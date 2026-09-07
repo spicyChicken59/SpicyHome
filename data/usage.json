@@ -1,1 +1,10 @@
-{"schema_version":1,"attempts":[]}
+{
+  "schema_version": 1,
+  "attempts": [
+    {
+      "id": "34160646756-1",
+      "at": "2026-09-07T20:46:11.840353Z",
+      "status": "reserved"
+    }
+  ]
+}

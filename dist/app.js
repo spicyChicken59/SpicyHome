@@ -728,11 +728,18 @@ $("#import-file").onchange = async (e) => {
     e.target.value = "";
   }
 };
-async function fetchJSON(url) {
+async function fetchJSON(url, { fresh = false, raw = false } = {}) {
   const ctrl = new AbortController(),
     timer = setTimeout(() => ctrl.abort(), 12000);
   try {
-    const r = await fetch(url, { cache: "no-store", signal: ctrl.signal });
+    const target = fresh
+      ? url + (url.includes("?") ? "&" : "?") + "_spicyhome=" + Date.now()
+      : url;
+    const r = await fetch(target, {
+      cache: "no-store",
+      signal: ctrl.signal,
+      ...(raw ? { headers: { Accept: "application/vnd.github.raw+json" } } : {}),
+    });
     if (!r.ok) throw Error("Source returned " + r.status);
     const text = await r.text();
     if (text.length > 8_000_000) throw Error("Snapshot too large");
@@ -747,33 +754,70 @@ async function loadFeed(manual = false) {
   $("#refresh").setAttribute("aria-disabled", "true");
   $("#refresh").textContent = "Checking…";
   try {
-    if (!config) config = await fetchJSON("./config.json");
-    let next, remoteError;
+    if (!config || manual) {
+      try {
+        config = await fetchJSON("./config.json", { fresh: true });
+      } catch (err) {
+        if (!config) throw err;
+      }
+    }
+    let next, remoteError, packaged;
     try {
-      next = validateFeed(await fetchJSON(config.feed_url));
+      next = validateFeed(await fetchJSON(config.feed_url, { fresh: true }));
     } catch (err) {
       remoteError = err;
     }
-    let usingCache = false;
-    if (!next) {
-      if (feed?.provider?.configured) {
-        next = feed;
-        usingCache = true;
-      } else {
-        try {
-          const cached = validateFeed(JSON.parse(localStorage.getItem(CACHE)));
-          if (cached.provider?.configured) {
-            next = cached;
-            usingCache = true;
-          }
-        } catch {}
-      }
-      if (!next) next = validateFeed(await fetchJSON(config.fallback_url));
+    let cached;
+    try {
+      cached = validateFeed(JSON.parse(localStorage.getItem(CACHE)));
+    } catch {}
+    try {
+      packaged = validateFeed(await fetchJSON(config.fallback_url, { fresh: true }));
+    } catch {
+      // A missing bundle must not discard a valid remote response, and the
+      // independent mirror still gets its chance when nothing loaded yet.
     }
+    let received = next;
+    const timestamp = (snapshot) =>
+      Date.parse(snapshot?.provider?.last_success ?? snapshot?.generated_at) || 0;
+    const prefer = (candidate, current) =>
+      !current ||
+      (candidate.provider?.configured && !current.provider?.configured) ||
+      (!!candidate.provider?.configured === !!current.provider?.configured &&
+        (timestamp(candidate) > timestamp(current) ||
+          (timestamp(candidate) === timestamp(current) &&
+            (Date.parse(candidate.generated_at) || 0) > (Date.parse(current.generated_at) || 0))));
+    // A stale-but-valid upstream response must not erase a newer connected
+    // snapshot. This also makes a fresh browser use the deployed live snapshot
+    // when the remote host is unavailable instead of requiring an old cache.
+    for (const candidate of [feed, cached, packaged]) {
+      if (!candidate) continue;
+      if (prefer(candidate, next)) next = candidate;
+    }
+    // Both addresses read the same committed public snapshot. No rental API
+    // request or provider quota is involved in opening or refreshing the site.
+    if (config.feed_mirror_url && (!received || !received.provider?.configured || next !== received)) {
+      try {
+        const mirrored = validateFeed(
+          await fetchJSON(config.feed_mirror_url, { fresh: true, raw: true }),
+        );
+        // A successful remote check also confirms an equally fresh saved or
+        // included snapshot. Prefer the fetched copy on ties for honest status.
+        if (!received || !prefer(received, mirrored)) received = mirrored;
+        if (!next || !prefer(next, mirrored)) next = mirrored;
+        remoteError = null;
+      } catch (err) {
+        if (!received) remoteError = err;
+      }
+    }
+    if (!next) throw remoteError ?? Error("No complete snapshot is available");
+    const usingCache = next !== received && next !== packaged;
+    const usingPackaged = next === packaged;
+    const olderSource = !!received && prefer(next, received);
     feed = next;
     if (config.status_url) {
       try {
-        const status = await fetchJSON(config.status_url);
+        const status = await fetchJSON(config.status_url, { fresh: true });
         if (
           status?.schema_version === 1 &&
           ["success", "failed", "not_configured"].includes(status.status)
@@ -786,9 +830,15 @@ async function loadFeed(manual = false) {
         ? "Official-site research is ready. Connect the daily feed in Sources & setup."
         : `Latest successful listing scan: ${dateLabel(feed.provider?.last_success)}. ${feed.provider?.coverage ?? ""}`;
     $("#notice").textContent =
-      (usingCache
-        ? "Source refresh unavailable; retaining your last complete connected snapshot. "
-        : "") +
+      (olderSource
+        ? usingPackaged
+          ? "The published source returned older data; showing the newer snapshot included with this site. "
+          : "The published source returned older data; retaining your newer saved snapshot. "
+        : usingCache
+          ? "Source refresh unavailable; retaining your last complete snapshot. "
+          : usingPackaged
+            ? "Live update unavailable; showing the snapshot included with this site. "
+            : "") +
       (lastAttempt?.status === "failed"
         ? "The most recent tracking attempt failed; the last successful scan remains below. "
         : "") +
@@ -802,10 +852,14 @@ async function loadFeed(manual = false) {
     } catch {}
     if (manual)
       toast(
-        remoteError
+        olderSource
+          ? usingPackaged
+            ? "Showing this site's newer included snapshot. The source returned older data."
+            : "Your newer saved snapshot is retained. The source returned older data."
+          : remoteError
           ? usingCache
             ? "Your last complete snapshot is retained. Source check unavailable."
-            : "Showing packaged research; the daily feed is not connected yet."
+            : "Live update unavailable. Showing this site's included snapshot."
           : "Latest published snapshot checked.",
       );
   } catch (err) {

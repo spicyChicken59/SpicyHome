@@ -40,7 +40,18 @@ The shipped defaults allow one attempt per UTC day and at most 30 in a rolling 3
 
 Publication is enabled only while `SPICYHOME_PAGES_ENABLED` is `true`. It also runs after tracking/context workflows complete. This explicit trigger handles updates committed using GitHub’s built-in token. Existing branch protections and environment approvals remain in force. If protected `main` blocks the tracker’s reservation commit, it fails before consuming a provider request; configure an authorized data-publication flow instead of bypassing the protection.
 
-The private Sites deployment reads `dist/config.json` to find the public raw GitHub snapshot. It starts with packaged research until that source exists. Notes belong to a browser origin: use Export/Import when moving between the private Sites URL and GitHub Pages.
+The Sites deployment reads `dist/config.json` to find the public raw GitHub
+snapshot and its GitHub Contents API mirror. These are reads of committed data,
+not provider scans. Initial loads and manual checks use cache-busting requests;
+manual checks also reload configuration. A newer connected snapshot in the browser
+or deployed bundle is retained if a source fails or returns older data.
+
+Publish the current `dist/` bundle after the first live scan so a fresh browser
+also has a connected snapshot when both public source hosts are unavailable.
+GitHub tracking commits update the live feed; they do not create a new Sites
+deployment. The notice distinguishes a successful source check from a cached or
+bundled fallback. Notes belong to a browser origin: use Export/Import when moving
+between the Sites URL and GitHub Pages, or between separate browsers.
 
 ## 4. Optional public EV charging
 

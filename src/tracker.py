@@ -66,10 +66,27 @@ def reported_layout(row):
     beds=layout_count(row.get('bedrooms'),True);baths=layout_count(row.get('bathrooms'))
     # Only an explicit structured unit-layout field can contradict bed counts.
     # General descriptions may mention a yoga studio or multiple building plans.
-    declared=str(row.get('unitLayout') or row.get('floorPlanType') or '').strip().lower()
-    compact=declared in ('studio','convertible','efficiency','studio apartment')
+    declarations={str(row.get(key) or '').strip().lower() for key in ('unitLayout','floorPlanType')}
+    compact=bool(declarations & {'studio','convertible','efficiency','studio apartment'})
+    one_bed=bool(declarations & {'one bedroom','one-bedroom','1 bedroom','1-bedroom','1 bed','1br'})
+    declaration='conflict' if compact and one_bed else 'studio' if compact else 'one_bed' if one_bed else None
     status=('studio' if beds in (None,0) else 'conflict') if compact else 'studio' if beds==0 else 'unverified' if beds is None or baths is None else 'provider_reported' if beds==1 and baths==1 else 'other'
-    return {'bedrooms':beds,'bathrooms':baths,'layout_status':status,'layout_note':f'Provider bedroom/bathroom fields: {beds!s}/{baths!s}.'+(f' Unit layout field: {declared}.' if declared else ' Separate bedroom not independently checked.')}
+    fields='; '.join(f'{key}: {str(row[key])[:200]}' for key in ('unitLayout','floorPlanType') if row.get(key))
+    return {'bedrooms':beds,'bathrooms':baths,'layout_status':status,'layout_declaration':declaration,'layout_note':f'Provider bedroom/bathroom fields: {beds!s}/{baths!s}.'+(f' Structured unit information: {fields}.' if fields else ' Separate bedroom not independently checked.')}
+
+def preserve_layout_evidence(previous,incoming):
+    result=copy.deepcopy(incoming)
+    explicit_studio=previous.get('layout_declaration') in ('studio','conflict')
+    explicit_resolution=incoming.get('layout_declaration')=='one_bed' and incoming.get('bedrooms')==1 and incoming.get('bathrooms')==1
+    if explicit_studio and not explicit_resolution and incoming.get('layout_declaration') not in ('studio','conflict'):
+        result['layout_declaration']=previous['layout_declaration']
+        result['layout_status']='studio' if incoming.get('bedrooms')==0 else 'conflict'
+        result['layout_note']='Earlier structured unit information identified a studio/convertible; numeric counts alone do not resolve it. '+incoming.get('layout_note','')
+        if previous.get('layout_observed_at'):result['layout_observed_at']=previous['layout_observed_at']
+    elif incoming.get('layout_status')=='unverified' and previous.get('layout_status') in ('studio','conflict','other'):
+        for key in ('bedrooms','bathrooms','layout_status','layout_declaration','layout_note','layout_observed_at'):
+            if key in previous:result[key]=previous[key]
+    return result
 
 def normalize(rows,config,at):
     if not isinstance(rows,list) or len(rows)>500: raise ValueError('Provider did not return one valid listing page')
@@ -83,7 +100,8 @@ def normalize(rows,config,at):
         if layout['layout_status']!='provider_reported':
             ident='rentcast:'+row['id'];previous=excluded['layout_corrections'].get(ident)
             rank={'unverified':0,'other':1,'conflict':2,'studio':3}
-            if not previous or rank[layout['layout_status']]>rank[previous['layout_status']]:excluded['layout_corrections'][ident]=layout
+            strength=lambda item:(item.get('layout_declaration') in ('studio','conflict'),rank[item['layout_status']])
+            if not previous or strength(layout)>strength(previous):excluded['layout_corrections'][ident]=layout
         if row.get('status')!='Active': excluded['inactive']+=1;continue
         if layout['layout_status']!='provider_reported':
             excluded['outside_layout_or_price']+=1;continue
@@ -107,14 +125,15 @@ def combine(previous,seed,homes,excluded,total,returned,at,query):
     old={h['id']:h for h in previous.get('homes',[]) if h['kind']=='listing'}
     for ident,layout in excluded.get('layout_corrections',{}).items():
         if ident in old:
-            prior_status=old[ident].get('layout_status') or reported_layout(old[ident])['layout_status']
-            if layout['layout_status']=='unverified' and prior_status in ('studio','conflict','other'):continue
-            old[ident]=copy.deepcopy(old[ident]);old[ident].update(layout)
-            old[ident]['layout_observed_at']=at
+            prior=old[ident]
+            if not prior.get('layout_status'):prior={**prior,**reported_layout(prior)}
+            corrected=preserve_layout_evidence(prior,{**layout,'layout_observed_at':at})
+            old[ident]=copy.deepcopy(prior);old[ident].update(corrected)
     events=list(previous.get('events',[]));current=[]
     for h in homes:
         prior=old.pop(h['id'],None)
         if prior:
+            h=preserve_layout_evidence(prior,h)
             history=list(prior.get('history',[]))
             # Same UTC day's price is the latest observed quote, never a fake extra day.
             history=[p for p in history if p['date'][:10]!=at[:10]]
@@ -129,7 +148,7 @@ def combine(previous,seed,homes,excluded,total,returned,at,query):
         if h.get('seen_in_latest',True): events.insert(0,{'at':at,'id':h['id'],'title':h['title'],'description':'Not in the latest capped snapshot; availability is unverified.'})
         h=copy.deepcopy(h);h['seen_in_latest']=False;current.append(h)
     truncated=total is not None and total>returned
-    coverage=(f"One page returned {returned} of {total} Chicago matches" if total is not None else f"One page returned {returned} Chicago matches; total count unavailable")+f"; {len(homes)} fit the downtown search window."
+    coverage=(f"One page returned {returned} of {total} Chicago matches" if total is not None else f"One page returned {returned} Chicago matches; total count unavailable")+f"; {sum(h.get('layout_status')=='provider_reported' for h in current if h.get('seen_in_latest'))} fit the downtown layout and price search."
     if truncated or total is None and returned==500: coverage+=' Coverage is incomplete.'
     if excluded.get('missing_coordinates',0): coverage+=f" {excluded['missing_coordinates']} could not be located."
     result=copy.deepcopy(seed)

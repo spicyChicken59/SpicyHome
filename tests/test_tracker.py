@@ -50,6 +50,29 @@ class FeedTests(unittest.TestCase):
   for rows in [[row(bedrooms=0,status='Inactive')],[row(bedrooms=0),row(bedrooms=None)],[row(bedrooms=None),row(bedrooms=0)]]:
    homes,excluded=t.normalize(rows,CFG,t.stamp(NOW));self.assertEqual(homes,[])
    self.assertEqual(excluded['layout_corrections']['rentcast:a']['layout_status'],'studio')
+ def test_both_structured_layout_fields_are_checked(self):
+  for fields in [dict(unitLayout='One bedroom',floorPlanType='Studio'),dict(unitLayout='Studio',floorPlanType='One bedroom')]:
+   homes,excluded=t.normalize([row(**fields)],CFG,t.stamp(NOW));self.assertEqual(homes,[])
+   self.assertEqual(excluded['layout_corrections']['rentcast:a']['layout_declaration'],'conflict')
+ def test_explicit_studio_survives_weaker_counts_until_explicitly_resolved(self):
+  previous=SEED
+  steps=[{},dict(unitLayout='Studio'),dict(bedrooms=2),dict(bedrooms=None),{},dict(unitLayout='One bedroom')]
+  for day,fields in enumerate(steps):
+   at=t.stamp(NOW+dt.timedelta(days=day));homes,excluded=t.normalize([row(**fields)],CFG,at)
+   previous=t.combine(previous,SEED,homes,excluded,1,1,at,{})
+   home=next(h for h in previous['homes'] if h['id']=='rentcast:a')
+   self.assertEqual(home['layout_status'],'provider_reported' if day in (0,5) else 'conflict')
+   if 0<day<5:self.assertEqual(home['layout_declaration'],'studio')
+ def test_duplicate_numeric_studio_cannot_discard_explicit_evidence(self):
+  for rows in [[row(bedrooms=0),row(unitLayout='Studio')],[row(unitLayout='Studio'),row(bedrooms=0)]]:
+   homes,excluded=t.normalize(rows,CFG,t.stamp(NOW));self.assertEqual(homes,[])
+   self.assertEqual(excluded['layout_corrections']['rentcast:a']['layout_declaration'],'studio')
+ def test_numeric_only_layout_can_be_corrected_by_later_numeric_evidence(self):
+  previous=SEED
+  for day,fields in enumerate([{},dict(bedrooms=0),{}]):
+   at=t.stamp(NOW+dt.timedelta(days=day));homes,excluded=t.normalize([row(**fields)],CFG,at)
+   previous=t.combine(previous,SEED,homes,excluded,1,1,at,{})
+  self.assertEqual(previous['homes'][-1]['layout_status'],'provider_reported')
  def test_query_is_one_page_without_listing_age_cutoff(self):
   q=t.build_query(CFG);self.assertEqual(q['price'],'1200:3000');self.assertEqual(q['limit'],500);self.assertNotIn('daysOld',q)
  def test_parking_and_charging_are_unknown(self):

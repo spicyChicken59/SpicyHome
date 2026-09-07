@@ -15,7 +15,7 @@ import {
   distanceMiles,
   layoutEvidence,
   planLabel,
-} from "./model.js?v=20260907-layout-evidence";
+} from "./model.js?v=20260907-audit-round";
 const $ = (s) => document.querySelector(s),
   KEY = "spicyhome.workspace.v1",
   CACHE = "spicyhome.feed.v1";
@@ -37,18 +37,18 @@ let state = emptyWorkspace(),
   markers = new Map(),
   refreshing = false,
   toastTimer,
-  searchTimer;
+  searchTimer,
+  storedNotebook = null,
+  unreadableNotebook = false;
 try {
-  const saved = localStorage.getItem(KEY);
-  if (saved) state = validateWorkspace(JSON.parse(saved));
+  storedNotebook = localStorage.getItem(KEY);
+  if (storedNotebook) state = validateWorkspace(JSON.parse(storedNotebook));
 } catch {
-  setTimeout(
-    () =>
-      toast(
-        "Your saved notebook could not be loaded. Import a backup to restore it.",
-      ),
-    0,
-  );
+  unreadableNotebook = !!storedNotebook;
+  setTimeout(() => {
+    if (unreadableNotebook) notebookRecovery(true);
+    else toast("Your saved notebook could not be loaded. Import a backup to restore it.");
+  }, 0);
 }
 let prefs = { ...defaults, ...state.preferences };
 const allHomes = () => {
@@ -56,8 +56,8 @@ const allHomes = () => {
     [...(feed?.homes ?? []), ...state.manual].map((h) => [h.id, h]),
   );
   for (const r of Object.values(state.records))
-    if (r.saved && r.snapshot && !homes.has(r.snapshot.id))
-      homes.set(r.snapshot.id, r.snapshot);
+    if ((r.saved || ["studio", "other"].includes(r.layoutReview)) && r.snapshot && !homes.has(r.snapshot.id))
+      homes.set(r.snapshot.id, { ...r.snapshot, notebook_only: true, seen_in_latest: false });
   return [...homes.values()];
 };
 const getHome = (id) => allHomes().find((h) => h.id === id);
@@ -78,10 +78,50 @@ function toast(message) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => ($("#toast").textContent = ""), 4500);
 }
+function notebookRecovery(unreadable = false) {
+  let warning = $("#storage-warning");
+  if (!warning) {
+    warning = document.createElement("div");
+    warning.id = "storage-warning";
+    warning.className = "callout";
+    warning.setAttribute("role", "alert");
+    $("#workspace").before(warning);
+  }
+  warning.innerHTML = unreadable
+    ? 'Your saved notebook could not be read. It has been protected from replacement. <button class="text-button" id="export-original">Download saved data</button> <button class="text-button" id="recover-import">Import a backup</button>'
+    : 'The notebook changed in another tab. Changes in this tab have not overwritten it. <button class="text-button" id="export-unsaved">Export this tab</button> <button class="text-button" id="load-latest-notebook">Load saved notebook</button>';
+  if (unreadable) {
+    $("#export-original").onclick = () => download(storedNotebook, "spicyhome-recovery.json");
+    $("#recover-import").onclick = () => $("#import-file").click();
+  } else {
+    $("#export-unsaved").onclick = exportNotebook;
+    $("#load-latest-notebook").onclick = () => {
+      try {
+        const latest = localStorage.getItem(KEY);
+        const restored = latest ? validateWorkspace(JSON.parse(latest)) : emptyWorkspace();
+        if (!confirm("Load the saved notebook? This replaces this tab's unsaved changes. Export this tab first if you want to keep them.")) return;
+        state = restored;
+        prefs = { ...defaults, ...state.preferences };
+        storedNotebook = latest;
+        unreadableNotebook = false;
+        document.querySelectorAll("dialog[open]").forEach((dialog) => dialog.close());
+        warning.remove();
+        render();
+        toast("Loaded the saved notebook.");
+      } catch { toast("The saved notebook could not be read. Export this tab before closing it."); }
+    };
+  }
+}
 function persist() {
   state.preferences = { ...prefs };
   try {
-    localStorage.setItem(KEY, JSON.stringify(state));
+    if (unreadableNotebook || localStorage.getItem(KEY) !== storedNotebook) {
+      notebookRecovery(unreadableNotebook);
+      return false;
+    }
+    const serialized = JSON.stringify(validateWorkspace(state));
+    localStorage.setItem(KEY, serialized);
+    storedNotebook = serialized;
     $("#storage-warning")?.remove();
     return true;
   } catch {
@@ -174,7 +214,7 @@ function renderCard(h) {
     c = costs(h, r, prefs),
     delta = changeFor(h),
     saved = !!r.saved;
-  return `<article class="home-card" data-home="${esc(h.id)}"><div class="card-top"><span class="neighborhood">${esc(h.neighborhood)}</span><button class="save-button" data-save="${esc(h.id)}" aria-label="${saved ? "Remove" : "Save"} ${esc(h.title)} ${saved ? "from" : "to"} shortlist" aria-pressed="${saved}">${saved ? "♥" : "♡"}</button></div><h3>${esc(h.title)}</h3><p class="address">${esc(h.address)}</p><p class="plan-label">${esc(planLabel(h))}</p><div class="rent-row"><strong class="rent">${money(displayPrice(h))}</strong>${displayPrice(h) !== null ? "<small>/ mo</small>" : ""}</div><p class="price-kind">${esc(priceKind(h))}</p><div class="specs"><span>${esc(layout.label)}</span><span>${h.sqft ? esc(h.sqft) + " sq ft" : "Size unverified"}</span></div><div class="cost-line"><span>Known monthly subtotal</span><strong>${c.rent === null ? "Incomplete" : money(c.known) + "+"}</strong></div><div class="chips">${chip(h, "parking", "Parking")}${chip(h, "charging", "EV")}</div><p class="card-evidence">${esc(h.atmosphere ?? (h.kind === "listing" ? "A source-reported listing. Verify its unit, price and amenity details." : "Your apartment research."))}</p>${delta !== null && delta !== 0 ? `<div class="price-change">${delta < 0 ? "↓" : "↑"} ${money(Math.abs(delta))} since previous observation</div>` : ""}${r.tourDate ? `<p class="tour-note">Tour: ${esc(r.tourDate.replace("T", " · "))}</p>` : ""}${h.seen_in_latest === false ? '<p class="price-change">Not seen in latest snapshot · availability unverified</p>' : ""}<div class="evidence-stamp">${evidence(h)} · ${esc(dateLabel(h.observed_at))}</div>${r.status ? `<p class="meta">${esc(r.status)}</p>` : ""}<div class="card-actions"><button class="button small secondary" data-detail="${esc(h.id)}">Details &amp; check layout</button><label class="compare-label"><input type="checkbox" data-compare="${esc(h.id)}" ${comparison.has(h.id) ? "checked" : ""}>Compare</label></div></article>`;
+  return `<article class="home-card" data-home="${esc(h.id)}"><div class="card-top"><span class="neighborhood">${esc(h.neighborhood)}</span><button class="save-button" data-save="${esc(h.id)}" aria-label="${saved ? "Remove" : "Save"} ${esc(h.title)} ${saved ? "from" : "to"} shortlist" aria-pressed="${saved}">${saved ? "♥" : "♡"}</button></div><h3>${esc(h.title)}</h3><p class="address">${esc(h.address)}</p><p class="plan-label">${esc(planLabel(h))}</p><div class="rent-row"><strong class="rent">${money(displayPrice(h))}</strong>${displayPrice(h) !== null ? "<small>/ mo</small>" : ""}</div><p class="price-kind">${esc(priceKind(h))}</p><div class="specs"><span>${esc(layout.label)}</span><span>${h.sqft ? esc(h.sqft) + " sq ft" : "Size unverified"}</span></div><div class="cost-line"><span>Known monthly subtotal</span><strong>${c.rent === null ? "Incomplete" : money(c.known) + "+"}</strong></div><div class="chips">${chip(h, "parking", "Parking")}${chip(h, "charging", "EV")}</div><p class="card-evidence">${esc(h.atmosphere ?? (h.kind === "listing" ? "A source-reported listing. Verify its unit, price and amenity details." : "Your apartment research."))}</p>${delta !== null && delta !== 0 ? `<div class="price-change">${delta < 0 ? "↓" : "↑"} ${money(Math.abs(delta))} since previous observation</div>` : ""}${r.tourDate ? `<p class="tour-note">Tour: ${esc(r.tourDate.replace("T", " · "))}</p>` : ""}${h.notebook_only ? '<p class="price-change">Archived notebook entry · absent from the current feed</p>' : h.seen_in_latest === false ? '<p class="price-change">Not seen in latest snapshot · availability unverified</p>' : ""}<div class="evidence-stamp">${evidence(h)} · ${esc(dateLabel(h.observed_at))}</div>${r.status ? `<p class="meta">${esc(r.status)}</p>` : ""}<div class="card-actions"><button class="button small secondary" data-detail="${esc(h.id)}">Details &amp; check layout</button><label class="compare-label"><input type="checkbox" data-compare="${esc(h.id)}" ${comparison.has(h.id) ? "checked" : ""}>Compare</label></div></article>`;
 }
 function empty(title, text, action = "") {
   return `<div class="empty"><h3>${esc(title)}</h3><p>${esc(text)}</p>${action}</div>`;
@@ -213,6 +253,7 @@ function focusHomeControl(id, attribute) {
     (element) => element.getAttribute(`data-${attribute}`) === id,
   );
   const target = control ?? $("#view-title");
+  control?.closest("details")?.setAttribute("open", "");
   if (!control) target.tabIndex = -1;
   target.focus();
 }
@@ -221,12 +262,13 @@ function renderDiscover() {
     ...new Set(allHomes().map((h) => h.neighborhood)),
   ].sort();
   $("#view-content").innerHTML =
-    `<div class="layout-controls"><label for="layout-scope">Layout evidence</label><select id="layout-scope"><option value="all" ${prefs.layoutScope === "all" ? "selected" : ""}>All potential matches</option><option value="source" ${prefs.layoutScope === "source" ? "selected" : ""}>Source-listed plans + my checked layouts</option><option value="confirmed" ${prefs.layoutScope === "confirmed" ? "selected" : ""}>Only layouts I have checked</option></select><p id="layout-summary" class="meta" role="status"></p></div><form class="filters" id="filters"><div class="field"><label for="search">Building or neighborhood</label><input type="search" id="search" name="search" placeholder="Your corner of Chicago" value="${esc(prefs.search)}"></div><div class="field"><label for="min">Minimum / month</label><input type="number" id="min" name="min" min="0" max="20000" step="50" value="${prefs.min}"></div><div class="field"><label for="max">Maximum / month</label><input type="number" id="max" name="max" min="0" max="20000" step="50" value="${prefs.max}"></div><div class="field"><label for="basis">Compare budget against</label><select id="basis" name="basis"><option value="rent" ${prefs.basis === "rent" ? "selected" : ""}>Base rent</option><option value="total" ${prefs.basis === "total" ? "selected" : ""}>Known monthly subtotal</option></select></div><div class="field"><label for="neighborhood">Neighborhood</label><select id="neighborhood" name="neighborhood"><option value="all">All downtown areas</option>${neighborhoods.map((n) => `<option ${prefs.neighborhood === n ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></div></form><div class="filter-options"><label><input type="checkbox" id="filter-parking" ${prefs.parking ? "checked" : ""}>Advertised parking only</label><label><input type="checkbox" id="filter-charging" ${prefs.charging ? "checked" : ""}>Advertised EV charging only</label><label><input type="checkbox" id="filter-unknown" ${prefs.unknown ? "checked" : ""}>Include unquoted base rent</label><button class="text-button" id="reset-filters">Reset</button><span class="meta">Target: a separate 1-bedroom · 1-bath apartment</span></div><p class="research-note">${feed.mode === "research" ? "Start with sourced building prospects. These are research leads, not confirmed available apartments." : "Listing snapshots and sourced building prospects are shown together, each labeled by its source."} Budget is ${prefs.basis === "rent" ? "base rent; parking, utilities and other fees can take your monthly cost above it." : "a known subtotal; missing fees are never treated as free."}</p><div class="filter-summary" id="filter-summary" role="status" aria-live="polite" hidden></div><div class="results-layout"><aside class="map-panel" aria-label="Chicago apartment map"><div class="map-heading"><h3>A neighborhood, not just a number.</h3></div><div class="map-surface" id="map" role="region" aria-label="Apartment locations"></div><ul class="map-list" id="map-list"></ul><div class="map-foot">Pins show approximate building locations. No pin means coordinates are unverified. Nearby public charging never proves resident charging access.</div></aside><div class="results-column"><div class="results-top"><strong id="result-count"></strong><label class="meta">Sort <select id="sort" aria-label="Sort apartments"><option value="rent" ${prefs.sort === "rent" ? "selected" : ""}>${prefs.basis === "rent" ? "Base rent" : "Known subtotal"}: low to high</option><option value="space" ${prefs.sort === "space" ? "selected" : ""}>More room</option><option value="recent" ${prefs.sort === "recent" ? "selected" : ""}>Recently observed</option></select></label></div><div class="home-grid" id="results"></div></div></div><div id="compare-tray"></div>`;
+    `<div class="layout-controls"><label for="layout-scope">Layout evidence</label><select id="layout-scope"><option value="all" ${prefs.layoutScope === "all" ? "selected" : ""}>All potential matches</option><option value="source" ${prefs.layoutScope === "source" ? "selected" : ""}>Source-listed plans + my checked layouts</option><option value="confirmed" ${prefs.layoutScope === "confirmed" ? "selected" : ""}>Only layouts I have checked</option></select><p id="layout-summary" class="meta" role="status"></p></div><form class="filters" id="filters"><div class="field"><label for="search">Building or neighborhood</label><input type="search" id="search" name="search" maxlength="500" placeholder="Your corner of Chicago" value="${esc(prefs.search)}"></div><div class="field"><label for="min">Minimum / month</label><input type="number" id="min" name="min" min="0" max="20000" step="50" value="${prefs.min}"></div><div class="field"><label for="max">Maximum / month</label><input type="number" id="max" name="max" min="0" max="20000" step="50" value="${prefs.max}"></div><div class="field"><label for="basis">Compare budget against</label><select id="basis" name="basis"><option value="rent" ${prefs.basis === "rent" ? "selected" : ""}>Base rent</option><option value="total" ${prefs.basis === "total" ? "selected" : ""}>Known monthly subtotal</option></select></div><div class="field"><label for="neighborhood">Neighborhood</label><select id="neighborhood" name="neighborhood"><option value="all">All downtown areas</option>${neighborhoods.map((n) => `<option ${prefs.neighborhood === n ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></div></form><div class="filter-options"><label><input type="checkbox" id="filter-parking" ${prefs.parking ? "checked" : ""}>Advertised parking only</label><label><input type="checkbox" id="filter-charging" ${prefs.charging ? "checked" : ""}>Advertised EV charging only</label><label><input type="checkbox" id="filter-unknown" ${prefs.unknown ? "checked" : ""}>Include unquoted base rent</label><button class="text-button" id="reset-filters">Reset</button><span class="meta">Target: a separate 1-bedroom · 1-bath apartment</span></div><p class="research-note" id="budget-note">${feed.mode === "research" ? "Start with sourced building prospects. These are research leads, not confirmed available apartments." : "Listing snapshots and sourced building prospects are shown together, each labeled by its source."} Budget is ${prefs.basis === "rent" ? "base rent; parking, utilities and other fees can take your monthly cost above it." : "a known subtotal; missing fees are never treated as free."}</p><div class="filter-summary" id="filter-summary" role="status" aria-live="polite" hidden></div><div class="results-layout"><aside class="map-panel" aria-label="Chicago apartment map"><div class="map-heading"><h3>A neighborhood, not just a number.</h3></div><div class="map-surface" id="map" role="region" aria-label="Apartment locations"></div><ul class="map-list" id="map-list"></ul><div class="map-foot">Pins show approximate building locations. No pin means coordinates are unverified. Nearby public charging never proves resident charging access.</div></aside><div class="results-column"><div class="results-top"><strong id="result-count"></strong><label class="meta">Sort <select id="sort" aria-label="Sort apartments"><option value="rent" ${prefs.sort === "rent" ? "selected" : ""}>${prefs.basis === "rent" ? "Base rent" : "Known subtotal"}: low to high</option><option value="space" ${prefs.sort === "space" ? "selected" : ""}>More room</option><option value="recent" ${prefs.sort === "recent" ? "selected" : ""}>Recently observed</option></select></label></div><div class="home-grid" id="results"></div></div></div><details class="excluded-layouts" id="excluded-layouts"><summary id="excluded-summary"></summary><p class="meta">These places are outside your one-bedroom search. Open a record to review the source or correct your layout choice. Removing a heart does not erase a layout correction.</p><div class="home-grid" id="excluded-results"></div></details><div id="compare-tray"></div>`;
   renderResults();
   $("#filters").addEventListener("submit", (e) => e.preventDefault());
   $("#filters").addEventListener("change", updateFilters);
   $("#search").addEventListener("input", (e) => {
-    prefs.search = e.target.value;
+    prefs.search = e.target.value.slice(0, 500);
+    e.target.value = prefs.search;
     persist();
     clearTimeout(searchTimer);
     searchTimer = setTimeout(updateFilters, 200);
@@ -253,8 +295,9 @@ function renderDiscover() {
   };
   $("#reset-filters").onclick = resetSearchFilters;
 }
-function resetSearchFilters() {
-  prefs = { ...defaults, utilityEstimate: prefs.utilityEstimate };
+function resetSearchFilters(keepLayout = false) {
+  const layoutScope = keepLayout === true ? prefs.layoutScope : defaults.layoutScope;
+  prefs = { ...defaults, utilityEstimate: prefs.utilityEstimate, layoutScope };
   persist();
   render();
   $("#reset-filters")?.focus();
@@ -279,7 +322,7 @@ function updateFilters() {
     max: hi,
     basis: $("#basis").value,
     neighborhood: $("#neighborhood").value,
-    search: $("#search").value,
+    search: $("#search").value.slice(0, 500),
   };
   persist();
   renderResults();
@@ -287,14 +330,18 @@ function updateFilters() {
 }
 function renderResults() {
   const loaded = allHomes(),
-    homes = visibleHomes(loaded, state, prefs),
-    listings = loaded.filter((h) => h.kind === "listing" && layoutEvidence(h, record(h.id)).matches).length,
+    homes = visibleHomes(loaded.filter((h) => !h.notebook_only), state, prefs),
+    checked = loaded.filter((h) => !h.notebook_only && layoutEvidence(h, record(h.id)).status === "confirmed").length,
+    excluded = loaded.filter((h) => !layoutEvidence(h, record(h.id)).matches),
+    listings = loaded.filter((h) => h.kind === "listing" && !h.notebook_only && layoutEvidence(h, record(h.id)).matches).length,
     shownListings = homes.filter((h) => h.kind === "listing").length,
     hiddenListings = listings - shownListings;
+  $("#sort option[value=rent]").textContent = `${prefs.basis === "rent" ? "Base rent" : "Known subtotal"}: low to high`;
+  $("#budget-note").textContent = `${feed.mode === "research" ? "Start with sourced building prospects. These are research leads, not confirmed available apartments." : "Listing snapshots and sourced building prospects are shown together, each labeled by its source."} Budget is ${prefs.basis === "rent" ? "base rent; parking, utilities and other fees can take your monthly cost above it." : "a known subtotal; missing fees are never treated as free."}`;
   $("#result-count").textContent =
     `${homes.length} of ${loaded.length} loaded places · ${homes.filter((h) => layoutEvidence(h, record(h.id)).status === "confirmed").length} layouts checked by you`;
   const statuses = homes.map((h) => layoutEvidence(h, record(h.id)).status);
-  $("#layout-summary").textContent = `${statuses.filter((s) => s === "source_listed").length} source-listed plans · ${statuses.filter((s) => ["provider_reported", "unverified"].includes(s)).length} layouts need checking · ${loaded.filter((h) => !layoutEvidence(h, record(h.id)).matches).length} excluded for studio, different or conflicting layout. A listed bedroom count does not confirm a separate enclosed bedroom.`;
+  $("#layout-summary").textContent = `${statuses.filter((s) => s === "source_listed").length} source-listed plans · ${statuses.filter((s) => ["provider_reported", "unverified"].includes(s)).length} layouts need checking · ${excluded.length} excluded for studio, different or conflicting layout. A listed bedroom count does not confirm a separate enclosed bedroom.`;
   const summary = $("#filter-summary");
   summary.hidden = hiddenListings === 0;
   summary.innerHTML = hiddenListings
@@ -303,10 +350,14 @@ function renderResults() {
   if (hiddenListings) $("#show-unfiltered").onclick = resetSearchFilters;
   $("#results").innerHTML = homes.length
     ? homes.map(renderCard).join("")
-    : prefs.layoutScope === "confirmed" ? empty("No layouts checked yet.", "Choose All potential matches, open Details & check layout, then record a separate one-bedroom and one-bathroom layout after reviewing the exact plan.") : empty(
-        "Room to adjust.",
-        "No places match these filters. Try another neighborhood or include unquoted base rents.",
-      );
+    : prefs.layoutScope === "confirmed" && !checked
+      ? empty("No layouts checked yet.", "Open a potential match and check its exact floor plan, then record a separate one-bedroom and one-bathroom layout.", '<button class="button secondary" id="browse-layouts">Browse potential matches</button>')
+      : empty("No places match these filters.", prefs.layoutScope === "confirmed" ? `${checked} checked layout${checked === 1 ? " is" : "s are"} hidden by your other filters.` : "Try clearing your search, neighborhood or amenity filters.", '<button class="button secondary" id="reset-other-filters">Reset other filters</button>');
+  if ($("#browse-layouts")) $("#browse-layouts").onclick = () => resetSearchFilters();
+  if ($("#reset-other-filters")) $("#reset-other-filters").onclick = () => resetSearchFilters(true);
+  $("#excluded-layouts").hidden = !excluded.length;
+  $("#excluded-summary").textContent = `Review excluded layouts (${excluded.length})`;
+  $("#excluded-results").innerHTML = excluded.map(renderCard).join("");
   $("#map-list").innerHTML = homes
     .map(
       (h, i) =>
@@ -511,7 +562,7 @@ function showDetail(id) {
     .sort((a, b) => a.distance - b.distance)
     .slice(0, 2);
   $("#detail-content").innerHTML =
-    `<div class="dialog-body"><div class="dialog-header"><div><p class="eyebrow">${esc(h.neighborhood)} / ${evidence(h)}</p><h2 id="detail-title">${esc(h.title)}</h2></div><button class="dialog-close" data-close aria-label="Close apartment details">×</button></div><p class="detail-sub">${esc(h.address)} · ${esc(layoutEvidence(h, r).label)} · ${esc(planLabel(h))}${h.sqft ? " · " + esc(h.sqft) + " sq ft" : ""}</p><div class="detail-links">${link(h.source_url, h.kind === "manual" ? "Your source ↗" : "Official source ↗", "button secondary")}${link("https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(h.address), "Map & directions ↗", "button secondary")}${h.kind === "listing" ? link("https://www.google.com/search?q=" + encodeURIComponent(h.address + " apartment for rent"), "Find the listing ↗", "button secondary") : ""}</div><div class="callout">${h.kind === "building" ? "This is a researched building prospect, not a guaranteed available unit. " : ""}${h.seen_in_latest === false ? "Not in the latest capped snapshot; current availability is unverified. " : ""}${esc(h.availability_note ?? "Confirm the current unit and move-in date with the listing source.")} Observed ${esc(dateLabel(h.observed_at))}${ageDays(h.observed_at) > 7 ? " — this quote needs refreshing." : "."}</div><div class="detail-grid"><section class="detail-section"><h3>The monthly picture</h3><table class="cost-table"><tr><td>Base rent</td><td>${money(c.rent)}</td></tr><tr><td>Parking</td><td>${money(c.parking)}</td></tr><tr><td>Recurring fees</td><td>${money(c.fees)}</td></tr><tr><td>Your utility estimate</td><td>${c.utilities !== null ? money(c.utilities) : "Not entered"}</td></tr><tr><td>Known subtotal</td><td>${c.rent === null ? "Incomplete" : money(c.known)}</td></tr></table><p class="range-note">${c.unknown.length ? "Still unquoted: " + esc(c.unknown.join(", ")) + ". This is not an all-in total." : "All entered monthly items included. Confirm the quote’s completeness with leasing."}</p><p class="meta">One-time nonrefundable fees: ${money(c.upfront)}. Refundable deposits are separate; record them in your notes.</p></section><section class="detail-section"><h3>Parking, charging & access</h3><ul class="fact-list"><li>${esc(h.parking?.note ?? "Parking terms unverified.")}</li><li>${esc(h.charging?.note ?? "EV charging unverified.")}</li><li>${esc(h.access?.note ?? "Step-free access unverified.")}</li><li>Confirm space availability, charger compatibility and fees for your lease.</li>${stations.map((s) => `<li>${esc(s.title)}: ${s.distance.toFixed(2)} mi straight-line. This is not a walking route or accessibility rating.</li>`).join("")}</ul></section></div><section class="detail-section"><h3>The feel of the place</h3><p class="detail-sub">${esc(h.atmosphere ?? "Add your own impression after a visit.")}</p><div class="chips">${(h.amenities ?? []).map((a) => `<span class="chip">${esc(a)}</span>`).join("")}</div></section><section class="detail-section"><h3>Observed base rent</h3>${priceChart(h)}${r.quote_history?.length ? "<h3>Your recorded quotes</h3>" + priceChart({ history: r.quote_history }) : ""}</section><section class="detail-section"><h3>Your quotes & tour notebook</h3><form id="record-form" data-id="${esc(id)}"><div class="form-grid"><div class="field full"><label for="layoutReview">What did you find when checking the floor plan?</label><select id="layoutReview" name="layoutReview"><option value="unverified" ${!r.layoutReview || r.layoutReview === "unverified" ? "selected" : ""}>Not checked yet</option><option value="one_bed" ${r.layoutReview === "one_bed" ? "selected" : ""}>I checked: separate 1 bedroom and 1 bathroom</option><option value="studio" ${r.layoutReview === "studio" ? "selected" : ""}>Studio / convertible — hide from search</option><option value="other" ${r.layoutReview === "other" ? "selected" : ""}>Different layout — hide from search</option></select><p class="meta">Compare the exact unit or named plan with the source. Your correction stays in this browser and survives feed refreshes; saved notes remain in your shortlist.</p></div><div class="field"><label for="status">Where you are</label><select id="status" name="status">${statuses.map((s) => `<option ${r.status === s ? "selected" : ""}>${s}</option>`).join("")}</select></div><div class="field"><label for="tourDate">Tour date & local time</label><input id="tourDate" name="tourDate" type="datetime-local" value="${esc(r.tourDate ?? "")}"></div>${[
+    `<div class="dialog-body"><div class="dialog-header"><div><p class="eyebrow">${esc(h.neighborhood)} / ${evidence(h)}</p><h2 id="detail-title">${esc(h.title)}</h2></div><button class="dialog-close" data-close aria-label="Close apartment details">×</button></div><p class="detail-sub">${esc(h.address)} · ${esc(layoutEvidence(h, r).label)} · ${esc(planLabel(h))}${h.sqft ? " · " + esc(h.sqft) + " sq ft" : ""}</p><div class="detail-links">${link(h.source_url, h.kind === "manual" ? "Your source ↗" : "Official source ↗", "button secondary")}${link("https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(h.address), "Map & directions ↗", "button secondary")}${h.kind === "listing" ? link("https://www.google.com/search?q=" + encodeURIComponent(h.address + " apartment for rent"), "Find the listing ↗", "button secondary") : ""}</div><div class="callout">${h.kind === "building" ? "This is a researched building prospect, not a guaranteed available unit. " : ""}${h.seen_in_latest === false ? "Not in the latest capped snapshot; current availability is unverified. " : ""}${esc(h.availability_note ?? "Confirm the current unit and move-in date with the listing source.")} Observed ${esc(dateLabel(h.observed_at))}${ageDays(h.observed_at) > 7 ? " — this quote needs refreshing." : "."}</div><section class="layout-review"><h3>Check the layout</h3><p class="meta">${esc(h.layout_note ?? "The source has not supplied a floor plan confirming a separate bedroom.")}</p><div class="field full"><label for="layoutReview">What did you find when checking the floor plan?</label><select id="layoutReview" name="layoutReview" form="record-form" aria-describedby="layout-help"><option value="unverified" ${!r.layoutReview || r.layoutReview === "unverified" ? "selected" : ""}>Not checked yet</option><option value="one_bed" ${r.layoutReview === "one_bed" ? "selected" : ""}>I checked: separate 1 bedroom and 1 bathroom</option><option value="studio" ${r.layoutReview === "studio" ? "selected" : ""}>Studio / convertible — hide from search</option><option value="other" ${r.layoutReview === "other" ? "selected" : ""}>Different layout — hide from search</option></select><p class="meta" id="layout-help">Compare the exact unit or named plan with the source. Your correction stays in this browser and survives feed refreshes; saved notes remain in your shortlist.</p></div><button class="button small" type="submit" form="record-form">Save changes</button></section><div class="detail-grid"><section class="detail-section"><h3>The monthly picture</h3><table class="cost-table"><tr><td>Base rent</td><td>${money(c.rent)}</td></tr><tr><td>Parking</td><td>${money(c.parking)}</td></tr><tr><td>Recurring fees</td><td>${money(c.fees)}</td></tr><tr><td>Your utility estimate</td><td>${c.utilities !== null ? money(c.utilities) : "Not entered"}</td></tr><tr><td>Known subtotal</td><td>${c.rent === null ? "Incomplete" : money(c.known)}</td></tr></table><p class="range-note">${c.unknown.length ? "Still unquoted: " + esc(c.unknown.join(", ")) + ". This is not an all-in total." : "All entered monthly items included. Confirm the quote’s completeness with leasing."}</p><p class="meta">One-time nonrefundable fees: ${money(c.upfront)}. Refundable deposits are separate; record them in your notes.</p></section><section class="detail-section"><h3>Parking, charging & access</h3><ul class="fact-list"><li>${esc(h.parking?.note ?? "Parking terms unverified.")}</li><li>${esc(h.charging?.note ?? "EV charging unverified.")}</li><li>${esc(h.access?.note ?? "Step-free access unverified.")}</li><li>Confirm space availability, charger compatibility and fees for your lease.</li>${stations.map((s) => `<li>${esc(s.title)}: ${s.distance.toFixed(2)} mi straight-line. This is not a walking route or accessibility rating.</li>`).join("")}</ul></section></div><section class="detail-section"><h3>The feel of the place</h3><p class="detail-sub">${esc(h.atmosphere ?? "Add your own impression after a visit.")}</p><div class="chips">${(h.amenities ?? []).map((a) => `<span class="chip">${esc(a)}</span>`).join("")}</div></section><section class="detail-section"><h3>Observed base rent</h3>${priceChart(h)}${r.quote_history?.length ? "<h3>Your recorded quotes</h3>" + priceChart({ history: r.quote_history }) : ""}</section><section class="detail-section"><h3>Your quotes & tour notebook</h3><form id="record-form" data-id="${esc(id)}"><div class="form-grid"><div class="field"><label for="status">Where you are</label><select id="status" name="status">${statuses.map((s) => `<option ${r.status === s ? "selected" : ""}>${s}</option>`).join("")}</select></div><div class="field"><label for="tourDate">Tour date & local time</label><input id="tourDate" name="tourDate" type="datetime-local" value="${esc(r.tourDate ?? "")}"></div>${[
       ["rentOverride", "Quoted base rent"],
       ["parkingCost", "Parking / month"],
       ["monthlyFees", "Other recurring fees / month"],
@@ -755,6 +806,7 @@ $("#import-file").onchange = async (e) => {
         .slice(0, 1000),
     });
     state = merged;
+    if (unreadableNotebook) unreadableNotebook = false;
     const ok = persist();
     render();
     saveNotice(ok);
@@ -862,12 +914,16 @@ async function loadFeed(manual = false) {
     const usingPackaged = next === packaged;
     const olderSource = !!received && prefer(next, received);
     feed = next;
+    const currentAttempt = (attempt) => Number.isFinite(Date.parse(attempt?.attempted_at)) &&
+      Date.parse(attempt.attempted_at) >= (Date.parse(feed.provider?.last_success) || 0);
+    if (!currentAttempt(lastAttempt)) lastAttempt = null;
     if (config.status_url) {
       try {
         const status = await fetchJSON(config.status_url, { fresh: true });
         if (
           status?.schema_version === 1 &&
-          ["success", "failed", "not_configured"].includes(status.status)
+          ["success", "failed", "not_configured"].includes(status.status) &&
+          currentAttempt(status)
         )
           lastAttempt = status;
       } catch {}

@@ -1192,3 +1192,12 @@ footer {
 .layout-controls select { max-width: 100%; padding: .6rem; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
 .layout-controls p { margin: .65rem 0 0; }
 .plan-label { font-weight: 600; font-size: .85rem; margin: -.25rem 0 .75rem; }
+
+.layout-review { padding: 1rem; margin: 1rem 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.layout-review h3 { margin-top: 0; }
+.layout-review .field { margin-bottom: 1rem; }
+.layout-review .meta, .excluded-layouts > .meta { font-size: .875rem; line-height: 1.5; }
+.layout-review select { width: 100%; min-width: 0; }
+.excluded-layouts { margin-top: 1.5rem; padding: 1rem; border: 1px solid var(--line); border-radius: 10px; }
+.excluded-layouts summary { cursor: pointer; font-size: 1rem; font-weight: 600; padding: .5rem 0; }
+.excluded-layouts summary:focus-visible { outline: 2px solid var(--wine); outline-offset: 4px; }

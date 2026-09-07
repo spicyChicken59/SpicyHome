@@ -22,6 +22,7 @@ async function boot({
   storageFails = false,
   mirror = undefined,
   packaged = seed,
+  configuration = undefined,
 } = {}) {
   const d = new JSDOM(html, {
       url: "https://spicyhome.test/",
@@ -48,13 +49,16 @@ async function boot({
   const requests = [];
   w.fetch = async (url, options) => {
     requests.push({ url, options });
-    const path = url.split("?")[0];
+    let path = url.split("?")[0];
+    if (path === "https://raw.githubusercontent.com/spicyChicken59/SpicyHome/main/dist/data.json") path = "remote";
+    if (path === "https://api.github.com/repos/spicyChicken59/SpicyHome/contents/dist/data.json") path = "mirror";
+    if (path === "./config.json" && configuration === null) throw Error("configuration unavailable");
     if (path === "remote" && remote === null) throw Error("offline");
     if (path === "mirror" && mirror === null) throw Error("mirror offline");
     if (path === "./data.json" && packaged === null) throw Error("bundle unavailable");
     const data =
       path === "./config.json"
-        ? { feed_url: "remote", fallback_url: "./data.json", ...(mirror !== undefined ? { feed_mirror_url: "mirror" } : {}) }
+        ? configuration ?? { feed_url: "remote", fallback_url: "./data.json", ...(mirror !== undefined ? { feed_mirror_url: "mirror" } : {}) }
         : path === "remote"
           ? remote
           : path === "mirror"
@@ -71,6 +75,45 @@ async function boot({
 function connectedSnapshot(at = "2026-09-08T00:00:00Z") {
   return { ...seed, mode: "connected", generated_at: at,
     provider: { configured: true, last_success: at, coverage: "Test connected snapshot", status: "success" } };
+}
+test("failed configuration still loads the connected bundle instead of trapping old research", async () => {
+  const live = connectedSnapshot();
+  const d = await boot({ configuration: null, remote: null, mirror: null, packaged: live, cache: seed });
+  assert.equal(JSON.parse(d.w.localStorage.getItem("spicyhome.feed.v1")).mode, "connected");
+  assert.match(d.doc.querySelector("#notice").textContent, /snapshot included with this site/);
+  d.doc.querySelector("#refresh").click();
+  for (let i = 0; i < 30 && d.doc.querySelector("#refresh").textContent === "Checking…"; i++) await new Promise(r => setTimeout(r, 3));
+  assert.equal(d.requests.filter(r => r.url.startsWith("./data.json?")).length, 2);
+  assert.equal(JSON.parse(d.w.localStorage.getItem("spicyhome.feed.v1")).mode, "connected");
+  d.close();
+});
+test("invalid configuration still permits a live public source without browser cache", async () => {
+  const d = await boot({ configuration: {feed_url: "javascript:bad", fallback_url: "./data.json"}, remote: connectedSnapshot() });
+  assert.equal(JSON.parse(d.w.localStorage.getItem("spicyhome.feed.v1")).mode, "connected");
+  assert(!d.requests.some(r => r.url.startsWith("javascript:")));
+  d.close();
+});
+for (const preferences of [{parking:true}, {charging:true}, {neighborhood:"River North"}]) {
+  test(`saved ${Object.keys(preferences)[0]} filter explains hidden listings and recovers without losing notes`, async () => {
+    const live = connectedSnapshot();
+    const listing = {...seed.homes[0], id:"test-unverified-listing", kind:"listing", rent:1800,
+      neighborhood:"Downtown search area", parking:{status:"unknown"}, charging:{status:"unknown"}};
+    live.homes = [...seed.homes, listing];
+    const notebook = {version:1,records:{[seed.homes[0].id]:{saved:true,notes:"Keep my tour notes",snapshot:seed.homes[0]}},manual:[],events:[],preferences:{...preferences,utilityEstimate:80}};
+    const d = await boot({remote:live,packaged:live,notebook});
+    assert.match(d.doc.querySelector("#result-count").textContent, /of 11 loaded places/);
+    assert.match(d.doc.querySelector("#filter-summary").textContent, /1 listing snapshots loaded · 1 hidden/);
+    assert.equal(d.doc.querySelector('[data-home="test-unverified-listing"]'),null);
+    d.doc.querySelector("#show-unfiltered").click();
+    assert(d.doc.querySelector('[data-home="test-unverified-listing"]'));
+    assert.equal(d.doc.querySelector("#filter-summary").hidden,true);
+    const saved=JSON.parse(d.w.localStorage.getItem("spicyhome.workspace.v1"));
+    assert.equal(saved.records[seed.homes[0].id].notes,"Keep my tour notes");
+    assert.equal(saved.records[seed.homes[0].id].saved,true);
+    assert.equal(saved.preferences.utilityEstimate,80);
+    assert.equal(d.doc.activeElement.id,"reset-filters");
+    d.close();
+  });
 }
 test("fresh direct visit can load the mirror without an existing browser cache", async () => {
   const d = await boot({ remote: null, mirror: connectedSnapshot() });

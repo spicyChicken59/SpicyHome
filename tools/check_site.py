@@ -1,9 +1,10 @@
 """Validate authored static entrypoints, shared design provenance and public data."""
 import hashlib,json,pathlib,re,sys
+from urllib.parse import urlsplit
 ROOT=pathlib.Path(__file__).resolve().parents[1];DIST=ROOT/'dist';errors=[]
 html=(DIST/'index.html').read_text()
 for ref in re.findall(r'(?:src|href)="([^"#]+)"',html):
- if not ref.startswith(('http:','https:','data:','mailto:')) and not (DIST/ref).is_file() and ref!='./':errors.append('Missing local asset: '+ref)
+ if not ref.startswith(('http:','https:','data:','mailto:')) and not (DIST/urlsplit(ref).path).is_file() and ref!='./':errors.append('Missing local asset: '+ref)
 for path in DIST.rglob('*'):
  if path.is_file() and path.name in ['.env','.git','usage.json','search.json']:errors.append('Private setup/state file in public assets: '+str(path))
 manifest=json.loads((DIST/'design-system/provenance.json').read_text())

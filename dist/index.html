@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="A considered apartment search. Compare downtown Chicago one-bedrooms, true monthly costs, parking and EV charging, then track your shortlist."
+    />
+    <meta name="color-scheme" content="light dark" />
+    <title>SpicyHome — Chicago apartment notebook</title>
+    <link rel="icon" href="./design-system/assets/favicon.ico" />
+    <link rel="stylesheet" href="./design-system/sc.css" />
+    <link rel="stylesheet" href="./vendor/leaflet/leaflet.css" />
+    <link rel="stylesheet" href="./style.css" />
+    <script src="./vendor/leaflet/leaflet.js" defer></script>
+    <script src="./design-system/sc-theme.js" defer></script>
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to apartments</a>
+    <header class="topbar">
+      <a class="brand" href="./"
+        ><img
+          src="./design-system/assets/sc-mark-mono-cream.svg"
+          alt="SpicyChicken"
+          width="36"
+          height="40"
+        /><span
+          >Spicy<span class="brand-home">Home</span
+          ><small>CHICAGO / APARTMENT NOTEBOOK</small></span
+        ></a
+      >
+      <nav aria-label="Main">
+        <button data-view="discover" aria-current="page">Discover</button
+        ><button data-view="shortlist">
+          Shortlist <span id="saved-count">0</span></button
+        ><button data-view="timeline">Activity</button
+        ><button data-view="setup">Sources & setup</button>
+      </nav>
+      <button
+        id="theme-toggle"
+        class="icon-button"
+        aria-label="Switch color theme"
+      >
+        ◐
+      </button>
+    </header>
+    <main id="main" tabindex="-1">
+      <section class="intro">
+        <div>
+          <p class="eyebrow">YOUR NEXT CHAPTER / DOWNTOWN CHICAGO</p>
+          <h1>A little room.<br /><em>A lot of possibility.</em></h1>
+          <p class="intro-copy">
+            One bedroom. Your own corner of the city. A place for the car, too.
+          </p>
+          <div class="criteria">
+            <span>$1,200–$3,000 / month</span><span>1 bed · 1 bath</span
+            ><span>Parking + EV charging</span>
+          </div>
+        </div>
+        <div class="city-window">
+          <img
+            src="./assets/chicago.jpg"
+            alt="Chicago skyline along Lake Michigan"
+            width="560"
+            height="350"
+          />
+          <div>
+            <span>HOME SEARCH 01</span><strong>Chicago, Illinois</strong
+            ><small id="photo-credit"></small>
+          </div>
+        </div>
+      </section>
+      <div id="notice" role="status" aria-live="polite"></div>
+      <section id="workspace" aria-label="Apartment research">
+        <div class="workspace-heading">
+          <div>
+            <p class="eyebrow" id="view-eyebrow">THE SEARCH</p>
+            <h2 id="view-title">Find your place.</h2>
+          </div>
+          <div class="actions">
+            <button class="button secondary" id="refresh">
+              Check for updates</button
+            ><button class="button" id="add-home">+ Add apartment</button>
+          </div>
+        </div>
+        <div id="view-content"><p>Loading your apartment notebook…</p></div>
+      </section>
+    </main>
+    <footer>
+      <span>A SpicyChicken project. A home worth taking your time for.</span
+      ><span
+        >Research supports your decision. Confirm rent, fees and charger access
+        with leasing.</span
+      ><a
+        href="https://github.com/spicyChicken59/SpicyHome"
+        target="_blank"
+        rel="noopener noreferrer"
+        >Source & setup ↗</a
+      >
+    </footer>
+    <dialog id="detail-dialog" aria-labelledby="detail-title">
+      <div id="detail-content"></div>
+    </dialog>
+    <dialog id="add-dialog" aria-labelledby="apartment-add-title">
+      <div id="add-content"></div>
+    </dialog>
+    <dialog id="compare-dialog" aria-labelledby="compare-title">
+      <div id="compare-content"></div>
+    </dialog>
+    <input type="file" id="import-file" accept="application/json" hidden />
+    <div id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "city": "Chicago",
+  "state": "IL",
+  "bedrooms": 1,
+  "bathrooms": 1,
+  "rent_min": 1200,
+  "rent_max": 3000,
+  "limit": 500,
+  "max_attempts_32_days": 30,
+  "max_attempts_utc_day": 1,
+  "bounds": {"south": 41.845, "north": 41.910, "west": -87.675, "east": -87.600},
+  "scope_note": "Chicago query, then a broad downtown search window from the Near South Side through River North and Streeterville, west through West Loop. This rectangle is a search boundary, not an official neighborhood boundary. Missing coordinates are counted separately, not placed downtown."
+}

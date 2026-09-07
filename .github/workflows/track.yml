@@ -1,0 +1,63 @@
+name: Track apartments
+on:
+  schedule:
+    - cron: '17 13 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: spicyhome-tracking
+  cancel-in-progress: false
+jobs:
+  track:
+    if: vars.SPICYHOME_TRACKING_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      RENTCAST_API_KEY: ${{ secrets.RENTCAST_API_KEY }}
+      RESERVATION: ${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run safety checks before spending a request
+        run: python -m unittest discover -s tests -p 'test_*.py'
+      - name: Reserve one request
+        id: reserve
+        run: python src/tracker.py reserve --reservation "$RESERVATION"
+      - name: Persist reservation before any provider call
+        id: receipt
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/usage.json
+          git commit -m 'data: reserve one apartment request'
+          git push origin HEAD:main
+      - name: Fetch one listing page and retain history
+        if: steps.receipt.outcome == 'success'
+        run: python src/tracker.py run --reservation "$RESERVATION"
+      - name: Persist result or failure status
+        if: always()
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/usage.json data/history dist/data.json dist/status.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'data: record apartment tracking outcome'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - name: Preserve diagnostics if publication fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spicyhome-tracking-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            data/usage.json
+            dist/status.json
+          if-no-files-found: ignore
+          retention-days: 35

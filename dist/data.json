@@ -1,0 +1,1063 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-07T00:00:00Z",
+  "mode": "research",
+  "provider": {
+    "name": "Official building research",
+    "configured": false,
+    "last_success": null,
+    "coverage": "10 selected buildings; not an exhaustive market search",
+    "status": "awaiting_key"
+  },
+  "homes": [
+    {
+      "id": "amli-lofts",
+      "kind": "building",
+      "title": "AMLI Lofts",
+      "neighborhood": "South Loop",
+      "address": "850 S. Clark St., Chicago, IL 60605",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "rent": 2663,
+      "advertised_price": 2783,
+      "advertised_price_type": "total_monthly",
+      "sqft": 745,
+      "lat": 41.871358648113,
+      "lng": -87.630662124126,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Two garages, one per building."
+      },
+      "charging": {
+        "status": "yes",
+        "note": "Building advertises electric car charging stations."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrance, elevator access and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": 120,
+        "one_time": null
+      },
+      "amenities": [
+        "In-home laundry",
+        "Outdoor pool",
+        "Rooftop sundecks",
+        "Resident lounge"
+      ],
+      "atmosphere": "Soft loft character: exposed concrete, high ceilings and a fireplace lounge.",
+      "source_url": "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-lofts",
+      "sources": [
+        {
+          "url": "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-lofts",
+          "supports": "Address, neighborhood, A320 1BR/1BA, 745 sq ft, base $2663, total $2783, design features",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-lofts/floorplans",
+          "supports": "A320 floor-plan details and advertised availability",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-lofts/amenities",
+          "supports": "Two garages and electric car charging stations",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Official floor-plan page says available now; recheck for desired move-in date.",
+      "floor_plan": "A320",
+      "history": [
+        {
+          "date": "2026-09-07",
+          "rent": 2663
+        }
+      ],
+      "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=850+S.+Clark+St.%2C+Chicago%2C+IL+60605&benchmark=Public_AR_Current&format=json"
+    },
+    {
+      "id": "amli-900",
+      "kind": "building",
+      "title": "AMLI 900",
+      "neighborhood": "South Loop",
+      "address": "900 S. Clark St., Chicago, IL 60605",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "rent": 2507,
+      "advertised_price": 2572,
+      "advertised_price_type": "total_monthly",
+      "sqft": 779,
+      "lat": 41.870461652164,
+      "lng": -87.630633621042,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Private resident garage."
+      },
+      "charging": {
+        "status": "yes",
+        "note": "Building advertises electric car charging stations."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrance, elevator access and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": 65,
+        "one_time": null
+      },
+      "amenities": [
+        "In-home laundry",
+        "Floor-to-ceiling windows",
+        "Rooftop lounge",
+        "Fitness center"
+      ],
+      "atmosphere": "Classic and soft loft finishes with a rooftop fireplace and resident garden.",
+      "source_url": "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-900",
+      "sources": [
+        {
+          "url": "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-900",
+          "supports": "Address, neighborhood, Trendy 1BR/1BA, 779 sq ft, base $2507, total $2572",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-900/amenities",
+          "supports": "Private resident garage, EV stations, fireplace, garden and apartment features",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Starting price advertised; desired-date unit availability requires checking.",
+      "floor_plan": "Trendy",
+      "history": [
+        {
+          "date": "2026-09-07",
+          "rent": 2507
+        }
+      ],
+      "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=900+S.+Clark+St.%2C+Chicago%2C+IL+60605&benchmark=Public_AR_Current&format=json"
+    },
+    {
+      "id": "amli-west-loop",
+      "kind": "building",
+      "title": "AMLI West Loop",
+      "neighborhood": "West Loop",
+      "address": "205 S. Peoria St., Chicago, IL 60607",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "rent": 2765,
+      "advertised_price": 2890,
+      "advertised_price_type": "total_monthly",
+      "sqft": 635,
+      "lat": 41.879076280791,
+      "lng": -87.649536590235,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Garage with reserved spaces."
+      },
+      "charging": {
+        "status": "yes",
+        "note": "Building advertises electric car charging stations."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrance, elevator access and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": 125,
+        "one_time": null
+      },
+      "amenities": [
+        "In-home laundry",
+        "Rooftop pool and spa",
+        "Library",
+        "Across from Mary Bartelme Park"
+      ],
+      "atmosphere": "Light cabinetry and chestnut flooring, with a library and rooftop fire pits.",
+      "source_url": "https://www.amli.com/apartments/chicago/west-loop-apartments/amli-west-loop",
+      "sources": [
+        {
+          "url": "https://www.amli.com/apartments/chicago/west-loop-apartments/amli-west-loop",
+          "supports": "Address, neighborhood, A2c 1BR/1BA, 635 sq ft, base $2765, total $2890, location and design",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.amli.com/apartments/chicago/west-loop-apartments/amli-west-loop/amenities",
+          "supports": "Reserved garage, EV stations, library, pool/spa and features",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Starting price advertised; desired-date unit availability requires checking.",
+      "floor_plan": "A2c",
+      "history": [
+        {
+          "date": "2026-09-07",
+          "rent": 2765
+        }
+      ],
+      "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=205+S.+Peoria+St.%2C+Chicago%2C+IL+60607&benchmark=Public_AR_Current&format=json"
+    },
+    {
+      "id": "aspire",
+      "kind": "building",
+      "title": "Aspire",
+      "neighborhood": "South Loop",
+      "address": "2111 S. Wabash Avenue, Chicago, IL 60616",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "rent": null,
+      "advertised_price": 2295,
+      "advertised_price_type": "monthly_fee_treatment_unspecified",
+      "sqft": 529,
+      "lat": 41.854085420462,
+      "lng": -87.625448796046,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Private garage."
+      },
+      "charging": {
+        "status": "yes",
+        "note": "Building advertises car charging stations."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrance, elevator access and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [
+        "Fireside lounge",
+        "Pool",
+        "Private workspaces",
+        "Fitness center"
+      ],
+      "atmosphere": "Compact layout with a fireside lounge and private workspaces downstairs.",
+      "source_url": "https://www.aspiresouthloop.com/",
+      "sources": [
+        {
+          "url": "https://www.aspiresouthloop.com/floorplans",
+          "supports": "asp1b03 1BR/1BA, 529 sq ft, $2295\u2013$2345 per month and advertised availability",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.aspiresouthloop.com/amenities",
+          "supports": "Address, private garage, charging stations, fireside lounge and shared amenities",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Official floor-plan page labels asp1b03 available now; confirm the quote and date.",
+      "floor_plan": "asp1b03",
+      "history": [],
+      "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=2111+S.+Wabash+Avenue%2C+Chicago%2C+IL+60616&benchmark=Public_AR_Current&format=json"
+    },
+    {
+      "id": "the-elle",
+      "kind": "building",
+      "title": "The Elle Apartments",
+      "neighborhood": "South Loop",
+      "address": "801 S Financial Pl, Chicago, IL 60605",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "rent": null,
+      "advertised_price": 2526,
+      "advertised_price_type": "total_monthly",
+      "sqft": 609,
+      "lat": 41.8718492,
+      "lng": -87.6327652,
+      "parking": {
+        "status": "unknown",
+        "monthly": null,
+        "note": "Parking terms were not stated on the retrieved official amenity page; confirm garage access and space availability."
+      },
+      "charging": {
+        "status": "yes",
+        "note": "Official amenities list EV charging stations."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrance, elevator access and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [
+        "In-home laundry",
+        "Quartz countertops",
+        "Coworking hub",
+        "Pool with cabanas"
+      ],
+      "atmosphere": "Bright modern finishes, plank flooring and a pool deck with cabanas.",
+      "source_url": "https://www.theellechicago.com/",
+      "sources": [
+        {
+          "url": "https://www.theellechicago.com/floorplans",
+          "supports": "609 plan, unit 0404, 1BR/1BA, 609 sq ft, total monthly price $2526 and advertised availability",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.theellechicago.com/amenities",
+          "supports": "Address, South Loop location, EV charging and interior/shared amenities",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Official page displayed unit 0404 as available now at this total monthly starting price; recheck before relying on it.",
+      "floor_plan": "609",
+      "history": [],
+      "coordinate_note": "Google Maps place linked by official building website \u2014 official_linked_place_coordinate",
+      "coordinate_source": "https://www.google.com/maps/place/The+Elle/@41.8718532,-87.6353401,17z/data=!3m1!4b1!4m6!3m5!1s0x880e2c969e522ae5:0x1a729f8147fc6096!8m2!3d41.8718492!4d-87.6327652!16s%2Fg%2F11g7z0gk4f?entry=tts"
+    },
+    {
+      "id": "grand-central",
+      "kind": "building",
+      "title": "The Grand Central",
+      "neighborhood": "South Loop",
+      "address": "221 West Harrison Street, Chicago, IL 60607",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "rent": null,
+      "advertised_price": 2548,
+      "advertised_price_type": "total_monthly",
+      "sqft": 674,
+      "lat": 41.874419623813,
+      "lng": -87.633970558751,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Official homepage lists garages."
+      },
+      "charging": {
+        "status": "yes",
+        "note": "Official amenities list an electric car charging station."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrance, elevator access and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [
+        "In-home laundry",
+        "Pool and cabanas",
+        "Coworking spaces",
+        "Fitness center"
+      ],
+      "atmosphere": "Oversized windows and plank flooring, with pool cabanas and lounge spaces.",
+      "source_url": "https://www.thegrandcentralapartments.com/",
+      "sources": [
+        {
+          "url": "https://www.thegrandcentralapartments.com/floorplans",
+          "supports": "Address, A2 1BR/1BA, 674 sq ft, $2548 total monthly, definition including mandatory fixed fees",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.thegrandcentralapartments.com/",
+          "supports": "Garages, EV charging, apartment features and South Loop location",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.thegrandcentralapartments.com/amenities",
+          "supports": "Electric car charging station and community amenities",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "A2 total monthly price advertised; check the availability link for your move-in date.",
+      "floor_plan": "A2",
+      "history": [],
+      "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=221+West+Harrison+Street%2C+Chicago%2C+IL+60607&benchmark=Public_AR_Current&format=json"
+    },
+    {
+      "id": "coast",
+      "kind": "building",
+      "title": "Coast at Lakeshore East",
+      "neighborhood": "Lakeshore East",
+      "address": "345 E Wacker Dr, Chicago, IL 60601",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "rent": null,
+      "advertised_price": 2654,
+      "advertised_price_type": "monthly_fee_treatment_unspecified",
+      "sqft": 663,
+      "lat": 41.887607222201,
+      "lng": -87.619332655533,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Garage managed by a third party with reserved and unreserved spaces."
+      },
+      "charging": {
+        "status": "yes",
+        "note": "SWTCH Level 2 stations; the garage operator says charging is for residents only."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrance, elevator access and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [
+        "In-home laundry",
+        "Study and coworking spaces",
+        "Outdoor lap pool",
+        "Indoor spa"
+      ],
+      "atmosphere": "Lake-and-river setting with a landscaped deck, fire pit and indoor spa.",
+      "source_url": "https://www.rentcoast.com/",
+      "sources": [
+        {
+          "url": "https://www.rentcoast.com/chicago/coast-at-lakeshore-east/conventional/",
+          "supports": "1x1L 1BR/1BA, 663 sq ft, from $2654 monthly on 15-month lease; displayed availability",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.rentcoast.com/chicago/coast-at-lakeshore-east/amenities/",
+          "supports": "Address, neighborhood, garage terms, SWTCH Level 2 charging and amenities",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://abmparking.com/facilities/345-e-wacker-dr-coast-at-lakeshore-east-garage/",
+          "supports": "Garage operator identifies EV charging as residents-only",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Official page displayed four units under 1x1L; individual dates and quoted rent need checking.",
+      "floor_plan": "1x1L",
+      "history": [],
+      "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=345+E+Wacker+Dr%2C+Chicago%2C+IL+60601&benchmark=Public_AR_Current&format=json"
+    },
+    {
+      "id": "215-west",
+      "kind": "building",
+      "title": "215 West Apartments",
+      "neighborhood": "The Loop",
+      "address": "215 W. Washington, Chicago, IL 60606",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "rent": null,
+      "advertised_price": 2683,
+      "advertised_price_type": "monthly_fee_treatment_unspecified",
+      "sqft": 756,
+      "lat": 41.88315385006,
+      "lng": -87.634125372922,
+      "parking": {
+        "status": "yes",
+        "monthly": 300,
+        "note": "Heated attached garage; advertised unreserved spaces at $300/month."
+      },
+      "charging": {
+        "status": "unknown",
+        "note": "No EV charging claim found on the retrieved official amenity page."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrance, elevator access and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [
+        "In-home laundry",
+        "Library fireplace lounge",
+        "Garden terrace and pool",
+        "24-hour concierge"
+      ],
+      "atmosphere": "Library fireplace lounge, cherry cabinetry and a garden terrace.",
+      "source_url": "https://www.215westapts.com/",
+      "sources": [
+        {
+          "url": "https://www.215westapts.com/floorplans",
+          "supports": "T03 1BR/1BA, 756 sq ft, $2683 monthly and October 24, 2026 availability",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.215westapts.com/amenities",
+          "supports": "Address, Loop location, heated garage at $300/month for unreserved spaces and amenities",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Official T03 listing says available October 24, 2026; confirm date and price.",
+      "floor_plan": "T03",
+      "history": [],
+      "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=215+W.+Washington%2C+Chicago%2C+IL+60606&benchmark=Public_AR_Current&format=json"
+    },
+    {
+      "id": "marlowe",
+      "kind": "building",
+      "title": "Marlowe",
+      "neighborhood": "River North",
+      "address": "169 W Huron Street, Chicago, IL 60654",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "rent": null,
+      "advertised_price": null,
+      "advertised_price_type": "unknown",
+      "sqft": 719,
+      "lat": 41.894736848063,
+      "lng": -87.633895360213,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Enclosed garage with EV stations."
+      },
+      "charging": {
+        "status": "yes",
+        "note": "Official community page advertises stations inside the enclosed garage."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrance, elevator access and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [
+        "Smart shades and lights",
+        "Quartz countertops",
+        "Pool",
+        "Fitness and yoga studios"
+      ],
+      "atmosphere": "Herringbone tile, wood-inspired floors and a rooftop lounge with fire pits.",
+      "source_url": "https://www.livemarlowe.com/",
+      "sources": [
+        {
+          "url": "https://www.livemarlowe.com/",
+          "supports": "River North neighborhood",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.livemarlowe.com/community",
+          "supports": "Address, enclosed garage with EV charging and community amenities",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.livemarlowe.com/floorplans/a8",
+          "supports": "A8 1BR/1BA, 719 sq ft and interior features; no available units shown on this page",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.livemarlowe.com/floorplans",
+          "supports": "Overview lists A8 units with future dates, conflicting with plan-detail page",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Official overview and plan-detail pages disagree on availability. Confirm directly; do not mark available.",
+      "floor_plan": "A8",
+      "history": [],
+      "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=169+W+Huron+Street%2C+Chicago%2C+IL+60654&benchmark=Public_AR_Current&format=json"
+    },
+    {
+      "id": "73-east-lake",
+      "kind": "building",
+      "title": "73 East Lake",
+      "neighborhood": "The Loop",
+      "address": "73 E Lake St, Chicago, IL 60601",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "rent": 3104,
+      "advertised_price": 3104,
+      "advertised_price_type": "base_rent",
+      "sqft": 682,
+      "lat": 41.885670901786,
+      "lng": -87.625677493946,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Reserved garage parking."
+      },
+      "charging": {
+        "status": "unknown",
+        "note": "EV charging was not stated in the retrieved official amenity list."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrance, elevator access and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [
+        "Reserved garage",
+        "Rooftop terrace",
+        "Built-in shelves",
+        "Near Millennium Park"
+      ],
+      "atmosphere": "Spacious high-rise homes with built-in shelving and a rooftop terrace.",
+      "source_url": "https://www.experience73.com/",
+      "sources": [
+        {
+          "url": "https://www.experience73.com/",
+          "supports": "Address, Loop location, built-in shelving and apartment descriptions",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.experience73.com/models",
+          "supports": "07a unit 2607, 1BR/1BA, 682 sq ft, base rent $3104\u2013$4664, 12-month term and October 5 availability",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.experience73.com/amenities",
+          "supports": "Reserved garage parking and rooftop terrace",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Official page displayed unit 2607, plan 07a, available October 5; confirm year/date and final rent.",
+      "floor_plan": "07a",
+      "history": [
+        {
+          "date": "2026-09-07",
+          "rent": 3104
+        }
+      ],
+      "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=73+E+Lake+St%2C+Chicago%2C+IL+60601&benchmark=Public_AR_Current&format=json"
+    }
+  ],
+  "events": [],
+  "charging_stations": [],
+  "transit_stops": [
+    {
+      "id": "cta:40830",
+      "title": "18th",
+      "lat": 41.857908,
+      "lng": -87.669147,
+      "routes": [
+        "pnk"
+      ],
+      "ada_advertised": true
+    },
+    {
+      "id": "cta:40680",
+      "title": "Adams/Wabash",
+      "lat": 41.879507,
+      "lng": -87.626037,
+      "routes": [
+        "brn",
+        "g",
+        "o",
+        "p",
+        "pnk"
+      ],
+      "ada_advertised": false
+    },
+    {
+      "id": "cta:40170",
+      "title": "Ashland",
+      "lat": 41.885269,
+      "lng": -87.666969,
+      "routes": [
+        "g",
+        "pnk"
+      ],
+      "ada_advertised": true
+    },
+    {
+      "id": "cta:41000",
+      "title": "Cermak-Chinatown",
+      "lat": 41.853206,
+      "lng": -87.630968,
+      "routes": [
+        "red"
+      ],
+      "ada_advertised": true
+    },
+    {
+      "id": "cta:41690",
+      "title": "Cermak-McCormick Place",
+      "lat": 41.853115,
+      "lng": -87.626402,
+      "routes": [
+        "g"
+      ],
+      "ada_advertised": true
+    },
+    {
+      "id": "cta:41450",
+      "title": "Chicago",
+      "lat": 41.896671,
+      "lng": -87.628176,
+      "routes": [
+        "red"
+      ],
+      "ada_advertised": true
+    },
+    {
+      "id": "cta:40710",
+      "title": "Chicago",
+      "lat": 41.89681,
+      "lng": -87.635924,
+      "routes": [
+        "brn",
+        "p"
+      ],
+      "ada_advertised": true
+    },
+    {
+      "id": "cta:41410",
+      "title": "Chicago",
+      "lat": 41.896075,
+      "lng": -87.655214,
+      "routes": [
+        "blue"
+      ],
+      "ada_advertised": false
+    },
+    {
+      "id": "cta:40630",
+      "title": "Clark/Division",
+      "lat": 41.90392,
+      "lng": -87.631412,
+      "routes": [
+        "red"
+      ],
+      "ada_advertised": true
+    },
+    {
+      "id": "cta:40380",
+      "title": "Clark/Lake",
+      "lat": 41.885737,
+      "lng": -87.630886,
+      "routes": [
+        "blue",
+        "brn",
+        "g",
+        "o",
+        "p",
+        "pnk"
+      ],
+      "ada_advertised": true
+    },
+    {
+      "id": "cta:41160",
+      "title": "Clinton",
+      "lat": 41.885678,
+      "lng": -87.641782,
+      "routes": [
+        "g",
+        "pnk"
+      ],
+      "ada_advertised": true
+    },
+    {
+      "id": "cta:40430",
+      "title": "Clinton",
+      "lat": 41.875539,
+      "lng": -87.640984,
+      "routes": [
+        "blue"
+      ],
+      "ada_advertised": false
+    },
+    {
+      "id": "cta:40320",
+      "title": "Division",
+      "lat": 41.903355,
+      "lng": -87.666496,
+      "routes": [
+        "blue"
+      ],
+      "ada_advertised": false
+    },
+    {
+      "id": "cta:40330",
+      "title": "Grand",
+      "lat": 41.891665,
+      "lng": -87.628021,
+      "routes": [
+        "red"
+      ],
+      "ada_advertised": true
+    },
+    {
+      "id": "cta:40490",
+      "title": "Grand",
+      "lat": 41.891189,
+      "lng": -87.647578,
+      "routes": [
+        "blue"
+      ],
+      "ada_advertised": false
+    },
+    {
+      "id": "cta:41130",
+      "title": "Halsted",
+      "lat": 41.84678,
+      "lng": -87.648088,
+      "routes": [
+        "o"
+      ],
+      "ada_advertised": true
+    },
+    {
+      "id": "cta:40850",
+      "title": "Harold Washington Library-State/Van Buren",
+      "lat": 41.876862,
+      "lng": -87.628196,
+      "routes": [
+        "brn",
+        "o",
+        "p",
+        "pnk"
+      ],
+      "ada_advertised": true
+    },
+    {
+      "id": "cta:41490",
+      "title": "Harrison",
+      "lat": 41.874039,
+      "lng": -87.627479,
+      "routes": [
+        "red"
+      ],
+      "ada_advertised": false
+    },
+    {
+      "id": "cta:40810",
+      "title": "Illinois Medical District",
+      "lat": 41.875706,
+      "lng": -87.673932,
+      "routes": [
+        "blue"
+      ],
+      "ada_advertised": true
+    },
+    {
+      "id": "cta:40070",
+      "title": "Jackson",
+      "lat": 41.878183,
+      "lng": -87.629296,
+      "routes": [
+        "blue"
+      ],
+      "ada_advertised": true
+    },
+    {
+      "id": "cta:40560",
+      "title": "Jackson",
+      "lat": 41.878153,
+      "lng": -87.627596,
+      "routes": [
+        "red"
+      ],
+      "ada_advertised": true
+    },
+    {
+      "id": "cta:41660",
+      "title": "Lake",
+      "lat": 41.884809,
+      "lng": -87.627813,
+      "routes": [
+        "red"
+      ],
+      "ada_advertised": true
+    },
+    {
+      "id": "cta:41340",
+      "title": "LaSalle",
+      "lat": 41.875568,
+      "lng": -87.631722,
+      "routes": [
+        "blue"
+      ],
+      "ada_advertised": false
+    },
+    {
+      "id": "cta:40160",
+      "title": "LaSalle/Van Buren",
+      "lat": 41.8768,
+      "lng": -87.631739,
+      "routes": [
+        "brn",
+        "o",
+        "p",
+        "pnk"
+      ],
+      "ada_advertised": false
+    },
+    {
+      "id": "cta:40460",
+      "title": "Merchandise Mart",
+      "lat": 41.888969,
+      "lng": -87.633924,
+      "routes": [
+        "brn",
+        "p"
+      ],
+      "ada_advertised": true
+    },
+    {
+      "id": "cta:41090",
+      "title": "Monroe",
+      "lat": 41.880745,
+      "lng": -87.627696,
+      "routes": [
+        "red"
+      ],
+      "ada_advertised": false
+    },
+    {
+      "id": "cta:40790",
+      "title": "Monroe",
+      "lat": 41.880703,
+      "lng": -87.629378,
+      "routes": [
+        "blue"
+      ],
+      "ada_advertised": false
+    },
+    {
+      "id": "cta:41510",
+      "title": "Morgan",
+      "lat": 41.885586,
+      "lng": -87.652193,
+      "routes": [
+        "g",
+        "pnk"
+      ],
+      "ada_advertised": true
+    },
+    {
+      "id": "cta:41030",
+      "title": "Polk",
+      "lat": 41.871551,
+      "lng": -87.66953,
+      "routes": [
+        "pnk"
+      ],
+      "ada_advertised": true
+    },
+    {
+      "id": "cta:40040",
+      "title": "Quincy/Wells",
+      "lat": 41.878723,
+      "lng": -87.63374,
+      "routes": [
+        "brn",
+        "o",
+        "p",
+        "pnk"
+      ],
+      "ada_advertised": true
+    },
+    {
+      "id": "cta:40470",
+      "title": "Racine",
+      "lat": 41.87592,
+      "lng": -87.659458,
+      "routes": [
+        "blue"
+      ],
+      "ada_advertised": false
+    },
+    {
+      "id": "cta:41400",
+      "title": "Roosevelt",
+      "lat": 41.867368,
+      "lng": -87.627402,
+      "routes": [
+        "g",
+        "o",
+        "red"
+      ],
+      "ada_advertised": true
+    },
+    {
+      "id": "cta:40260",
+      "title": "State/Lake",
+      "lat": 41.88574,
+      "lng": -87.627835,
+      "routes": [
+        "brn",
+        "g",
+        "o",
+        "p",
+        "pnk"
+      ],
+      "ada_advertised": false
+    },
+    {
+      "id": "cta:40350",
+      "title": "UIC-Halsted",
+      "lat": 41.875474,
+      "lng": -87.649707,
+      "routes": [
+        "blue"
+      ],
+      "ada_advertised": true
+    },
+    {
+      "id": "cta:40370",
+      "title": "Washington",
+      "lat": 41.883164,
+      "lng": -87.62944,
+      "routes": [
+        "blue"
+      ],
+      "ada_advertised": false
+    },
+    {
+      "id": "cta:41700",
+      "title": "Washington/Wabash",
+      "lat": 41.88322,
+      "lng": -87.626189,
+      "routes": [
+        "brn",
+        "g",
+        "o",
+        "p",
+        "pnk"
+      ],
+      "ada_advertised": true
+    },
+    {
+      "id": "cta:40730",
+      "title": "Washington/Wells",
+      "lat": 41.882695,
+      "lng": -87.63378,
+      "routes": [
+        "brn",
+        "o",
+        "p",
+        "pnk"
+      ],
+      "ada_advertised": true
+    }
+  ],
+  "city_context": {
+    "afdc_status": "Key not configured; no public charging dataset fetched.",
+    "cta": {
+      "updated_at": "2026-09-07T07:50:46.615944Z",
+      "source": "https://data.cityofchicago.org/resource/8pix-ypme.json?$limit=1000"
+    },
+    "last_attempt_at": "2026-09-07T07:50:46.615944Z",
+    "errors": []
+  }
+}

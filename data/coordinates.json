@@ -1,0 +1,413 @@
+{
+  "observed_at": "2026-09-07",
+  "provider": "U.S. Census Geocoder; The Elle uses its official website-linked Google Maps place",
+  "documentation_url": "https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html",
+  "method": "Per-record provenance: 9 Census address-range geocodes, 1 official-linked Google Maps place coordinate",
+  "note": "Nine coordinates are calculated by the Census geocoder along street address ranges and should be treated as approximate locations, not surveyed entrances or rooftop centroids. The Elle uses the Google Maps place location directly linked on its official amenities page after rejecting an inaccurate Census interpolation.",
+  "coordinates": [
+    {
+      "id": "amli-lofts",
+      "inputAddress": "850 S. Clark St., Chicago, IL 60605",
+      "lat": 41.871358648113,
+      "lng": -87.630662124126,
+      "status": "matched",
+      "source_url": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=850+S.+Clark+St.%2C+Chicago%2C+IL+60605&benchmark=Public_AR_Current&format=json",
+      "observed_at": "2026-09-07",
+      "provider": "U.S. Census Geocoder",
+      "method": "address_range_interpolation",
+      "benchmark": {
+        "isDefault": true,
+        "benchmarkDescription": "Public Address Ranges - Current Benchmark",
+        "id": "4",
+        "benchmarkName": "Public_AR_Current"
+      },
+      "addressSourceUrls": [
+        "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-lofts"
+      ],
+      "matchCount": 1,
+      "matchedAddress": "850 S CLARK ST, CHICAGO, IL, 60605",
+      "tigerLine": {
+        "side": "R",
+        "tigerLineId": "655271551"
+      },
+      "addressComponents": {
+        "zip": "60605",
+        "streetName": "CLARK",
+        "preType": "",
+        "city": "CHICAGO",
+        "preDirection": "S",
+        "suffixDirection": "",
+        "fromAddress": "800",
+        "state": "IL",
+        "suffixType": "ST",
+        "toAddress": "898",
+        "suffixQualifier": "",
+        "preQualifier": ""
+      }
+    },
+    {
+      "id": "amli-900",
+      "inputAddress": "900 S. Clark St., Chicago, IL 60605",
+      "lat": 41.870461652164,
+      "lng": -87.630633621042,
+      "status": "matched",
+      "source_url": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=900+S.+Clark+St.%2C+Chicago%2C+IL+60605&benchmark=Public_AR_Current&format=json",
+      "observed_at": "2026-09-07",
+      "provider": "U.S. Census Geocoder",
+      "method": "address_range_interpolation",
+      "benchmark": {
+        "isDefault": true,
+        "benchmarkDescription": "Public Address Ranges - Current Benchmark",
+        "id": "4",
+        "benchmarkName": "Public_AR_Current"
+      },
+      "addressSourceUrls": [
+        "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-900"
+      ],
+      "matchCount": 1,
+      "matchedAddress": "900 S CLARK ST, CHICAGO, IL, 60605",
+      "tigerLine": {
+        "side": "R",
+        "tigerLineId": "112048223"
+      },
+      "addressComponents": {
+        "zip": "60605",
+        "streetName": "CLARK",
+        "preType": "",
+        "city": "CHICAGO",
+        "preDirection": "S",
+        "suffixDirection": "",
+        "fromAddress": "900",
+        "state": "IL",
+        "suffixType": "ST",
+        "toAddress": "998",
+        "suffixQualifier": "",
+        "preQualifier": ""
+      }
+    },
+    {
+      "id": "amli-west-loop",
+      "inputAddress": "205 S. Peoria St., Chicago, IL 60607",
+      "lat": 41.879076280791,
+      "lng": -87.649536590235,
+      "status": "matched",
+      "source_url": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=205+S.+Peoria+St.%2C+Chicago%2C+IL+60607&benchmark=Public_AR_Current&format=json",
+      "observed_at": "2026-09-07",
+      "provider": "U.S. Census Geocoder",
+      "method": "address_range_interpolation",
+      "benchmark": {
+        "isDefault": true,
+        "benchmarkDescription": "Public Address Ranges - Current Benchmark",
+        "id": "4",
+        "benchmarkName": "Public_AR_Current"
+      },
+      "addressSourceUrls": [
+        "https://www.amli.com/apartments/chicago/west-loop-apartments/amli-west-loop"
+      ],
+      "matchCount": 1,
+      "matchedAddress": "205 S PEORIA ST, CHICAGO, IL, 60607",
+      "tigerLine": {
+        "side": "L",
+        "tigerLineId": "111769303"
+      },
+      "addressComponents": {
+        "zip": "60607",
+        "streetName": "PEORIA",
+        "preType": "",
+        "city": "CHICAGO",
+        "preDirection": "S",
+        "suffixDirection": "",
+        "fromAddress": "201",
+        "state": "IL",
+        "suffixType": "ST",
+        "toAddress": "299",
+        "suffixQualifier": "",
+        "preQualifier": ""
+      }
+    },
+    {
+      "id": "aspire",
+      "inputAddress": "2111 S. Wabash Avenue, Chicago, IL 60616",
+      "lat": 41.854085420462,
+      "lng": -87.625448796046,
+      "status": "matched",
+      "source_url": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=2111+S.+Wabash+Avenue%2C+Chicago%2C+IL+60616&benchmark=Public_AR_Current&format=json",
+      "observed_at": "2026-09-07",
+      "provider": "U.S. Census Geocoder",
+      "method": "address_range_interpolation",
+      "benchmark": {
+        "isDefault": true,
+        "benchmarkDescription": "Public Address Ranges - Current Benchmark",
+        "id": "4",
+        "benchmarkName": "Public_AR_Current"
+      },
+      "addressSourceUrls": [
+        "https://www.aspiresouthloop.com/amenities"
+      ],
+      "matchCount": 1,
+      "matchedAddress": "2111 S WABASH AVE, CHICAGO, IL, 60616",
+      "tigerLine": {
+        "side": "L",
+        "tigerLineId": "111828980"
+      },
+      "addressComponents": {
+        "zip": "60616",
+        "streetName": "WABASH",
+        "preType": "",
+        "city": "CHICAGO",
+        "preDirection": "S",
+        "suffixDirection": "",
+        "fromAddress": "2101",
+        "state": "IL",
+        "suffixType": "AVE",
+        "toAddress": "2199",
+        "suffixQualifier": "",
+        "preQualifier": ""
+      }
+    },
+    {
+      "id": "the-elle",
+      "inputAddress": "801 S Financial Pl, Chicago, IL 60605",
+      "lat": 41.8718492,
+      "lng": -87.6327652,
+      "status": "matched",
+      "source_url": "https://www.google.com/maps/place/The+Elle/@41.8718532,-87.6353401,17z/data=!3m1!4b1!4m6!3m5!1s0x880e2c969e522ae5:0x1a729f8147fc6096!8m2!3d41.8718492!4d-87.6327652!16s%2Fg%2F11g7z0gk4f?entry=tts",
+      "observed_at": "2026-09-07",
+      "provider": "Google Maps place linked by official building website",
+      "method": "official_linked_place_coordinate",
+      "addressSourceUrls": [
+        "https://www.theellechicago.com/amenities"
+      ],
+      "matchCount": 1,
+      "official_map_link": "https://maps.app.goo.gl/xU4wMZKpa62tvVvy5",
+      "official_address_page": "https://www.theellechicago.com/amenities",
+      "rejected_census_result": {
+        "lat": 41.878070394146,
+        "lng": -87.632654279223,
+        "source_url": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=801+S+Financial+Pl%2C+Chicago%2C+IL+60605&benchmark=Public_AR_Current&format=json",
+        "matchedAddress": "801 S FINANCIAL PL, CHICAGO, IL, 60605",
+        "tigerLine": {
+          "side": "L",
+          "tigerLineId": "111769576"
+        },
+        "addressComponents": {
+          "zip": "60605",
+          "streetName": "FINANCIAL",
+          "preType": "",
+          "city": "CHICAGO",
+          "preDirection": "S",
+          "suffixDirection": "",
+          "fromAddress": "801",
+          "state": "IL",
+          "suffixType": "PL",
+          "toAddress": "899",
+          "suffixQualifier": "",
+          "preQualifier": ""
+        },
+        "reason": "Census matched the address but interpolated too far north along Financial Place; replaced with the official website-linked Google Maps place coordinate."
+      },
+      "coordinate_extraction": "Place location !3d41.8718492!4d-87.6327652, not the @ viewport center.",
+      "matchedPlace": "The Elle, 801 S Financial Pl, Chicago, IL 60605"
+    },
+    {
+      "id": "grand-central",
+      "inputAddress": "221 West Harrison Street, Chicago, IL 60607",
+      "lat": 41.874419623813,
+      "lng": -87.633970558751,
+      "status": "matched",
+      "source_url": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=221+West+Harrison+Street%2C+Chicago%2C+IL+60607&benchmark=Public_AR_Current&format=json",
+      "observed_at": "2026-09-07",
+      "provider": "U.S. Census Geocoder",
+      "method": "address_range_interpolation",
+      "benchmark": {
+        "isDefault": true,
+        "benchmarkDescription": "Public Address Ranges - Current Benchmark",
+        "id": "4",
+        "benchmarkName": "Public_AR_Current"
+      },
+      "addressSourceUrls": [
+        "https://www.thegrandcentralapartments.com/floorplans"
+      ],
+      "matchCount": 1,
+      "matchedAddress": "221 W HARRISON ST, CHICAGO, IL, 60607",
+      "tigerLine": {
+        "side": "L",
+        "tigerLineId": "111827689"
+      },
+      "addressComponents": {
+        "zip": "60607",
+        "streetName": "HARRISON",
+        "preType": "",
+        "city": "CHICAGO",
+        "preDirection": "W",
+        "suffixDirection": "",
+        "fromAddress": "201",
+        "state": "IL",
+        "suffixType": "ST",
+        "toAddress": "299",
+        "suffixQualifier": "",
+        "preQualifier": ""
+      }
+    },
+    {
+      "id": "coast",
+      "inputAddress": "345 E Wacker Dr, Chicago, IL 60601",
+      "lat": 41.887607222201,
+      "lng": -87.619332655533,
+      "status": "matched",
+      "source_url": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=345+E+Wacker+Dr%2C+Chicago%2C+IL+60601&benchmark=Public_AR_Current&format=json",
+      "observed_at": "2026-09-07",
+      "provider": "U.S. Census Geocoder",
+      "method": "address_range_interpolation",
+      "benchmark": {
+        "isDefault": true,
+        "benchmarkDescription": "Public Address Ranges - Current Benchmark",
+        "id": "4",
+        "benchmarkName": "Public_AR_Current"
+      },
+      "addressSourceUrls": [
+        "https://www.rentcoast.com/chicago/coast-at-lakeshore-east/amenities/"
+      ],
+      "matchCount": 1,
+      "matchedAddress": "345 E WACKER DR, CHICAGO, IL, 60601",
+      "tigerLine": {
+        "side": "R",
+        "tigerLineId": "633618864"
+      },
+      "addressComponents": {
+        "zip": "60601",
+        "streetName": "WACKER",
+        "preType": "",
+        "city": "CHICAGO",
+        "preDirection": "E",
+        "suffixDirection": "",
+        "fromAddress": "313",
+        "state": "IL",
+        "suffixType": "DR",
+        "toAddress": "399",
+        "suffixQualifier": "",
+        "preQualifier": ""
+      }
+    },
+    {
+      "id": "215-west",
+      "inputAddress": "215 W. Washington, Chicago, IL 60606",
+      "lat": 41.88315385006,
+      "lng": -87.634125372922,
+      "status": "matched",
+      "source_url": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=215+W.+Washington%2C+Chicago%2C+IL+60606&benchmark=Public_AR_Current&format=json",
+      "observed_at": "2026-09-07",
+      "provider": "U.S. Census Geocoder",
+      "method": "address_range_interpolation",
+      "benchmark": {
+        "isDefault": true,
+        "benchmarkDescription": "Public Address Ranges - Current Benchmark",
+        "id": "4",
+        "benchmarkName": "Public_AR_Current"
+      },
+      "addressSourceUrls": [
+        "https://www.215westapts.com/amenities"
+      ],
+      "matchCount": 1,
+      "matchedAddress": "215 W WASHINGTON ST, CHICAGO, IL, 60606",
+      "tigerLine": {
+        "side": "L",
+        "tigerLineId": "111768720"
+      },
+      "addressComponents": {
+        "zip": "60606",
+        "streetName": "WASHINGTON",
+        "preType": "",
+        "city": "CHICAGO",
+        "preDirection": "W",
+        "suffixDirection": "",
+        "fromAddress": "201",
+        "state": "IL",
+        "suffixType": "ST",
+        "toAddress": "299",
+        "suffixQualifier": "",
+        "preQualifier": ""
+      }
+    },
+    {
+      "id": "marlowe",
+      "inputAddress": "169 W Huron Street, Chicago, IL 60654",
+      "lat": 41.894736848063,
+      "lng": -87.633895360213,
+      "status": "matched",
+      "source_url": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=169+W+Huron+Street%2C+Chicago%2C+IL+60654&benchmark=Public_AR_Current&format=json",
+      "observed_at": "2026-09-07",
+      "provider": "U.S. Census Geocoder",
+      "method": "address_range_interpolation",
+      "benchmark": {
+        "isDefault": true,
+        "benchmarkDescription": "Public Address Ranges - Current Benchmark",
+        "id": "4",
+        "benchmarkName": "Public_AR_Current"
+      },
+      "addressSourceUrls": [
+        "https://www.livemarlowe.com/community"
+      ],
+      "matchCount": 1,
+      "matchedAddress": "169 W HURON ST, CHICAGO, IL, 60654",
+      "tigerLine": {
+        "side": "L",
+        "tigerLineId": "605074412"
+      },
+      "addressComponents": {
+        "zip": "60654",
+        "streetName": "HURON",
+        "preType": "",
+        "city": "CHICAGO",
+        "preDirection": "W",
+        "suffixDirection": "",
+        "fromAddress": "129",
+        "state": "IL",
+        "suffixType": "ST",
+        "toAddress": "199",
+        "suffixQualifier": "",
+        "preQualifier": ""
+      }
+    },
+    {
+      "id": "73-east-lake",
+      "inputAddress": "73 E Lake St, Chicago, IL 60601",
+      "lat": 41.885670901786,
+      "lng": -87.625677493946,
+      "status": "matched",
+      "source_url": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=73+E+Lake+St%2C+Chicago%2C+IL+60601&benchmark=Public_AR_Current&format=json",
+      "observed_at": "2026-09-07",
+      "provider": "U.S. Census Geocoder",
+      "method": "address_range_interpolation",
+      "benchmark": {
+        "isDefault": true,
+        "benchmarkDescription": "Public Address Ranges - Current Benchmark",
+        "id": "4",
+        "benchmarkName": "Public_AR_Current"
+      },
+      "addressSourceUrls": [
+        "https://www.experience73.com/"
+      ],
+      "matchCount": 1,
+      "matchedAddress": "73 E LAKE ST, CHICAGO, IL, 60601",
+      "tigerLine": {
+        "side": "R",
+        "tigerLineId": "646586300"
+      },
+      "addressComponents": {
+        "zip": "60601",
+        "streetName": "LAKE",
+        "preType": "",
+        "city": "CHICAGO",
+        "preDirection": "E",
+        "suffixDirection": "",
+        "fromAddress": "35",
+        "state": "IL",
+        "suffixType": "ST",
+        "toAddress": "99",
+        "suffixQualifier": "",
+        "preQualifier": ""
+      }
+    }
+  ]
+}

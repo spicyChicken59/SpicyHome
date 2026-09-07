@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "feed_url": "https://raw.githubusercontent.com/spicyChicken59/SpicyHome/main/dist/data.json",
+  "fallback_url": "./data.json",
+  "repository": "https://github.com/spicyChicken59/SpicyHome",
+  "budget_min": 1200,
+  "budget_max": 3000,
+  "status_url": "https://raw.githubusercontent.com/spicyChicken59/SpicyHome/main/dist/status.json"
+}

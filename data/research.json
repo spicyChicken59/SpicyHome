@@ -1,0 +1,576 @@
+{
+  "researchDate": "2026-09-07",
+  "scope": "Official apartment and operator websites for downtown or near-downtown Chicago. These are building prospects, not guaranteed available units.",
+  "target": {
+    "bedrooms": 1,
+    "bathrooms": 1,
+    "baseRentMin": 1200,
+    "baseRentMax": 3000,
+    "currency": "USD"
+  },
+  "limitations": [
+    "Rents and availability are the official site's observed claims on the research date and can change; search retrieval may contain cached content.",
+    "Amenity yes means the building advertises it, not that a parking space or functioning charger is available to a new resident.",
+    "Unknown does not mean no. Charger count, connector type, charging price, reservation rules and waitlists were not verified unless explicitly stated.",
+    "Quoted total monthly prices and prices with unspecified fee treatment are not relabeled as base rent. Base rent remains null for those properties.",
+    "Coordinates were not verified and are null. Do not fabricate precise map pins.",
+    "Nice and cozy are subjective. The atmosphere notes are editorial impressions based on advertised design and amenities, not resident ratings.",
+    "73 East Lake is a near-budget watchlist prospect, with the observed base price above the requested ceiling. Marlowe has no verified rent in the retrieved official content."
+  ],
+  "buildings": [
+    {
+      "id": "amli-lofts",
+      "name": "AMLI Lofts",
+      "neighborhood": "South Loop / Printers Row",
+      "address": "850 S. Clark St., Chicago, IL 60605",
+      "coordinates": null,
+      "website": "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-lofts",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floorPlan": "A320",
+      "sqft": 745,
+      "baseRentFrom": 2663,
+      "advertisedPriceFrom": 2783,
+      "advertisedPriceType": "total_monthly",
+      "budgetStatus": "base_rent_in_range",
+      "availability": "Official floor-plan page says available now; recheck for desired move-in date.",
+      "parking": {
+        "status": "yes",
+        "detail": "Two garages, one per building.",
+        "monthlyCost": null,
+        "availabilityStatus": "unknown"
+      },
+      "evCharging": {
+        "status": "yes",
+        "detail": "Building advertises electric car charging stations.",
+        "level": null,
+        "monthlyCost": null,
+        "availabilityStatus": "unknown"
+      },
+      "atmosphere": "Soft loft character: exposed concrete, high ceilings and a fireplace lounge.",
+      "features": [
+        "In-home laundry",
+        "Outdoor pool",
+        "Rooftop sundecks",
+        "Resident lounge"
+      ],
+      "sources": [
+        {
+          "url": "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-lofts",
+          "supports": "Address, neighborhood, A320 1BR/1BA, 745 sq ft, base $2663, total $2783, design features",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-lofts/floorplans",
+          "supports": "A320 floor-plan details and advertised availability",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-lofts/amenities",
+          "supports": "Two garages and electric car charging stations",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "recordType": "building_research",
+      "unitAvailabilityStatus": "unverified"
+    },
+    {
+      "id": "amli-900",
+      "name": "AMLI 900",
+      "neighborhood": "South Loop",
+      "address": "900 S. Clark St., Chicago, IL 60605",
+      "coordinates": null,
+      "website": "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-900",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floorPlan": "Trendy",
+      "sqft": 779,
+      "baseRentFrom": 2507,
+      "advertisedPriceFrom": 2572,
+      "advertisedPriceType": "total_monthly",
+      "budgetStatus": "base_rent_in_range",
+      "availability": "Starting price advertised; desired-date unit availability requires checking.",
+      "parking": {
+        "status": "yes",
+        "detail": "Private resident garage.",
+        "monthlyCost": null,
+        "availabilityStatus": "unknown"
+      },
+      "evCharging": {
+        "status": "yes",
+        "detail": "Building advertises electric car charging stations.",
+        "level": null,
+        "monthlyCost": null,
+        "availabilityStatus": "unknown"
+      },
+      "atmosphere": "Classic and soft loft finishes with a rooftop fireplace and resident garden.",
+      "features": [
+        "In-home laundry",
+        "Floor-to-ceiling windows",
+        "Rooftop lounge",
+        "Fitness center"
+      ],
+      "sources": [
+        {
+          "url": "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-900",
+          "supports": "Address, neighborhood, Trendy 1BR/1BA, 779 sq ft, base $2507, total $2572",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-900/amenities",
+          "supports": "Private resident garage, EV stations, fireplace, garden and apartment features",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "recordType": "building_research",
+      "unitAvailabilityStatus": "unverified"
+    },
+    {
+      "id": "amli-west-loop",
+      "name": "AMLI West Loop",
+      "neighborhood": "West Loop",
+      "address": "205 S. Peoria St., Chicago, IL 60607",
+      "coordinates": null,
+      "website": "https://www.amli.com/apartments/chicago/west-loop-apartments/amli-west-loop",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floorPlan": "A2c",
+      "sqft": 635,
+      "baseRentFrom": 2765,
+      "advertisedPriceFrom": 2890,
+      "advertisedPriceType": "total_monthly",
+      "budgetStatus": "base_rent_in_range",
+      "availability": "Starting price advertised; desired-date unit availability requires checking.",
+      "parking": {
+        "status": "yes",
+        "detail": "Garage with reserved spaces.",
+        "monthlyCost": null,
+        "availabilityStatus": "unknown"
+      },
+      "evCharging": {
+        "status": "yes",
+        "detail": "Building advertises electric car charging stations.",
+        "level": null,
+        "monthlyCost": null,
+        "availabilityStatus": "unknown"
+      },
+      "atmosphere": "Light cabinetry and chestnut flooring, with a library and rooftop fire pits.",
+      "features": [
+        "In-home laundry",
+        "Rooftop pool and spa",
+        "Library",
+        "Across from Mary Bartelme Park"
+      ],
+      "sources": [
+        {
+          "url": "https://www.amli.com/apartments/chicago/west-loop-apartments/amli-west-loop",
+          "supports": "Address, neighborhood, A2c 1BR/1BA, 635 sq ft, base $2765, total $2890, location and design",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.amli.com/apartments/chicago/west-loop-apartments/amli-west-loop/amenities",
+          "supports": "Reserved garage, EV stations, library, pool/spa and features",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "recordType": "building_research",
+      "unitAvailabilityStatus": "unverified"
+    },
+    {
+      "id": "aspire",
+      "name": "Aspire",
+      "neighborhood": "South Loop",
+      "address": "2111 S. Wabash Avenue, Chicago, IL 60616",
+      "coordinates": null,
+      "website": "https://www.aspiresouthloop.com/",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floorPlan": "asp1b03",
+      "sqft": 529,
+      "baseRentFrom": null,
+      "advertisedPriceFrom": 2295,
+      "advertisedPriceTo": 2345,
+      "advertisedPriceType": "monthly_fee_treatment_unspecified",
+      "budgetStatus": "advertised_price_in_range_confirm_base",
+      "availability": "Official floor-plan page labels asp1b03 available now; confirm the quote and date.",
+      "parking": {
+        "status": "yes",
+        "detail": "Private garage.",
+        "monthlyCost": null,
+        "availabilityStatus": "unknown"
+      },
+      "evCharging": {
+        "status": "yes",
+        "detail": "Building advertises car charging stations.",
+        "level": null,
+        "monthlyCost": null,
+        "availabilityStatus": "unknown"
+      },
+      "atmosphere": "Compact layout with a fireside lounge and private workspaces downstairs.",
+      "features": [
+        "Fireside lounge",
+        "Pool",
+        "Private workspaces",
+        "Fitness center"
+      ],
+      "sources": [
+        {
+          "url": "https://www.aspiresouthloop.com/floorplans",
+          "supports": "asp1b03 1BR/1BA, 529 sq ft, $2295\u2013$2345 per month and advertised availability",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.aspiresouthloop.com/amenities",
+          "supports": "Address, private garage, charging stations, fireside lounge and shared amenities",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "recordType": "building_research",
+      "unitAvailabilityStatus": "unverified"
+    },
+    {
+      "id": "the-elle",
+      "name": "The Elle Apartments",
+      "neighborhood": "South Loop",
+      "address": "801 S Financial Pl, Chicago, IL 60605",
+      "coordinates": null,
+      "website": "https://www.theellechicago.com/",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floorPlan": "609",
+      "sqft": 609,
+      "baseRentFrom": null,
+      "advertisedPriceFrom": 2526,
+      "advertisedPriceType": "total_monthly",
+      "budgetStatus": "total_price_in_range_confirm_base",
+      "availability": "Official page displayed unit 0404 as available now at this total monthly starting price; recheck before relying on it.",
+      "parking": {
+        "status": "unknown",
+        "detail": "Parking terms were not stated on the retrieved official amenity page; confirm garage access and space availability.",
+        "monthlyCost": null,
+        "availabilityStatus": "unknown"
+      },
+      "evCharging": {
+        "status": "yes",
+        "detail": "Official amenities list EV charging stations.",
+        "level": null,
+        "monthlyCost": null,
+        "availabilityStatus": "unknown"
+      },
+      "atmosphere": "Bright modern finishes, plank flooring and a pool deck with cabanas.",
+      "features": [
+        "In-home laundry",
+        "Quartz countertops",
+        "Coworking hub",
+        "Pool with cabanas"
+      ],
+      "sources": [
+        {
+          "url": "https://www.theellechicago.com/floorplans",
+          "supports": "609 plan, unit 0404, 1BR/1BA, 609 sq ft, total monthly price $2526 and advertised availability",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.theellechicago.com/amenities",
+          "supports": "Address, South Loop location, EV charging and interior/shared amenities",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "recordType": "building_research",
+      "unitAvailabilityStatus": "unverified"
+    },
+    {
+      "id": "grand-central",
+      "name": "The Grand Central",
+      "neighborhood": "South Loop",
+      "address": "221 West Harrison Street, Chicago, IL 60607",
+      "coordinates": null,
+      "website": "https://www.thegrandcentralapartments.com/",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floorPlan": "A2",
+      "sqft": 674,
+      "baseRentFrom": null,
+      "advertisedPriceFrom": 2548,
+      "advertisedPriceType": "total_monthly",
+      "budgetStatus": "total_price_in_range_confirm_base",
+      "availability": "A2 total monthly price advertised; check the availability link for your move-in date.",
+      "parking": {
+        "status": "yes",
+        "detail": "Official homepage lists garages.",
+        "monthlyCost": null,
+        "availabilityStatus": "unknown"
+      },
+      "evCharging": {
+        "status": "yes",
+        "detail": "Official amenities list an electric car charging station.",
+        "level": null,
+        "monthlyCost": null,
+        "availabilityStatus": "unknown"
+      },
+      "atmosphere": "Oversized windows and plank flooring, with pool cabanas and lounge spaces.",
+      "features": [
+        "In-home laundry",
+        "Pool and cabanas",
+        "Coworking spaces",
+        "Fitness center"
+      ],
+      "sources": [
+        {
+          "url": "https://www.thegrandcentralapartments.com/floorplans",
+          "supports": "Address, A2 1BR/1BA, 674 sq ft, $2548 total monthly, definition including mandatory fixed fees",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.thegrandcentralapartments.com/",
+          "supports": "Garages, EV charging, apartment features and South Loop location",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.thegrandcentralapartments.com/amenities",
+          "supports": "Electric car charging station and community amenities",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "recordType": "building_research",
+      "unitAvailabilityStatus": "unverified"
+    },
+    {
+      "id": "coast",
+      "name": "Coast at Lakeshore East",
+      "neighborhood": "Lakeshore East",
+      "address": "345 E Wacker Dr, Chicago, IL 60601",
+      "coordinates": null,
+      "website": "https://www.rentcoast.com/",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floorPlan": "1x1L",
+      "sqft": 663,
+      "baseRentFrom": null,
+      "advertisedPriceFrom": 2654,
+      "advertisedPriceType": "monthly_fee_treatment_unspecified",
+      "leaseMonths": 15,
+      "budgetStatus": "advertised_price_in_range_confirm_base",
+      "availability": "Official page displayed four units under 1x1L; individual dates and quoted rent need checking.",
+      "parking": {
+        "status": "yes",
+        "detail": "Garage managed by a third party with reserved and unreserved spaces.",
+        "monthlyCost": null,
+        "availabilityStatus": "unknown"
+      },
+      "evCharging": {
+        "status": "yes",
+        "detail": "SWTCH Level 2 stations; the garage operator says charging is for residents only.",
+        "level": 2,
+        "monthlyCost": null,
+        "availabilityStatus": "unknown"
+      },
+      "atmosphere": "Lake-and-river setting with a landscaped deck, fire pit and indoor spa.",
+      "features": [
+        "In-home laundry",
+        "Study and coworking spaces",
+        "Outdoor lap pool",
+        "Indoor spa"
+      ],
+      "sources": [
+        {
+          "url": "https://www.rentcoast.com/chicago/coast-at-lakeshore-east/conventional/",
+          "supports": "1x1L 1BR/1BA, 663 sq ft, from $2654 monthly on 15-month lease; displayed availability",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.rentcoast.com/chicago/coast-at-lakeshore-east/amenities/",
+          "supports": "Address, neighborhood, garage terms, SWTCH Level 2 charging and amenities",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://abmparking.com/facilities/345-e-wacker-dr-coast-at-lakeshore-east-garage/",
+          "supports": "Garage operator identifies EV charging as residents-only",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "recordType": "building_research",
+      "unitAvailabilityStatus": "unverified"
+    },
+    {
+      "id": "215-west",
+      "name": "215 West Apartments",
+      "neighborhood": "The Loop",
+      "address": "215 W. Washington, Chicago, IL 60606",
+      "coordinates": null,
+      "website": "https://www.215westapts.com/",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floorPlan": "T03",
+      "sqft": 756,
+      "baseRentFrom": null,
+      "advertisedPriceFrom": 2683,
+      "advertisedPriceType": "monthly_fee_treatment_unspecified",
+      "budgetStatus": "advertised_price_in_range_confirm_base",
+      "availability": "Official T03 listing says available October 24, 2026; confirm date and price.",
+      "parking": {
+        "status": "yes",
+        "detail": "Heated attached garage; advertised unreserved spaces at $300/month.",
+        "monthlyCost": 300,
+        "availabilityStatus": "unknown"
+      },
+      "evCharging": {
+        "status": "unknown",
+        "detail": "No EV charging claim found on the retrieved official amenity page.",
+        "level": null,
+        "monthlyCost": null,
+        "availabilityStatus": "unknown"
+      },
+      "atmosphere": "Library fireplace lounge, cherry cabinetry and a garden terrace.",
+      "features": [
+        "In-home laundry",
+        "Library fireplace lounge",
+        "Garden terrace and pool",
+        "24-hour concierge"
+      ],
+      "sources": [
+        {
+          "url": "https://www.215westapts.com/floorplans",
+          "supports": "T03 1BR/1BA, 756 sq ft, $2683 monthly and October 24, 2026 availability",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.215westapts.com/amenities",
+          "supports": "Address, Loop location, heated garage at $300/month for unreserved spaces and amenities",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "recordType": "building_research",
+      "unitAvailabilityStatus": "unverified"
+    },
+    {
+      "id": "marlowe",
+      "name": "Marlowe",
+      "neighborhood": "River North",
+      "address": "169 W Huron Street, Chicago, IL 60654",
+      "coordinates": null,
+      "website": "https://www.livemarlowe.com/",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floorPlan": "A8",
+      "sqft": 719,
+      "baseRentFrom": null,
+      "advertisedPriceFrom": null,
+      "advertisedPriceType": "unknown",
+      "budgetStatus": "price_unverified",
+      "availability": "Official overview and plan-detail pages disagree on availability. Confirm directly; do not mark available.",
+      "parking": {
+        "status": "yes",
+        "detail": "Enclosed garage with EV stations.",
+        "monthlyCost": null,
+        "availabilityStatus": "unknown"
+      },
+      "evCharging": {
+        "status": "yes",
+        "detail": "Official community page advertises stations inside the enclosed garage.",
+        "level": null,
+        "monthlyCost": null,
+        "availabilityStatus": "unknown"
+      },
+      "atmosphere": "Herringbone tile, wood-inspired floors and a rooftop lounge with fire pits.",
+      "features": [
+        "Smart shades and lights",
+        "Quartz countertops",
+        "Pool",
+        "Fitness and yoga studios"
+      ],
+      "sources": [
+        {
+          "url": "https://www.livemarlowe.com/",
+          "supports": "River North neighborhood",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.livemarlowe.com/community",
+          "supports": "Address, enclosed garage with EV charging and community amenities",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.livemarlowe.com/floorplans/a8",
+          "supports": "A8 1BR/1BA, 719 sq ft and interior features; no available units shown on this page",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.livemarlowe.com/floorplans",
+          "supports": "Overview lists A8 units with future dates, conflicting with plan-detail page",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "recordType": "building_research",
+      "unitAvailabilityStatus": "unverified"
+    },
+    {
+      "id": "73-east-lake",
+      "name": "73 East Lake",
+      "neighborhood": "The Loop",
+      "address": "73 E Lake St, Chicago, IL 60601",
+      "coordinates": null,
+      "website": "https://www.experience73.com/",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floorPlan": "07a",
+      "sqft": 682,
+      "baseRentFrom": 3104,
+      "advertisedPriceFrom": 3104,
+      "advertisedPriceTo": 4664,
+      "advertisedPriceType": "base_rent",
+      "leaseMonths": 12,
+      "budgetStatus": "above_base_rent_ceiling",
+      "availability": "Official page displayed unit 2607, plan 07a, available October 5; confirm year/date and final rent.",
+      "parking": {
+        "status": "yes",
+        "detail": "Reserved garage parking.",
+        "monthlyCost": null,
+        "availabilityStatus": "unknown"
+      },
+      "evCharging": {
+        "status": "unknown",
+        "detail": "EV charging was not stated in the retrieved official amenity list.",
+        "level": null,
+        "monthlyCost": null,
+        "availabilityStatus": "unknown"
+      },
+      "atmosphere": "Spacious high-rise homes with built-in shelving and a rooftop terrace.",
+      "features": [
+        "Reserved garage",
+        "Rooftop terrace",
+        "Built-in shelves",
+        "Near Millennium Park"
+      ],
+      "sources": [
+        {
+          "url": "https://www.experience73.com/",
+          "supports": "Address, Loop location, built-in shelving and apartment descriptions",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.experience73.com/models",
+          "supports": "07a unit 2607, 1BR/1BA, 682 sq ft, base rent $3104\u2013$4664, 12-month term and October 5 availability",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.experience73.com/amenities",
+          "supports": "Reserved garage parking and rooftop terrace",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "recordType": "building_research",
+      "unitAvailabilityStatus": "unverified"
+    }
+  ]
+}

@@ -23,6 +23,33 @@ class ReservationTests(unittest.TestCase):
   for u in [{},dict(schema_version=1,attempts=[dict(at='bad')]),dict(schema_version=1,attempts=[dict(at=t.stamp(NOW+dt.timedelta(days=3)))])]:
    with self.assertRaises((ValueError,KeyError)):t.reserve(u,CFG,'new',NOW)
 class FeedTests(unittest.TestCase):
+ def test_studio_unknown_and_bool_layouts_are_not_coerced(self):
+  for patch in [dict(bedrooms=0),dict(bedrooms=True),dict(bathrooms=True),dict(bedrooms=None),dict(bedrooms=1,unitLayout='Studio')]:
+   homes,excluded=t.normalize([row(**patch)],CFG,t.stamp(NOW));self.assertEqual(homes,[]);self.assertIn('rentcast:a',excluded['layout_corrections'])
+ def test_amenity_mentions_do_not_classify_a_unit(self):
+  homes,_=t.normalize([row(description='Yoga studio and studios, one and two bedrooms available',addressLine2='Unit 2',propertyType='Apartment')],CFG,t.stamp(NOW))
+  self.assertEqual(homes[0]['layout_status'],'provider_reported');self.assertEqual(homes[0]['unit_label'],'Unit 2')
+ def test_corrected_studio_supersedes_retained_one_bed_history(self):
+  at=t.stamp(NOW);homes,excluded=t.normalize([row()],CFG,at);first=t.combine(SEED,SEED,homes,excluded,1,1,at,{})
+  before=copy.deepcopy(first['homes'][-1]['history'])
+  homes,excluded=t.normalize([row(bedrooms=0)],CFG,t.stamp(NOW+dt.timedelta(days=1)))
+  result=t.combine(first,SEED,homes,excluded,1,1,t.stamp(NOW+dt.timedelta(days=1)),{})
+  old=result['homes'][-1];self.assertEqual(old['bedrooms'],0);self.assertEqual(old['layout_status'],'studio');self.assertEqual(old['history'],before)
+  again=t.combine(result,SEED,[],{},0,0,t.stamp(NOW+dt.timedelta(days=2)),{})
+  self.assertEqual(again['homes'][-1]['bedrooms'],0)
+  homes,excluded=t.normalize([row(bedrooms=None)],CFG,t.stamp(NOW+dt.timedelta(days=3)))
+  unknown=t.combine(again,SEED,homes,excluded,1,1,t.stamp(NOW+dt.timedelta(days=3)),{})
+  self.assertEqual(unknown['homes'][-1]['layout_status'],'studio');self.assertEqual(unknown['homes'][-1]['bedrooms'],0)
+ def test_conflicting_duplicate_does_not_publish_accepted_copy(self):
+  for rows in [[row(),row(bedrooms=0)],[row(bedrooms=0),row()]]:
+   homes,excluded=t.normalize(rows,CFG,t.stamp(NOW));self.assertEqual(homes,[])
+ def test_explicit_studio_without_bed_count_stays_nonmatching(self):
+  homes,excluded=t.normalize([row(bedrooms=None,unitLayout='Studio')],CFG,t.stamp(NOW))
+  self.assertEqual(excluded['layout_corrections']['rentcast:a']['layout_status'],'studio')
+ def test_inactive_and_duplicate_unknown_cannot_erase_studio_evidence(self):
+  for rows in [[row(bedrooms=0,status='Inactive')],[row(bedrooms=0),row(bedrooms=None)],[row(bedrooms=None),row(bedrooms=0)]]:
+   homes,excluded=t.normalize(rows,CFG,t.stamp(NOW));self.assertEqual(homes,[])
+   self.assertEqual(excluded['layout_corrections']['rentcast:a']['layout_status'],'studio')
  def test_query_is_one_page_without_listing_age_cutoff(self):
   q=t.build_query(CFG);self.assertEqual(q['price'],'1200:3000');self.assertEqual(q['limit'],500);self.assertNotIn('daysOld',q)
  def test_parking_and_charging_are_unknown(self):

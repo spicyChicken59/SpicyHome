@@ -2,7 +2,7 @@
 No scraping, scoring service, email, or secrets in browser outputs.
 """
 from __future__ import annotations
-import argparse, copy, datetime as dt, hashlib, json, math, os, pathlib, sys, urllib.error, urllib.parse, urllib.request
+import argparse, copy, datetime as dt, hashlib, json, math, os, pathlib, re, sys, urllib.error, urllib.parse, urllib.request
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 UTC=dt.timezone.utc
 ENDPOINT='https://api.rentcast.io/v1/listings/rental/long-term'
@@ -59,16 +59,35 @@ def get_listings(key,query,opener=urllib.request.urlopen):
         return rows,total
 
 def in_bounds(lat,lng,b): return finite(lat) and finite(lng) and b['south']<=lat<=b['north'] and b['west']<=lng<=b['east']
+def layout_count(value, bedroom=False):
+    return value if finite(value) and 0<=value<=20 and (value%1==0 if bedroom else value*2%1==0) else None
+
+def reported_layout(row):
+    beds=layout_count(row.get('bedrooms'),True);baths=layout_count(row.get('bathrooms'))
+    # Only an explicit structured unit-layout field can contradict bed counts.
+    # General descriptions may mention a yoga studio or multiple building plans.
+    declared=str(row.get('unitLayout') or row.get('floorPlanType') or '').strip().lower()
+    compact=declared in ('studio','convertible','efficiency','studio apartment')
+    status=('studio' if beds in (None,0) else 'conflict') if compact else 'studio' if beds==0 else 'unverified' if beds is None or baths is None else 'provider_reported' if beds==1 and baths==1 else 'other'
+    return {'bedrooms':beds,'bathrooms':baths,'layout_status':status,'layout_note':f'Provider bedroom/bathroom fields: {beds!s}/{baths!s}.'+(f' Unit layout field: {declared}.' if declared else ' Separate bedroom not independently checked.')}
+
 def normalize(rows,config,at):
     if not isinstance(rows,list) or len(rows)>500: raise ValueError('Provider did not return one valid listing page')
-    homes=[];seen=set();excluded={'outside_search_window':0,'missing_coordinates':0,'outside_layout_or_price':0,'inactive':0,'duplicate':0}
+    homes=[];seen=set();excluded={'outside_search_window':0,'missing_coordinates':0,'outside_layout_or_price':0,'inactive':0,'duplicate':0,'layout_corrections':{}}
     for row in rows:
         if not isinstance(row,dict) or not isinstance(row.get('id'),str) or not row['id'].strip() or not isinstance(row.get('formattedAddress'),str) or not row['formattedAddress'].strip(): raise ValueError('Provider listing has no stable ID or address')
         price=row.get('price')
         if not positive(price): raise ValueError('Provider listing contains an invalid rent; retaining the last complete snapshot')
         if row.get('city','').lower()!='chicago' or row.get('state')!='IL': raise ValueError('Provider returned an unexpected city/state')
+        layout=reported_layout(row)
+        if layout['layout_status']!='provider_reported':
+            ident='rentcast:'+row['id'];previous=excluded['layout_corrections'].get(ident)
+            rank={'unverified':0,'other':1,'conflict':2,'studio':3}
+            if not previous or rank[layout['layout_status']]>rank[previous['layout_status']]:excluded['layout_corrections'][ident]=layout
         if row.get('status')!='Active': excluded['inactive']+=1;continue
-        if row.get('bedrooms')!=1 or row.get('bathrooms')!=1 or not config['rent_min']<=price<=config['rent_max']: excluded['outside_layout_or_price']+=1;continue
+        if layout['layout_status']!='provider_reported':
+            excluded['outside_layout_or_price']+=1;continue
+        if not config['rent_min']<=price<=config['rent_max']: excluded['outside_layout_or_price']+=1;continue
         lat,lng=row.get('latitude'),row.get('longitude')
         if not finite(lat) or not finite(lng) or (lat==0 and lng==0): excluded['missing_coordinates']+=1;continue
         if not in_bounds(lat,lng,config['bounds']): excluded['outside_search_window']+=1;continue
@@ -77,10 +96,21 @@ def normalize(rows,config,at):
         seen.add(ident)
         unknown={'status':'unknown','note':'Not reported by the listing provider; confirm with leasing.'}
         homes.append({'id':ident,'kind':'listing','title':row.get('addressLine1') or row['formattedAddress'],'address':row['formattedAddress'],'neighborhood':'Downtown search area','bedrooms':1,'bathrooms':1,'rent':price,'sqft':row.get('squareFootage') if positive(row.get('squareFootage')) else None,'lat':lat,'lng':lng,'parking':{**unknown,'monthly':None},'charging':dict(unknown),'access':dict(unknown),'fees':{'monthly':None,'one_time':None},'amenities':[],'source_url':None,'sources':[{'url':'https://developers.rentcast.io/reference/property-listings','supports':'RentCast listing ID '+row['id']+'; no direct listing URL supplied by the API.'}],'observed_at':at,'provider_last_seen':row.get('lastSeenDate'),'listed_date':row.get('listedDate'),'seen_in_latest':True,'history':[{'date':at,'rent':price}]})
+        homes[-1].update(layout)
+        homes[-1]['unit_label']=str(row.get('addressLine2') or '')[:2000] or None
+        homes[-1]['property_type']=str(row.get('propertyType') or '')[:2000] or None
+    # A conflicting duplicate must not leave an accepted 1/1 copy in results.
+    homes=[h for h in homes if h['id'] not in excluded['layout_corrections']]
     return homes,excluded
 
 def combine(previous,seed,homes,excluded,total,returned,at,query):
     old={h['id']:h for h in previous.get('homes',[]) if h['kind']=='listing'}
+    for ident,layout in excluded.get('layout_corrections',{}).items():
+        if ident in old:
+            prior_status=old[ident].get('layout_status') or reported_layout(old[ident])['layout_status']
+            if layout['layout_status']=='unverified' and prior_status in ('studio','conflict','other'):continue
+            old[ident]=copy.deepcopy(old[ident]);old[ident].update(layout)
+            old[ident]['layout_observed_at']=at
     events=list(previous.get('events',[]));current=[]
     for h in homes:
         prior=old.pop(h['id'],None)

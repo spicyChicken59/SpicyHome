@@ -48,7 +48,7 @@
         "Resident lounge"
       ],
       "atmosphere": "Soft loft character: exposed concrete, high ceilings and a fireplace lounge.",
-      "source_url": "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-lofts",
+      "source_url": "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-lofts/floorplans",
       "sources": [
         {
           "url": "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-lofts",
@@ -76,7 +76,9 @@
         }
       ],
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
-      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=850+S.+Clark+St.%2C+Chicago%2C+IL+60605&benchmark=Public_AR_Current&format=json"
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=850+S.+Clark+St.%2C+Chicago%2C+IL+60605&benchmark=Public_AR_Current&format=json",
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists A320 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
     },
     {
       "id": "amli-900",
@@ -139,7 +141,9 @@
         }
       ],
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
-      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=900+S.+Clark+St.%2C+Chicago%2C+IL+60605&benchmark=Public_AR_Current&format=json"
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=900+S.+Clark+St.%2C+Chicago%2C+IL+60605&benchmark=Public_AR_Current&format=json",
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists Trendy as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
     },
     {
       "id": "amli-west-loop",
@@ -202,7 +206,9 @@
         }
       ],
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
-      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=205+S.+Peoria+St.%2C+Chicago%2C+IL+60607&benchmark=Public_AR_Current&format=json"
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=205+S.+Peoria+St.%2C+Chicago%2C+IL+60607&benchmark=Public_AR_Current&format=json",
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists A2c as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
     },
     {
       "id": "aspire",
@@ -242,7 +248,7 @@
         "Fitness center"
       ],
       "atmosphere": "Compact layout with a fireside lounge and private workspaces downstairs.",
-      "source_url": "https://www.aspiresouthloop.com/",
+      "source_url": "https://www.aspiresouthloop.com/floorplans",
       "sources": [
         {
           "url": "https://www.aspiresouthloop.com/floorplans",
@@ -260,7 +266,9 @@
       "floor_plan": "asp1b03",
       "history": [],
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
-      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=2111+S.+Wabash+Avenue%2C+Chicago%2C+IL+60616&benchmark=Public_AR_Current&format=json"
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=2111+S.+Wabash+Avenue%2C+Chicago%2C+IL+60616&benchmark=Public_AR_Current&format=json",
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists asp1b03 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
     },
     {
       "id": "the-elle",
@@ -300,7 +308,7 @@
         "Pool with cabanas"
       ],
       "atmosphere": "Bright modern finishes, plank flooring and a pool deck with cabanas.",
-      "source_url": "https://www.theellechicago.com/",
+      "source_url": "https://www.theellechicago.com/floorplans",
       "sources": [
         {
           "url": "https://www.theellechicago.com/floorplans",
@@ -318,7 +326,9 @@
       "floor_plan": "609",
       "history": [],
       "coordinate_note": "Google Maps place linked by official building website \u2014 official_linked_place_coordinate",
-      "coordinate_source": "https://www.google.com/maps/place/The+Elle/@41.8718532,-87.6353401,17z/data=!3m1!4b1!4m6!3m5!1s0x880e2c969e522ae5:0x1a729f8147fc6096!8m2!3d41.8718492!4d-87.6327652!16s%2Fg%2F11g7z0gk4f?entry=tts"
+      "coordinate_source": "https://www.google.com/maps/place/The+Elle/@41.8718532,-87.6353401,17z/data=!3m1!4b1!4m6!3m5!1s0x880e2c969e522ae5:0x1a729f8147fc6096!8m2!3d41.8718492!4d-87.6327652!16s%2Fg%2F11g7z0gk4f?entry=tts",
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists 609 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
     },
     {
       "id": "grand-central",
@@ -358,7 +368,7 @@
         "Fitness center"
       ],
       "atmosphere": "Oversized windows and plank flooring, with pool cabanas and lounge spaces.",
-      "source_url": "https://www.thegrandcentralapartments.com/",
+      "source_url": "https://www.thegrandcentralapartments.com/floorplans",
       "sources": [
         {
           "url": "https://www.thegrandcentralapartments.com/floorplans",
@@ -381,7 +391,9 @@
       "floor_plan": "A2",
       "history": [],
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
-      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=221+West+Harrison+Street%2C+Chicago%2C+IL+60607&benchmark=Public_AR_Current&format=json"
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=221+West+Harrison+Street%2C+Chicago%2C+IL+60607&benchmark=Public_AR_Current&format=json",
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists A2 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
     },
     {
       "id": "coast",
@@ -421,7 +433,7 @@
         "Indoor spa"
       ],
       "atmosphere": "Lake-and-river setting with a landscaped deck, fire pit and indoor spa.",
-      "source_url": "https://www.rentcoast.com/",
+      "source_url": "https://www.rentcoast.com/chicago/coast-at-lakeshore-east/conventional/",
       "sources": [
         {
           "url": "https://www.rentcoast.com/chicago/coast-at-lakeshore-east/conventional/",
@@ -444,7 +456,9 @@
       "floor_plan": "1x1L",
       "history": [],
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
-      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=345+E+Wacker+Dr%2C+Chicago%2C+IL+60601&benchmark=Public_AR_Current&format=json"
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=345+E+Wacker+Dr%2C+Chicago%2C+IL+60601&benchmark=Public_AR_Current&format=json",
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists 1x1L as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
     },
     {
       "id": "215-west",
@@ -484,7 +498,7 @@
         "24-hour concierge"
       ],
       "atmosphere": "Library fireplace lounge, cherry cabinetry and a garden terrace.",
-      "source_url": "https://www.215westapts.com/",
+      "source_url": "https://www.215westapts.com/floorplans",
       "sources": [
         {
           "url": "https://www.215westapts.com/floorplans",
@@ -502,7 +516,9 @@
       "floor_plan": "T03",
       "history": [],
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
-      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=215+W.+Washington%2C+Chicago%2C+IL+60606&benchmark=Public_AR_Current&format=json"
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=215+W.+Washington%2C+Chicago%2C+IL+60606&benchmark=Public_AR_Current&format=json",
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists T03 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
     },
     {
       "id": "marlowe",
@@ -542,7 +558,7 @@
         "Fitness and yoga studios"
       ],
       "atmosphere": "Herringbone tile, wood-inspired floors and a rooftop lounge with fire pits.",
-      "source_url": "https://www.livemarlowe.com/",
+      "source_url": "https://www.livemarlowe.com/floorplans/a8",
       "sources": [
         {
           "url": "https://www.livemarlowe.com/",
@@ -570,7 +586,9 @@
       "floor_plan": "A8",
       "history": [],
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
-      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=169+W+Huron+Street%2C+Chicago%2C+IL+60654&benchmark=Public_AR_Current&format=json"
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=169+W+Huron+Street%2C+Chicago%2C+IL+60654&benchmark=Public_AR_Current&format=json",
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists A8 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
     },
     {
       "id": "73-east-lake",
@@ -610,7 +628,7 @@
         "Near Millennium Park"
       ],
       "atmosphere": "Spacious high-rise homes with built-in shelving and a rooftop terrace.",
-      "source_url": "https://www.experience73.com/",
+      "source_url": "https://www.experience73.com/models",
       "sources": [
         {
           "url": "https://www.experience73.com/",
@@ -638,7 +656,9 @@
         }
       ],
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
-      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=73+E+Lake+St%2C+Chicago%2C+IL+60601&benchmark=Public_AR_Current&format=json"
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=73+E+Lake+St%2C+Chicago%2C+IL+60601&benchmark=Public_AR_Current&format=json",
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists 07a as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
     }
   ],
   "events": [],

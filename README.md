@@ -43,6 +43,20 @@ filters while retaining saved homes, notes, quotes and utility estimates. If
 configuration cannot load, built-in public read URLs and the included data still
 work. The app and stylesheet URLs carry a revision to refresh browser asset caches.
 
+Layout counts describe evidence rather than guaranteeing an enclosed bedroom.
+Cards distinguish official source-listed plans, provider-reported layouts and
+layouts checked by the user. Exact plan/unit labels accompany prices, and missing
+unit identifiers remain explicit. The layout filter can limit results to
+source-listed plans or personal checks. Manual entries start with unknown layout.
+A saved studio/convertible or other-layout correction stays in the notebook and
+excludes that record from the search after refresh, without deleting saved notes.
+
+The tracker does not infer bedrooms from price or square footage. It rejects
+nonmatching numeric layouts and explicit contradictory unit-layout fields, retains
+layout corrections on historical IDs, and prevents later unknown evidence from
+restoring a previously identified studio. No new provider requests are needed to
+use these controls. Existing provider counts have not been independently verified.
+
 ## Daily operation
 
 The rental job is disabled until the repository variable `SPICYHOME_TRACKING_ENABLED` equals `true` and `RENTCAST_API_KEY` is configured. It is scheduled at **13:17 UTC**; GitHub schedules can run late. Regional context refreshes Mondays at 12:47 UTC.

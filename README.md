@@ -57,6 +57,19 @@ layout corrections on historical IDs, and prevents later unknown evidence from
 restoring a previously identified studio. No new provider requests are needed to
 use these controls. Existing provider counts have not been independently verified.
 
+The layout check appears near the top of apartment details. Excluded layouts stay
+reviewable from Discover, including corrections removed from the shortlist.
+Checked-only searches explain when other filters hide checked homes and can reset
+those filters without changing the layout scope. Plan and unit names are searchable.
+Saved snapshots absent from the current feed remain archived notebook entries.
+
+Notebook writes detect changes made in another tab before replacing saved data.
+Conflicting tabs offer export and explicit reload; unreadable saved notebooks are
+protected with a raw-data download and backup import. Search text is bounded before
+saving. Tracking status is compared with the selected scan date so an older failure
+cannot contradict a newer success. Explicit structured studio evidence is retained
+across numeric-only provider updates until explicit one-bedroom evidence resolves it.
+
 ## Daily operation
 
 The rental job is disabled until the repository variable `SPICYHOME_TRACKING_ENABLED` equals `true` and `RENTCAST_API_KEY` is configured. It is scheduled at **13:17 UTC**; GitHub schedules can run late. Regional context refreshes Mondays at 12:47 UTC.

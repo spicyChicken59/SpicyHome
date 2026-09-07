@@ -194,3 +194,11 @@ test("dates and distances have explicit units", () => {
   assert.equal(distanceMiles({ lat: null, lng: 0 }, home), null);
   assert.equal(distanceMiles(home, home), 0);
 });
+
+test("plan and unit identifiers are searchable and structured declarations validate", () => {
+  assert.equal(visibleHomes([home],emptyWorkspace(),{...defaults,search:home.floor_plan}).length,1);
+  const listing={...home,kind:"listing",floor_plan:undefined,unit_label:"Unit 427"};
+  assert.equal(visibleHomes([listing],emptyWorkspace(),{...defaults,search:"427"}).length,1);
+  assert(validateHome({...home,layout_declaration:"conflict"}));
+  assert(!validateHome({...home,layout_declaration:"anything"}));
+});

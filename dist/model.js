@@ -114,7 +114,7 @@ export function visibleHomes(homes, workspace, prefs) {
         return false;
       if (prefs.parking && h.parking?.status !== "yes") return false;
       if (prefs.charging && h.charging?.status !== "yes") return false;
-      return `${h.title} ${h.address} ${h.neighborhood}`
+      return `${h.title} ${h.address} ${h.neighborhood} ${planLabel(h)}`
         .toLowerCase()
         .includes(prefs.search.toLowerCase());
     })
@@ -186,6 +186,7 @@ export function validateHome(h) {
   )
     return false;
   if (h.layout_status !== undefined && !["source_listed", "provider_reported", "unverified", "studio", "conflict", "other"].includes(h.layout_status)) return false;
+  if (h.layout_declaration != null && !["studio", "one_bed", "conflict"].includes(h.layout_declaration)) return false;
   for (const key of ["layout_note", "unit_label", "property_type"])
     if (h[key] !== undefined && h[key] !== null && !textOk(h[key], 2000)) return false;
   if (!dateOk(h.observed_at) || !historyOk(h.history)) return false;

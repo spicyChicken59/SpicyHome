@@ -23,6 +23,7 @@ async function boot({
   mirror = undefined,
   packaged = seed,
   configuration = undefined,
+  attempt = undefined,
 } = {}) {
   const d = new JSDOM(html, {
       url: "https://spicyhome.test/",
@@ -59,6 +60,8 @@ async function boot({
     const data =
       path === "./config.json"
         ? configuration ?? { feed_url: "remote", fallback_url: "./data.json", ...(mirror !== undefined ? { feed_mirror_url: "mirror" } : {}) }
+        : path === "status"
+          ? attempt
         : path === "remote"
           ? remote
           : path === "mirror"
@@ -212,8 +215,10 @@ test("save retains a home snapshot and survives a later missing source", async (
   d.close();
   const newer = { ...seed, homes: seed.homes.filter((h) => h.id !== id) };
   const next = await boot({ remote: newer, notebook: saved });
+  assert.equal(next.doc.querySelector(`#results [data-home="${id}"]`), null);
   next.doc.querySelector('[data-view="shortlist"]').click();
   assert.equal(next.doc.querySelectorAll(".home-card").length, 1);
+  assert.match(next.doc.querySelector(".home-card").textContent, /Archived notebook entry/);
   next.close();
 });
 test("failed startup refresh retains newer connected cache", async () => {
@@ -346,10 +351,10 @@ test("a studio correction hides the candidate after refresh but keeps its notebo
   d.doc.querySelector('#layoutReview').value='studio';
   d.doc.querySelector('#notes').value='Open sleeping area, no bedroom door';
   d.doc.querySelector('#record-form').dispatchEvent(new d.w.Event('submit',{bubbles:true,cancelable:true}));
-  assert.equal(d.doc.querySelector(`[data-home="${id}"]`),null);
+  assert.equal(d.doc.querySelector(`#results [data-home="${id}"]`),null);
   d.doc.querySelector('#refresh').click();
   for(let i=0;i<30&&d.doc.querySelector('#refresh').textContent==='Checking…';i++)await new Promise(r=>setTimeout(r,3));
-  assert.equal(d.doc.querySelector(`[data-home="${id}"]`),null);
+  assert.equal(d.doc.querySelector(`#results [data-home="${id}"]`),null);
   d.doc.querySelector('[data-view="shortlist"]').click();
   assert.match(d.doc.querySelector(`[data-home="${id}"]`).textContent,/studio \/ convertible/);
   const stored=JSON.parse(d.w.localStorage.getItem('spicyhome.workspace.v1'));
@@ -366,3 +371,110 @@ test("checked-layout filter responds to an explicit floor-plan check", async () 
   assert.match(d.doc.querySelector('.home-card').textContent,/checked by you/);
   d.close();
 });
+
+test("excluded layouts stay reviewable after unshortlisting and can be corrected", async () => {
+  const d = await boot();
+  const id = d.doc.querySelector("[data-detail]").dataset.detail;
+  d.doc.querySelector("[data-detail]").click();
+  assert(d.doc.querySelector(".layout-review").compareDocumentPosition(d.doc.querySelector(".detail-grid")) & 4);
+  assert.equal(d.doc.querySelector("#layoutReview").form.id, "record-form");
+  d.doc.querySelector("#layoutReview").value = "studio";
+  d.doc.querySelector("#notes").value = "Keep this correction accessible";
+  d.doc.querySelector('.layout-review button[type="submit"]').click();
+  assert.equal(d.doc.querySelector(`#results [data-home="${id}"]`), null);
+  assert(d.doc.querySelector(`#excluded-results [data-home="${id}"]`));
+  assert.equal(d.doc.querySelector("#excluded-layouts").open, true);
+  assert.equal(d.doc.activeElement.dataset.detail, id);
+  d.doc.querySelector('[data-view="shortlist"]').click();
+  d.doc.querySelector(`[data-save="${id}"]`).click();
+  d.doc.querySelector('[data-view="discover"]').click();
+  d.doc.querySelector(`#excluded-results [data-detail="${id}"]`).click();
+  d.doc.querySelector("#layoutReview").value = "one_bed";
+  d.doc.querySelector('.layout-review button[type="submit"]').click();
+  assert(d.doc.querySelector(`#results [data-home="${id}"]`));
+  assert.equal(JSON.parse(d.w.localStorage.getItem("spicyhome.workspace.v1")).records[id].notes, "Keep this correction accessible");
+  d.close();
+});
+test("checked layouts hidden by other filters get a scoped recovery action", async () => {
+  const d = await boot();
+  d.doc.querySelector("[data-detail]").click();
+  d.doc.querySelector("#layoutReview").value = "one_bed";
+  d.doc.querySelector('.layout-review button[type="submit"]').click();
+  const scope = d.doc.querySelector("#layout-scope");
+  scope.value = "confirmed"; scope.dispatchEvent(new d.w.Event("change"));
+  const search = d.doc.querySelector("#search");
+  search.value = "no matching apartment"; search.dispatchEvent(new d.w.Event("change", {bubbles:true}));
+  assert.match(d.doc.querySelector("#results").textContent, /1 checked layout is hidden/);
+  assert.doesNotMatch(d.doc.querySelector("#results").textContent, /No layouts checked yet/);
+  d.doc.querySelector("#reset-other-filters").click();
+  assert.equal(d.doc.querySelector("#layout-scope").value, "confirmed");
+  assert.equal(d.doc.querySelectorAll("#results .home-card").length, 1);
+  d.close();
+});
+test("budget labels follow the active basis without moving focus", async () => {
+  const d = await boot();
+  const basis = d.doc.querySelector("#basis"); basis.focus();
+  basis.value = "total"; basis.dispatchEvent(new d.w.Event("change", {bubbles:true}));
+  assert.match(d.doc.querySelector('#sort option[value="rent"]').textContent, /Known subtotal/);
+  assert.match(d.doc.querySelector("#budget-note").textContent, /Budget is a known subtotal/);
+  assert.equal(d.doc.activeElement, basis);
+  d.close();
+});
+test("overlong search cannot make notes and studio corrections unloadable", async () => {
+  const h = seed.homes[0];
+  const notebook = {version:1,records:{[h.id]:{saved:true,snapshot:h,notes:"Keep me",layoutReview:"studio"}},manual:[],events:[],preferences:{}};
+  const d = await boot({notebook});
+  const search = d.doc.querySelector("#search");
+  search.value = "x".repeat(501); search.dispatchEvent(new d.w.Event("input", {bubbles:true}));
+  const saved = JSON.parse(d.w.localStorage.getItem("spicyhome.workspace.v1"));
+  assert.equal(saved.preferences.search.length,500);
+  d.close();
+  const next = await boot({notebook:saved});
+  next.doc.querySelector("#reset-filters").click();
+  const retained = JSON.parse(next.w.localStorage.getItem("spicyhome.workspace.v1"));
+  assert.equal(retained.records[h.id].notes,"Keep me");
+  assert.equal(retained.records[h.id].layoutReview,"studio");
+  next.close();
+});
+test("a stale tab cannot overwrite a newer notebook and can load the saved copy", async () => {
+  const d = await boot();
+  const h = seed.homes[0];
+  const updated = {version:1,records:{[h.id]:{saved:true,snapshot:h,notes:"Saved in another tab",layoutReview:"studio"}},manual:[],events:[],preferences:{}};
+  const raw = JSON.stringify(updated);
+  d.w.localStorage.setItem("spicyhome.workspace.v1",raw);
+  const sort = d.doc.querySelector("#sort"); sort.value="space"; sort.dispatchEvent(new d.w.Event("change"));
+  assert.equal(d.w.localStorage.getItem("spicyhome.workspace.v1"),raw);
+  assert(d.doc.querySelector("#export-unsaved"));
+  d.doc.querySelector("#load-latest-notebook").click();
+  assert.equal(d.doc.querySelector(`#results [data-home="${h.id}"]`),null);
+  d.doc.querySelector("#reset-filters").click();
+  assert.equal(JSON.parse(d.w.localStorage.getItem("spicyhome.workspace.v1")).records[h.id].notes,"Saved in another tab");
+  d.close();
+});
+test("unreadable notebook remains recoverable until a validated backup is imported", async () => {
+  const h = seed.homes[0];
+  const notebook = {version:1,records:{[h.id]:{saved:true,snapshot:h,notes:"Original notes"}},manual:[],events:[],preferences:{search:"x".repeat(501)}};
+  const d = await boot({notebook});
+  const original = d.w.localStorage.getItem("spicyhome.workspace.v1");
+  d.doc.querySelector("#reset-filters").click();
+  assert.equal(d.w.localStorage.getItem("spicyhome.workspace.v1"),original);
+  let downloaded;
+  d.w.Blob = class {constructor(parts) {downloaded=parts[0];}};
+  d.w.HTMLAnchorElement.prototype.click = () => {};
+  d.doc.querySelector("#export-original").click();
+  assert.equal(downloaded,original);
+  const fixed = JSON.stringify({...notebook,preferences:{}});
+  await d.doc.querySelector("#import-file").onchange({target:{files:[{size:fixed.length,text:async()=>fixed}],value:""}});
+  assert.equal(JSON.parse(d.w.localStorage.getItem("spicyhome.workspace.v1")).records[h.id].notes,"Original notes");
+  assert.equal(d.doc.querySelector("#storage-warning"),null);
+  d.close();
+});
+for (const attempted_at of ["2026-09-06T00:00:00Z", undefined, "2026-09-09T00:00:00Z"]) {
+  test(`tracking failure is compared with the selected successful scan: ${attempted_at}`, async () => {
+    const live = connectedSnapshot();
+    const d = await boot({remote:live,packaged:live,configuration:{feed_url:"remote",fallback_url:"./data.json",status_url:"status"},attempt:{schema_version:1,status:"failed",attempted_at,message:"Test failure"}});
+    const failureVisible=d.doc.querySelector("#notice").textContent.includes("most recent tracking attempt failed");
+    assert.equal(failureVisible,attempted_at === "2026-09-09T00:00:00Z");
+    d.close();
+  });
+}

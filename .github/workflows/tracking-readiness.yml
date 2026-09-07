@@ -1,0 +1,52 @@
+name: Check tracking setup
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/tracking-readiness.yml'
+permissions:
+  contents: read
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Explain tracking prerequisites without making an API request
+        env:
+          TRACKING_GATE_OPEN: ${{ vars.SPICYHOME_TRACKING_ENABLED == 'true' }}
+          TRACKING_FLAG_PRESENT: ${{ vars.SPICYHOME_TRACKING_ENABLED != '' }}
+          RENTCAST_KEY_PRESENT: ${{ secrets.RENTCAST_API_KEY != '' }}
+          TRACKING_FLAG_IN_SECRETS: ${{ secrets.SPICYHOME_TRACKING_ENABLED != '' }}
+          RENTCAST_KEY_IN_VARIABLES: ${{ vars.RENTCAST_API_KEY != '' }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          enabled = os.environ.get('TRACKING_GATE_OPEN') == 'true'
+          flag_present = os.environ.get('TRACKING_FLAG_PRESENT') == 'true'
+          key_present = os.environ.get('RENTCAST_KEY_PRESENT') == 'true'
+          flag_in_secrets = os.environ.get('TRACKING_FLAG_IN_SECRETS') == 'true'
+          key_in_variables = os.environ.get('RENTCAST_KEY_IN_VARIABLES') == 'true'
+          messages = ['# SpicyHome tracking setup', '', 'This check makes no provider requests and reveals no configuration or secret values.', '']
+          if enabled:
+              messages.append('Enable variable: accepted by the tracking job condition.')
+          elif not flag_present and flag_in_secrets:
+              messages.append('Enable variable: missing from Variables; a secret with that name exists. Add SPICYHOME_TRACKING_ENABLED as a repository variable with value true.')
+          elif not flag_present:
+              messages.append('Enable variable: unavailable. Add SPICYHOME_TRACKING_ENABLED=true under Settings > Secrets and variables > Actions > Variables > Repository variables. Environment variables are not available to this job condition.')
+          else:
+              messages.append('Enable variable: present but not accepted. Replace its value with the four letters true only, without quotes, backticks, or extra whitespace.')
+          if key_present:
+              messages.append('RentCast API key: an accessible secret is present. Its validity and subscription have not been tested.')
+          else:
+              messages.append('RentCast API key: no accessible secret. Add RENTCAST_API_KEY under Actions > Secrets > Repository secrets.')
+          if key_in_variables:
+              messages.append('A variable named RENTCAST_API_KEY also exists. Store the key only as a repository secret and remove the variable; its value was not inspected or printed.')
+          messages.append('')
+          messages.append('Ready for a manual Track apartments run.' if enabled and key_present else 'Tracking setup needs the corrections above before another Track apartments run.')
+          report = '\n'.join(messages) + '\n'
+          print(report)
+          Path(os.environ['GITHUB_STEP_SUMMARY']).write_text(report)
+          PY

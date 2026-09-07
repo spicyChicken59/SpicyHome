@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "feed_url": "https://raw.githubusercontent.com/spicyChicken59/SpicyHome/main/dist/data.json",
+  "feed_mirror_url": "https://api.github.com/repos/spicyChicken59/SpicyHome/contents/dist/data.json?ref=main",
   "fallback_url": "./data.json",
   "repository": "https://github.com/spicyChicken59/SpicyHome",
   "budget_min": 1200,

@@ -20,6 +20,8 @@ async function boot({
   cache = null,
   notebook = null,
   storageFails = false,
+  mirror = undefined,
+  packaged = seed,
 } = {}) {
   const d = new JSDOM(html, {
       url: "https://spicyhome.test/",
@@ -43,21 +45,112 @@ async function boot({
     w.Storage.prototype.setItem = function () {
       throw Error("QuotaExceeded");
     };
-  w.fetch = async (url) => {
-    if (url === "remote" && remote === null) throw Error("offline");
+  const requests = [];
+  w.fetch = async (url, options) => {
+    requests.push({ url, options });
+    const path = url.split("?")[0];
+    if (path === "remote" && remote === null) throw Error("offline");
+    if (path === "mirror" && mirror === null) throw Error("mirror offline");
+    if (path === "./data.json" && packaged === null) throw Error("bundle unavailable");
     const data =
-      url === "./config.json"
-        ? { feed_url: "remote", fallback_url: "./data.json" }
-        : url === "remote"
+      path === "./config.json"
+        ? { feed_url: "remote", fallback_url: "./data.json", ...(mirror !== undefined ? { feed_mirror_url: "mirror" } : {}) }
+        : path === "remote"
           ? remote
-          : seed;
+          : path === "mirror"
+            ? mirror
+            : packaged;
     return { ok: true, text: async () => JSON.stringify(data) };
   };
   w.eval(model + "\n" + app);
   for (let i = 0; i < 30 && !w.document.querySelector(".home-card"); i++)
     await new Promise((r) => setTimeout(r, 3));
-  return { w, doc: w.document, close: () => w.close() };
+  return { w, doc: w.document, requests, close: () => w.close() };
 }
+
+function connectedSnapshot(at = "2026-09-08T00:00:00Z") {
+  return { ...seed, mode: "connected", generated_at: at,
+    provider: { configured: true, last_success: at, coverage: "Test connected snapshot", status: "success" } };
+}
+test("fresh direct visit can load the mirror without an existing browser cache", async () => {
+  const d = await boot({ remote: null, mirror: connectedSnapshot() });
+  assert.equal(JSON.parse(d.w.localStorage.getItem("spicyhome.feed.v1")).mode, "connected");
+  assert.match(d.doc.querySelector("#notice").textContent, /Latest successful listing scan/);
+  assert.doesNotMatch(d.doc.querySelector("#notice").textContent, /Live update unavailable|Connect the daily feed/);
+  const request = d.requests.find(r => r.url.startsWith("mirror?"));
+  assert.equal(request.options.headers.Accept, "application/vnd.github.raw+json");
+  assert.match(request.url, /_spicyhome=/);
+  d.close();
+});
+test("a direct visit uses the included connected snapshot when both public hosts fail", async () => {
+  const d = await boot({ remote: null, mirror: null, packaged: connectedSnapshot() });
+  assert.equal(JSON.parse(d.w.localStorage.getItem("spicyhome.feed.v1")).mode, "connected");
+  assert.match(d.doc.querySelector("#notice").textContent, /snapshot included with this site/);
+  assert.doesNotMatch(d.doc.querySelector("#notice").textContent, /Connect the daily feed/);
+  d.close();
+});
+test("a stale successful response cannot replace a newer connected browser snapshot", async () => {
+  const newer = connectedSnapshot("2026-09-09T00:00:00Z");
+  const d = await boot({ remote: connectedSnapshot(), cache: newer });
+  assert.equal(JSON.parse(d.w.localStorage.getItem("spicyhome.feed.v1")).provider.last_success, newer.provider.last_success);
+  assert.match(d.doc.querySelector("#notice").textContent, /source returned older data/);
+  d.close();
+});
+test("an old research response does not hide the newer packaged listings", async () => {
+  const d = await boot({ remote: seed, packaged: connectedSnapshot() });
+  assert.equal(JSON.parse(d.w.localStorage.getItem("spicyhome.feed.v1")).mode, "connected");
+  d.close();
+});
+test("a stale connected response on a fresh visit is compared with the newer bundle", async () => {
+  const newer = connectedSnapshot("2026-09-09T00:00:00Z");
+  const d = await boot({ remote: connectedSnapshot(), packaged: newer });
+  assert.equal(JSON.parse(d.w.localStorage.getItem("spicyhome.feed.v1")).provider.last_success, newer.provider.last_success);
+  assert.match(d.doc.querySelector("#notice").textContent, /newer snapshot included with this site/);
+  d.close();
+});
+test("an older primary triggers the mirror and can discover an even newer snapshot", async () => {
+  const newest = connectedSnapshot("2026-09-10T00:00:00Z");
+  const d = await boot({ remote: connectedSnapshot(), packaged: connectedSnapshot("2026-09-09T00:00:00Z"), mirror: newest });
+  assert.equal(JSON.parse(d.w.localStorage.getItem("spicyhome.feed.v1")).provider.last_success, newest.provider.last_success);
+  assert(d.requests.some(r => r.url.startsWith("mirror?")));
+  assert.doesNotMatch(d.doc.querySelector("#notice").textContent, /older data|unavailable/);
+  d.close();
+});
+test("a missing bundle never discards valid published research", async () => {
+  const d = await boot({ remote: seed, packaged: null });
+  assert.equal(d.doc.querySelectorAll(".home-card").length, 9);
+  assert.doesNotMatch(d.doc.querySelector("#notice").textContent, /could not load/);
+  d.close();
+});
+for (const source of ["cache", "packaged"]) {
+  test(`a matching mirror confirms the ${source} snapshot as current`, async () => {
+    const newest = connectedSnapshot("2026-09-09T00:00:00Z");
+    const d = await boot({ remote: connectedSnapshot(), [source]: newest, mirror: newest });
+    assert.doesNotMatch(d.doc.querySelector("#notice").textContent, /older data|unavailable/);
+    d.doc.querySelector("#refresh").click();
+    for (let i = 0; i < 30 && d.doc.querySelector("#refresh").textContent === "Checking…"; i++) await new Promise(r => setTimeout(r, 3));
+    assert.match(d.doc.querySelector("#toast").textContent, /Latest published snapshot checked/);
+    assert.equal(JSON.parse(d.w.localStorage.getItem("spicyhome.feed.v1")).provider.last_success, newest.provider.last_success);
+    d.close();
+  });
+}
+test("research retained during an outage is never called a connected snapshot", async () => {
+  const d = await boot({ remote: null, mirror: null, packaged: null, cache: seed });
+  assert.match(d.doc.querySelector("#notice").textContent, /last complete snapshot/);
+  assert.doesNotMatch(d.doc.querySelector("#notice").textContent, /complete connected snapshot/);
+  d.close();
+});
+test("manual refresh reloads configuration and sends uncached snapshot requests", async () => {
+  const d = await boot({ remote: connectedSnapshot() });
+  d.doc.querySelector("#refresh").click();
+  for (let i = 0; i < 30 && d.doc.querySelector("#refresh").textContent === "Checking…"; i++) await new Promise(r => setTimeout(r, 3));
+  assert.equal(d.requests.filter(r => r.url.startsWith("./config.json?")).length, 2);
+  const reads = d.requests.filter(r => r.url.startsWith("remote?"));
+  assert.equal(reads.length, 2);
+  assert(reads.every(r => /_spicyhome=/.test(r.url) && r.options.cache === "no-store"));
+  assert.match(d.doc.querySelector("#toast").textContent, /Latest published snapshot checked/);
+  d.close();
+});
 test("working surface renders real prospects and usable map fallback", async () => {
   const d = await boot();
   assert.equal(d.doc.querySelectorAll(".home-card").length, 9);
@@ -95,7 +188,7 @@ test("failed startup refresh retains newer connected cache", async () => {
   const d = await boot({ remote: null, cache: connected });
   assert.match(
     d.doc.querySelector("#notice").textContent,
-    /retaining your last complete connected snapshot/,
+    /retaining your last complete snapshot/,
   );
   assert.equal(
     JSON.parse(d.w.localStorage.getItem("spicyhome.feed.v1")).mode,

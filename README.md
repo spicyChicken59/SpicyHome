@@ -28,7 +28,13 @@ python tools/check_site.py
 npm run dev
 ```
 
-Open the local URL printed by Vite. The app uses the configured published feed when available and keeps bundled research as its initial fallback. It has no production build step and no browser API secrets.
+Open the local URL printed by Vite. The app reads the committed public feed, with
+a second GitHub read endpoint if the raw-content host fails. Update checks bypass
+cached responses and reload the feed configuration. When sources are unavailable,
+the app keeps the newest complete connected snapshot available in memory, browser
+storage or the deployed bundle. An older successful response cannot silently
+replace newer saved listings. The fallback is labeled explicitly. It has no
+production build step and no browser API secrets; refreshing never calls RentCast.
 
 ## Daily operation
 

@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-07T00:00:00Z",
+  "generated_at": "2026-09-07T23:52:21.486588Z",
   "mode": "research",
   "provider": {
     "name": "Official building research",
     "configured": false,
     "last_success": null,
-    "coverage": "10 selected buildings; not an exhaustive market search",
+    "coverage": "18 sourced building prospects across Chicago and seven selected suburbs; not an exhaustive market search",
     "status": "awaiting_key"
   },
   "homes": [
@@ -78,7 +78,8 @@
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
       "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=850+S.+Clark+St.%2C+Chicago%2C+IL+60605&benchmark=Public_AR_Current&format=json",
       "layout_status": "source_listed",
-      "layout_note": "The official source lists A320 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
+      "layout_note": "The official source lists A320 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking.",
+      "city": "Chicago"
     },
     {
       "id": "amli-900",
@@ -143,7 +144,8 @@
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
       "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=900+S.+Clark+St.%2C+Chicago%2C+IL+60605&benchmark=Public_AR_Current&format=json",
       "layout_status": "source_listed",
-      "layout_note": "The official source lists Trendy as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
+      "layout_note": "The official source lists Trendy as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking.",
+      "city": "Chicago"
     },
     {
       "id": "amli-west-loop",
@@ -208,7 +210,8 @@
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
       "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=205+S.+Peoria+St.%2C+Chicago%2C+IL+60607&benchmark=Public_AR_Current&format=json",
       "layout_status": "source_listed",
-      "layout_note": "The official source lists A2c as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
+      "layout_note": "The official source lists A2c as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking.",
+      "city": "Chicago"
     },
     {
       "id": "aspire",
@@ -268,7 +271,8 @@
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
       "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=2111+S.+Wabash+Avenue%2C+Chicago%2C+IL+60616&benchmark=Public_AR_Current&format=json",
       "layout_status": "source_listed",
-      "layout_note": "The official source lists asp1b03 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
+      "layout_note": "The official source lists asp1b03 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking.",
+      "city": "Chicago"
     },
     {
       "id": "the-elle",
@@ -328,7 +332,8 @@
       "coordinate_note": "Google Maps place linked by official building website \u2014 official_linked_place_coordinate",
       "coordinate_source": "https://www.google.com/maps/place/The+Elle/@41.8718532,-87.6353401,17z/data=!3m1!4b1!4m6!3m5!1s0x880e2c969e522ae5:0x1a729f8147fc6096!8m2!3d41.8718492!4d-87.6327652!16s%2Fg%2F11g7z0gk4f?entry=tts",
       "layout_status": "source_listed",
-      "layout_note": "The official source lists 609 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
+      "layout_note": "The official source lists 609 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking.",
+      "city": "Chicago"
     },
     {
       "id": "grand-central",
@@ -393,7 +398,8 @@
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
       "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=221+West+Harrison+Street%2C+Chicago%2C+IL+60607&benchmark=Public_AR_Current&format=json",
       "layout_status": "source_listed",
-      "layout_note": "The official source lists A2 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
+      "layout_note": "The official source lists A2 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking.",
+      "city": "Chicago"
     },
     {
       "id": "coast",
@@ -458,7 +464,8 @@
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
       "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=345+E+Wacker+Dr%2C+Chicago%2C+IL+60601&benchmark=Public_AR_Current&format=json",
       "layout_status": "source_listed",
-      "layout_note": "The official source lists 1x1L as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
+      "layout_note": "The official source lists 1x1L as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking.",
+      "city": "Chicago"
     },
     {
       "id": "215-west",
@@ -518,7 +525,8 @@
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
       "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=215+W.+Washington%2C+Chicago%2C+IL+60606&benchmark=Public_AR_Current&format=json",
       "layout_status": "source_listed",
-      "layout_note": "The official source lists T03 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
+      "layout_note": "The official source lists T03 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking.",
+      "city": "Chicago"
     },
     {
       "id": "marlowe",
@@ -588,7 +596,8 @@
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
       "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=169+W+Huron+Street%2C+Chicago%2C+IL+60654&benchmark=Public_AR_Current&format=json",
       "layout_status": "source_listed",
-      "layout_note": "The official source lists A8 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
+      "layout_note": "The official source lists A8 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking.",
+      "city": "Chicago"
     },
     {
       "id": "73-east-lake",
@@ -658,7 +667,495 @@
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
       "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=73+E+Lake+St%2C+Chicago%2C+IL+60601&benchmark=Public_AR_Current&format=json",
       "layout_status": "source_listed",
-      "layout_note": "The official source lists 07a as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
+      "layout_note": "The official source lists 07a as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking.",
+      "city": "Chicago"
+    },
+    {
+      "id": "amli-evanston",
+      "kind": "building",
+      "title": "AMLI Evanston",
+      "city": "Evanston",
+      "neighborhood": "Evanston",
+      "address": "737 Chicago Ave., Evanston, IL 60202",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floor_plan": "A420",
+      "unit_label": null,
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists A420 as 1 bedroom / 1 bathroom. Check the exact plan for a separate enclosed bedroom.",
+      "rent": 2739,
+      "advertised_price": 2743.45,
+      "advertised_price_type": "total_monthly",
+      "sqft": 810,
+      "lat": 42.03157472989,
+      "lng": -87.67881535104,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Reserved garage parking advertised; fee and space availability need confirming."
+      },
+      "charging": {
+        "status": "yes",
+        "note": "Electric-car charging stations advertised; confirm connector, access and fees."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrances, elevators and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [],
+      "source_url": "https://www.amli.com/apartments/chicago/near-north-suburbs-apartments/amli-evanston/floorplans",
+      "sources": [
+        {
+          "url": "https://www.amli.com/apartments/chicago/near-north-suburbs-apartments/amli-evanston/floorplans",
+          "supports": "Address; A420 1BR/1BA, 810 sq ft; base from $2739, published total from $2743.45.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.amli.com/apartments/chicago/near-north-suburbs-apartments/amli-evanston/amenities",
+          "supports": "Reserved garage parking and electric-car charging.",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Source lists availability now for A420. Starting prices are subject to lease terms and the desired move-in date.",
+      "history": [
+        {
+          "date": "2026-09-07",
+          "rent": 2739
+        }
+      ],
+      "coordinate_note": "U.S. Census Geocoder \u2014 interpolated street address, approximate location. Matched: 737 CHICAGO AVE, EVANSTON, IL, 60202",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=737+Chicago+Ave%2C+Evanston%2C+IL+60202&benchmark=Public_AR_Current&format=json"
+    },
+    {
+      "id": "tapestry-station",
+      "kind": "building",
+      "title": "Tapestry Station",
+      "city": "Evanston",
+      "neighborhood": "Evanston",
+      "address": "740 Main St., Evanston, IL 60202",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floor_plan": "The Main",
+      "unit_label": "Unit 212",
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists The Main as 1 bedroom / 1 bathroom. Check the exact plan for a separate enclosed bedroom.",
+      "rent": null,
+      "advertised_price": 2335,
+      "advertised_price_type": "unspecified",
+      "sqft": 520,
+      "lat": 42.03389809866,
+      "lng": -87.681190387245,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Heated garage parking advertised; pricing and spaces unverified."
+      },
+      "charging": {
+        "status": "yes",
+        "note": "Electric-car charging advertised; confirm access, connector and fees."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrances, elevators and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [],
+      "source_url": "https://chicagorentals.com/apartment/tapestry-station/",
+      "sources": [
+        {
+          "url": "https://chicagorentals.com/apartment/tapestry-station/",
+          "supports": "The Main, unit 212, 1BR/1BA, 520 sq ft, advertised rent from $2335; heated garage and EV charging.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://chicagorentals.com/evanston/",
+          "supports": "740 Main St., Evanston address.",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Source lists unit 212 for September 12, 2026, from $2335. Base-rent and fee breakdown require confirmation.",
+      "history": [],
+      "coordinate_note": "U.S. Census Geocoder \u2014 interpolated street address, approximate location. Matched: 740 MAIN ST, EVANSTON, IL, 60202",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=740+Main+St%2C+Evanston%2C+IL+60202&benchmark=Public_AR_Current&format=json"
+    },
+    {
+      "id": "the-emerson",
+      "kind": "building",
+      "title": "The Emerson",
+      "city": "Oak Park",
+      "neighborhood": "Oak Park",
+      "address": "1135 Westgate St., Oak Park, IL 60301",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floor_plan": "A1",
+      "unit_label": null,
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists A1 as 1 bedroom / 1 bathroom. Check the exact plan for a separate enclosed bedroom.",
+      "rent": null,
+      "advertised_price": 2339,
+      "advertised_price_type": "unspecified",
+      "sqft": 754,
+      "lat": 41.887765,
+      "lng": -87.8037329,
+      "parking": {
+        "status": "yes",
+        "monthly": 155,
+        "note": "Official FAQ advertises unreserved LAZ parking at $155 per month. Confirm current terms and availability."
+      },
+      "charging": {
+        "status": "unknown",
+        "note": "Resident EV charging was not established by the reviewed source; confirm with the property."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrances, elevators and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [],
+      "source_url": "https://www.trinity-pm.com/oak-park/the-emerson/conventional/",
+      "sources": [
+        {
+          "url": "https://www.trinity-pm.com/oak-park/the-emerson/conventional/",
+          "supports": "A1, 1BR/1BA, 754 sq ft; current list starting at $2339 for 13 months; map-link coordinates.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://theemerson.com/",
+          "supports": "Property address.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://theemerson.com/faqs/",
+          "supports": "Unreserved LAZ parking $155/month.",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Current management list advertises A1 from $2339 for a 13-month lease, October 23, 2026. Confirm the exact unit and fee breakdown; other cached pages show different starting prices.",
+      "history": [],
+      "coordinate_source": "https://www.trinity-pm.com/oak-park/the-emerson/conventional/",
+      "coordinate_note": "Coordinates from the official management page\u2019s map link; approximate property location."
+    },
+    {
+      "id": "park-205",
+      "kind": "building",
+      "title": "Park 205",
+      "city": "Park Ridge",
+      "neighborhood": "Park Ridge",
+      "address": "205 Touhy Ave., Park Ridge, IL 60068",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floor_plan": "Brickton B",
+      "unit_label": "Unit 320",
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists Brickton B as 1 bedroom / 1 bathroom. Check the exact plan for a separate enclosed bedroom.",
+      "rent": 2550,
+      "advertised_price": 2617.25,
+      "advertised_price_type": "total_monthly",
+      "sqft": 798,
+      "lat": 42.011233615844,
+      "lng": -87.824395366525,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Garage, reserved and temperature-controlled covered parking advertised; optional costs and availability unverified."
+      },
+      "charging": {
+        "status": "unknown",
+        "note": "Resident EV charging was not established by the reviewed source; confirm with the property."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrances, elevators and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [],
+      "source_url": "https://www.park205.com/floorplans/brickton-b",
+      "sources": [
+        {
+          "url": "https://www.park205.com/floorplans/brickton-b",
+          "supports": "Brickton B, unit 320, 1BR/1BA, 798 sq ft; base $2550 and starting total $2617.25 for a 7-month term; property address.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.park205.com/amenities",
+          "supports": "Garage and reserved/covered parking.",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Unit 320 lists base $2550 and starting total $2617.25 for a 7-month lease. Other terms cost more; variable charges and optional parking may be additional.",
+      "history": [
+        {
+          "date": "2026-09-07",
+          "rent": 2550
+        }
+      ],
+      "coordinate_note": "U.S. Census Geocoder \u2014 interpolated street address, approximate location. Matched: 205 W TOUHY AVE, PARK RIDGE, IL, 60068",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=205+Touhy+Ave%2C+Park+Ridge%2C+IL+60068&benchmark=Public_AR_Current&format=json"
+    },
+    {
+      "id": "elmhurst-255",
+      "kind": "building",
+      "title": "Elmhurst 255",
+      "city": "Elmhurst",
+      "neighborhood": "Elmhurst",
+      "address": "255 N. Addison Ave., Elmhurst, IL 60126",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floor_plan": "B",
+      "unit_label": null,
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists B as 1 bedroom / 1 bathroom. Check the exact plan for a separate enclosed bedroom.",
+      "rent": 2405,
+      "advertised_price": null,
+      "advertised_price_type": null,
+      "sqft": 693,
+      "lat": 41.904828421133,
+      "lng": -87.941441426923,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Indoor heated parking advertised; fees and space availability unverified."
+      },
+      "charging": {
+        "status": "yes",
+        "note": "Dedicated EV parking spaces advertised; connector, access and charging fees unverified."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrances, elevators and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [],
+      "source_url": "https://www.elmhurst255.com/floorplans",
+      "sources": [
+        {
+          "url": "https://www.elmhurst255.com/floorplans",
+          "supports": "Plan B, 1BR/1BA, 693 sq ft, base from $2405; November 5, 2026.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.elmhurst255.com/amenities",
+          "supports": "Address; indoor heated parking, EV spaces and in-home laundry.",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Plan B advertises base rent from $2405 and November 5, 2026 availability. Confirm the exact unit and lease terms.",
+      "history": [
+        {
+          "date": "2026-09-07",
+          "rent": 2405
+        }
+      ],
+      "coordinate_note": "U.S. Census Geocoder \u2014 interpolated street address, approximate location. Matched: 255 N ADDISON AVE, ELMHURST, IL, 60126",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=255+N+Addison+Ave%2C+Elmhurst%2C+IL+60126&benchmark=Public_AR_Current&format=json"
+    },
+    {
+      "id": "burlington-station",
+      "kind": "building",
+      "title": "Burlington Station",
+      "city": "Downers Grove",
+      "neighborhood": "Downers Grove",
+      "address": "5100 Forest Avenue, Downers Grove, IL 60515",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floor_plan": "The Dakotan 744",
+      "unit_label": null,
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists The Dakotan 744 as 1 bedroom / 1 bathroom. Check the exact plan for a separate enclosed bedroom.",
+      "rent": null,
+      "advertised_price": 2438,
+      "advertised_price_type": "unspecified",
+      "sqft": 744,
+      "lat": null,
+      "lng": null,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Heated garage parking advertised; fees and space availability unverified."
+      },
+      "charging": {
+        "status": "yes",
+        "note": "EV charging advertised; connector, access and charges unverified."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrances, elevators and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [],
+      "source_url": "https://www.liveindowners.com/floorplans",
+      "sources": [
+        {
+          "url": "https://www.liveindowners.com/floorplans",
+          "supports": "The Dakotan 744, 1BR/1BA, 744 sq ft; advertised rent from $2438; November 3, 2026.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.liveindowners.com/amenities",
+          "supports": "Heated garage and EV charging.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.liveindowners.com/contactus",
+          "supports": "5100 Forest Avenue address; coordinates not established.",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Plan shows advertised rent from $2438, with November 3, 2026 availability. Exact unit, lease term and fee-inclusive total require confirmation.",
+      "history": [],
+      "coordinate_note": "Exact coordinates unverified; use the sourced address and directions link."
+    },
+    {
+      "id": "one-arlington",
+      "kind": "building",
+      "title": "One Arlington",
+      "city": "Arlington Heights",
+      "neighborhood": "Arlington Heights",
+      "address": "3400 W. Stonegate Blvd., Arlington Heights, IL 60005",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floor_plan": "A2",
+      "unit_label": null,
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists A2 as 1 bedroom / 1 bathroom. Check the exact plan for a separate enclosed bedroom.",
+      "rent": null,
+      "advertised_price": 2335,
+      "advertised_price_type": "unspecified",
+      "sqft": null,
+      "lat": 42.090311415417,
+      "lng": -88.026488783396,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Site advertises underground assigned parking at $125 standard or $225 for a charging space; confirm billing period, current terms and electricity charges."
+      },
+      "charging": {
+        "status": "yes",
+        "note": "Charging-space parking advertised; verify connector and access."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrances, elevators and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [],
+      "source_url": "https://www.onearlington.com/",
+      "sources": [
+        {
+          "url": "https://www.onearlington.com/",
+          "supports": "Official indexed A2 result: 1BR/1BA, 803\u2013833 sq ft, from $2335 excluding additional fees; direct page does not expose the price.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.onearlington.com/Floor-Plans.aspx",
+          "supports": "Official floor-plan lookup.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.onearlington.com/Amenities.aspx",
+          "supports": "Address; underground assigned parking, charging-space fee, laundry and rooftop amenities.",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Official indexed result advertises A2 from $2335 with 803\u2013833 sq ft. The page uses an embedded leasing map; exact-unit price, layout size and availability need confirmation.",
+      "history": [],
+      "coordinate_note": "U.S. Census Geocoder \u2014 interpolated street address, approximate location. Matched: 3400 W STONEGATE BLVD, ARLINGTON HEIGHTS, IL, 60005",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=3400+W+Stonegate+Blvd%2C+Arlington+Heights%2C+IL+60005&benchmark=Public_AR_Current&format=json"
+    },
+    {
+      "id": "bristol-station",
+      "kind": "building",
+      "title": "Bristol Station",
+      "city": "Naperville",
+      "neighborhood": "Naperville",
+      "address": "704 Greenwood Circle, Naperville, IL 60563",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floor_plan": "Union",
+      "unit_label": null,
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists Union as 1 bedroom / 1 bathroom. Check the exact plan for a separate enclosed bedroom.",
+      "rent": null,
+      "advertised_price": 1665,
+      "advertised_price_type": "unspecified",
+      "sqft": 700,
+      "lat": 41.782272808167,
+      "lng": -88.211116639941,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Individual garages advertised; price and space availability unverified."
+      },
+      "charging": {
+        "status": "unknown",
+        "note": "Resident EV charging was not established by the reviewed source; confirm with the property."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrances, elevators and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [],
+      "source_url": "https://www.bristolstation.com/floorplans",
+      "sources": [
+        {
+          "url": "https://www.bristolstation.com/floorplans",
+          "supports": "Union, 1BR/1BA, 700 sq ft; advertised rent from $1665 and availability now.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.bristolstation.com/",
+          "supports": "Individual garages.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.bristolstation.com/amenities",
+          "supports": "Address, laundry, pool and fitness center.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.bristolstation.com/faq",
+          "supports": "Route 59 area, about 3.5 miles from downtown Naperville.",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Union plan advertises rent from $1665 and availability now. Confirm exact-unit base rent, recurring fees and lease terms. This is in the Route 59 area, not downtown Naperville.",
+      "history": [],
+      "coordinate_note": "U.S. Census Geocoder \u2014 interpolated street address, approximate location. Matched: 704 GREENWOOD CIR, NAPERVILLE, IL, 60563",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=704+Greenwood+Circle%2C+Naperville%2C+IL+60563&benchmark=Public_AR_Current&format=json"
     }
   ],
   "events": [],
@@ -1079,5 +1576,56 @@
     },
     "last_attempt_at": "2026-09-07T07:50:46.615944Z",
     "errors": []
+  },
+  "search_area": {
+    "center": {
+      "lat": 41.882,
+      "lng": -87.632,
+      "label": "central Chicago"
+    },
+    "radius_miles": 35,
+    "areas": [
+      {
+        "city": "Chicago",
+        "note": "Expanded beyond the original downtown rectangle; neighborhood names remain unverified when the provider does not supply them.",
+        "source_url": "https://www.transitchicago.com/"
+      },
+      {
+        "city": "Evanston",
+        "note": "Purple Line and Metra options. Purple Line express service to the Loop runs during rush periods.",
+        "source_url": "https://www.cityofevanston.org/explore/transportation_mobility/public_transportation.php"
+      },
+      {
+        "city": "Oak Park",
+        "note": "Blue Line, Green Line and Metra Union Pacific West connections.",
+        "source_url": "https://www.oak-park.us/Services-Parking/Transportation"
+      },
+      {
+        "city": "Park Ridge",
+        "note": "Metra access at Uptown and Dee Road; check the route from the exact apartment.",
+        "source_url": "https://www.parkridge.us/resident_service/commuters/index.php"
+      },
+      {
+        "city": "Elmhurst",
+        "note": "Downtown City Centre offers shops and restaurants along the Metra Union Pacific West line.",
+        "source_url": "https://www.elmhurst.org/business/economic_development/business_districts.php"
+      },
+      {
+        "city": "Downers Grove",
+        "note": "Three BNSF Metra stops, with shopping and dining around the downtown station.",
+        "source_url": "https://www.downers.us/parking"
+      },
+      {
+        "city": "Arlington Heights",
+        "note": "Two Metra stations, Pace service and I-90/Route 53 access.",
+        "source_url": "https://www.vah.com/explore/transportation.php"
+      },
+      {
+        "city": "Naperville",
+        "note": "BNSF service at Naperville and Route 59 stations connects east to Chicago and west to Aurora.",
+        "source_url": "https://www.naperville.il.us/about-naperville/transportation-and-parking/public-transportation/"
+      }
+    ],
+    "scan_note": "One city per scheduled scan, rotating through eight cities. A full cycle takes approximately 8\u201310 days within the existing request cap; failures can delay coverage."
   }
 }

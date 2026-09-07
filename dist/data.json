@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-07T22:47:22.899720Z",
+  "generated_at": "2026-09-07T23:52:21.486588Z",
   "mode": "connected",
   "provider": {
     "name": "RentCast",
@@ -29,7 +29,15 @@
       "inactive": 0,
       "duplicate": 0
     },
-    "archived_from_current_view": 0
+    "archived_from_current_view": 0,
+    "area_scans": {
+      "Chicago": {
+        "last_success": "2026-09-07T20:46:13.021825Z",
+        "returned": 500,
+        "total": 2703,
+        "truncated": true
+      }
+    }
   },
   "homes": [
     {
@@ -100,7 +108,8 @@
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
       "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=850+S.+Clark+St.%2C+Chicago%2C+IL+60605&benchmark=Public_AR_Current&format=json",
       "layout_status": "source_listed",
-      "layout_note": "The official source lists A320 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
+      "layout_note": "The official source lists A320 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking.",
+      "city": "Chicago"
     },
     {
       "id": "amli-900",
@@ -165,7 +174,8 @@
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
       "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=900+S.+Clark+St.%2C+Chicago%2C+IL+60605&benchmark=Public_AR_Current&format=json",
       "layout_status": "source_listed",
-      "layout_note": "The official source lists Trendy as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
+      "layout_note": "The official source lists Trendy as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking.",
+      "city": "Chicago"
     },
     {
       "id": "amli-west-loop",
@@ -230,7 +240,8 @@
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
       "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=205+S.+Peoria+St.%2C+Chicago%2C+IL+60607&benchmark=Public_AR_Current&format=json",
       "layout_status": "source_listed",
-      "layout_note": "The official source lists A2c as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
+      "layout_note": "The official source lists A2c as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking.",
+      "city": "Chicago"
     },
     {
       "id": "aspire",
@@ -290,7 +301,8 @@
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
       "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=2111+S.+Wabash+Avenue%2C+Chicago%2C+IL+60616&benchmark=Public_AR_Current&format=json",
       "layout_status": "source_listed",
-      "layout_note": "The official source lists asp1b03 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
+      "layout_note": "The official source lists asp1b03 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking.",
+      "city": "Chicago"
     },
     {
       "id": "the-elle",
@@ -350,7 +362,8 @@
       "coordinate_note": "Google Maps place linked by official building website \u2014 official_linked_place_coordinate",
       "coordinate_source": "https://www.google.com/maps/place/The+Elle/@41.8718532,-87.6353401,17z/data=!3m1!4b1!4m6!3m5!1s0x880e2c969e522ae5:0x1a729f8147fc6096!8m2!3d41.8718492!4d-87.6327652!16s%2Fg%2F11g7z0gk4f?entry=tts",
       "layout_status": "source_listed",
-      "layout_note": "The official source lists 609 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
+      "layout_note": "The official source lists 609 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking.",
+      "city": "Chicago"
     },
     {
       "id": "grand-central",
@@ -415,7 +428,8 @@
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
       "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=221+West+Harrison+Street%2C+Chicago%2C+IL+60607&benchmark=Public_AR_Current&format=json",
       "layout_status": "source_listed",
-      "layout_note": "The official source lists A2 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
+      "layout_note": "The official source lists A2 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking.",
+      "city": "Chicago"
     },
     {
       "id": "coast",
@@ -480,7 +494,8 @@
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
       "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=345+E+Wacker+Dr%2C+Chicago%2C+IL+60601&benchmark=Public_AR_Current&format=json",
       "layout_status": "source_listed",
-      "layout_note": "The official source lists 1x1L as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
+      "layout_note": "The official source lists 1x1L as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking.",
+      "city": "Chicago"
     },
     {
       "id": "215-west",
@@ -540,7 +555,8 @@
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
       "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=215+W.+Washington%2C+Chicago%2C+IL+60606&benchmark=Public_AR_Current&format=json",
       "layout_status": "source_listed",
-      "layout_note": "The official source lists T03 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
+      "layout_note": "The official source lists T03 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking.",
+      "city": "Chicago"
     },
     {
       "id": "marlowe",
@@ -610,7 +626,8 @@
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
       "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=169+W+Huron+Street%2C+Chicago%2C+IL+60654&benchmark=Public_AR_Current&format=json",
       "layout_status": "source_listed",
-      "layout_note": "The official source lists A8 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
+      "layout_note": "The official source lists A8 as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking.",
+      "city": "Chicago"
     },
     {
       "id": "73-east-lake",
@@ -680,7 +697,8 @@
       "coordinate_note": "U.S. Census Geocoder \u2014 address_range_interpolation",
       "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=73+E+Lake+St%2C+Chicago%2C+IL+60601&benchmark=Public_AR_Current&format=json",
       "layout_status": "source_listed",
-      "layout_note": "The official source lists 07a as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking."
+      "layout_note": "The official source lists 07a as 1 bedroom / 1 bathroom. A separate enclosed bedroom and current unit availability still need checking.",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1353-S-Wabash-Ave,-Unit-1513,-Chicago,-IL-60605",
@@ -731,7 +749,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1513"
+      "unit_label": "Unit 1513",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1227-W-Fulton-St,-Chicago,-IL-60607",
@@ -782,7 +801,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": null
+      "unit_label": null,
+      "city": "Chicago"
     },
     {
       "id": "rentcast:333-E-Ontario-St,-Unit-1-4303,-Chicago,-IL-60611",
@@ -833,7 +853,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1-4303"
+      "unit_label": "Unit 1-4303",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:730-S-Clark-St,-Apt-2301,-Chicago,-IL-60605",
@@ -884,7 +905,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 2301"
+      "unit_label": "Apt 2301",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:850-S-Clark-St,-Unit-511,-Chicago,-IL-60605",
@@ -935,7 +957,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 511"
+      "unit_label": "Unit 511",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1515-W-Monroe-St,-Unit-425,-Chicago,-IL-60607",
@@ -986,7 +1009,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 425"
+      "unit_label": "Unit 425",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:343-S-Dearborn-St,-Unit-1-1,-Chicago,-IL-60604",
@@ -1037,7 +1061,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1-1"
+      "unit_label": "Unit 1-1",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:805-N-La-Salle-Dr,-Unit-1807,-Chicago,-IL-60610",
@@ -1088,7 +1113,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1807"
+      "unit_label": "Unit 1807",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1001-S-State-St,-Unit-3110,-Chicago,-IL-60605",
@@ -1139,7 +1165,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 3110"
+      "unit_label": "Unit 3110",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:2030-S-Clark-St,-Chicago,-IL-60616",
@@ -1190,7 +1217,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": null
+      "unit_label": null,
+      "city": "Chicago"
     },
     {
       "id": "rentcast:8-E-Huron-St,-Chicago,-IL-60611",
@@ -1241,7 +1269,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": null
+      "unit_label": null,
+      "city": "Chicago"
     },
     {
       "id": "rentcast:70-W-Burton-Pl,-Apt-2401,-Chicago,-IL-60610",
@@ -1292,7 +1321,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 2401"
+      "unit_label": "Apt 2401",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1406-S-Wabash-Ave,-Chicago,-IL-60605",
@@ -1343,7 +1373,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": null
+      "unit_label": null,
+      "city": "Chicago"
     },
     {
       "id": "rentcast:205-E-Grand-Ave,-Unit-2612,-Chicago,-IL-60611",
@@ -1394,7 +1425,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 2612"
+      "unit_label": "Unit 2612",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:751-N-Hudson-Ave,-Chicago,-IL-60654",
@@ -1445,7 +1477,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": null
+      "unit_label": null,
+      "city": "Chicago"
     },
     {
       "id": "rentcast:211-E-Ohio-St,-Apt-1504,-Chicago,-IL-60611",
@@ -1496,7 +1529,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 1504"
+      "unit_label": "Apt 1504",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1164-W-Grand-Ave,-Apt-4R,-Chicago,-IL-60642",
@@ -1547,7 +1581,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 4R"
+      "unit_label": "Apt 4R",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1532-W-Chicago-Ave,-Chicago,-IL-60642",
@@ -1598,7 +1633,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": null
+      "unit_label": null,
+      "city": "Chicago"
     },
     {
       "id": "rentcast:2101-S-Wabash-Ave,-Chicago,-IL-60616",
@@ -1649,7 +1685,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": null
+      "unit_label": null,
+      "city": "Chicago"
     },
     {
       "id": "rentcast:338-E-Ontario-St,-Chicago,-IL-60611",
@@ -1700,7 +1737,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": null
+      "unit_label": null,
+      "city": "Chicago"
     },
     {
       "id": "rentcast:160-W-Superior-St,-Unit-3E,-Chicago,-IL-60654",
@@ -1751,7 +1789,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 3E"
+      "unit_label": "Unit 3E",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:832-N-Orleans-St,-Chicago,-IL-60610",
@@ -1802,7 +1841,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": null
+      "unit_label": null,
+      "city": "Chicago"
     },
     {
       "id": "rentcast:333-E-Ontario-St,-Unit-2-2703,-Chicago,-IL-60611",
@@ -1853,7 +1893,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 2-2703"
+      "unit_label": "Unit 2-2703",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1001-S-State-St,-Unit-903,-Chicago,-IL-60605",
@@ -1904,7 +1945,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 903"
+      "unit_label": "Unit 903",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:333-E-Ontario-St,-Unit-2-2803,-Chicago,-IL-60611",
@@ -1955,7 +1997,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 2-2803"
+      "unit_label": "Unit 2-2803",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:222-N-Canal-St,-Unit-1114,-Chicago,-IL-60606",
@@ -2006,7 +2049,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1114"
+      "unit_label": "Unit 1114",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:805-N-La-Salle-Dr,-Unit-2201,-Chicago,-IL-60610",
@@ -2057,7 +2101,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 2201"
+      "unit_label": "Unit 2201",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:330-S-Wells-St,-Apt-693,-Chicago,-IL-60606",
@@ -2108,7 +2153,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 693"
+      "unit_label": "Apt 693",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1325-S-Michicagan-Ave,-Unit-60605,-Chicago,-IL-60614",
@@ -2159,7 +2205,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 60605"
+      "unit_label": "Unit 60605",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1344-N-Dearborn-St,-Apt-14D,-Chicago,-IL-60610",
@@ -2210,7 +2257,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 14D"
+      "unit_label": "Apt 14D",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:750-N-Dearborn-St,-Unit-1-0508,-Chicago,-IL-60654",
@@ -2261,7 +2309,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1-0508"
+      "unit_label": "Unit 1-0508",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1935-S-Wabash-Ave,-Unit-413,-Chicago,-IL-60616",
@@ -2312,7 +2361,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 413"
+      "unit_label": "Unit 413",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:501-N-Kigsbury-St,-Chicago,-IL-60654",
@@ -2363,7 +2413,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": null
+      "unit_label": null,
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1611-W-Division-St,-Apt-1105,-Chicago,-IL-60622",
@@ -2414,7 +2465,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 1105"
+      "unit_label": "Apt 1105",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:801-N-Clark-St,-Unit-1907,-Chicago,-IL-60610",
@@ -2465,7 +2517,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1907"
+      "unit_label": "Unit 1907",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:200-E-Chestnut-St,-Apt-1520,-Chicago,-IL-60611",
@@ -2516,7 +2569,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 1520"
+      "unit_label": "Apt 1520",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:441-E-Erie-St,-Apt-4812,-Chicago,-IL-60611",
@@ -2567,7 +2621,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 4812"
+      "unit_label": "Apt 4812",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1515-W-Monroe-St,-Unit-320,-Chicago,-IL-60607",
@@ -2618,7 +2673,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 320"
+      "unit_label": "Unit 320",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:740-N-Aberdeen-St,-Apt-616,-Chicago,-IL-60642",
@@ -2669,7 +2725,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 616"
+      "unit_label": "Apt 616",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:333-E-Ontario-St,-Unit-2-301,-Chicago,-IL-60611",
@@ -2720,7 +2777,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 2-301"
+      "unit_label": "Unit 2-301",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:221-W-Harrison-St,-Unit-207-604,-Chicago,-IL-60607",
@@ -2771,7 +2829,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 207-604"
+      "unit_label": "Unit 207-604",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:2-E-8th-St,-Apt-507,-Chicago,-IL-60605",
@@ -2822,7 +2881,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 507"
+      "unit_label": "Apt 507",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:411-W-Chicago-Ave,-Apt-810,-Chicago,-IL-60654",
@@ -2873,7 +2933,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 810"
+      "unit_label": "Apt 810",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:65-E-Scott-St,-Unit-6514H,-Chicago,-IL-60610",
@@ -2924,7 +2985,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 6514H"
+      "unit_label": "Unit 6514H",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:805-N-La-Salle-Dr,-Unit-507,-Chicago,-IL-60610",
@@ -2975,7 +3037,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 507"
+      "unit_label": "Unit 507",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:441-E-Erie-St,-Apt-4811,-Chicago,-IL-60611",
@@ -3026,7 +3089,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 4811"
+      "unit_label": "Apt 4811",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1344-N-Dearborn-St,-Apt-6F,-Chicago,-IL-60610",
@@ -3077,7 +3141,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 6F"
+      "unit_label": "Apt 6F",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1515-W-Monroe-St,-Unit-6,-Chicago,-IL-60607",
@@ -3128,7 +3193,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 6"
+      "unit_label": "Unit 6",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:201-N-Garland-Ct,-Unit-1902,-Chicago,-IL-60601",
@@ -3179,7 +3245,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1902"
+      "unit_label": "Unit 1902",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1225-W-Madison-St,-Chicago,-IL-60607",
@@ -3230,7 +3297,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": null
+      "unit_label": null,
+      "city": "Chicago"
     },
     {
       "id": "rentcast:221-W-Harrison-St,-Unit-207-905,-Chicago,-IL-60607",
@@ -3281,7 +3349,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 207-905"
+      "unit_label": "Unit 207-905",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:65-E-Scott-St,-Unit-6501A,-Chicago,-IL-60610",
@@ -3332,7 +3401,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 6501A"
+      "unit_label": "Unit 6501A",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:505-N-Lake-Shore-Dr,-Apt-1312,-Chicago,-IL-60611",
@@ -3383,7 +3453,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 1312"
+      "unit_label": "Apt 1312",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1922-W-Ogden-Ave,-Unit-1003,-Chicago,-IL-60612",
@@ -3434,7 +3505,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1003"
+      "unit_label": "Unit 1003",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:300-N-State-St,-Apt-3334,-Chicago,-IL-60654",
@@ -3485,7 +3557,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 3334"
+      "unit_label": "Apt 3334",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:910-S-Michigan-Ave,-Apt-1306,-Chicago,-IL-60605",
@@ -3536,7 +3609,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 1306"
+      "unit_label": "Apt 1306",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:253-E-Delaware-Pl,-Apt-21F,-Chicago,-IL-60611",
@@ -3587,7 +3661,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 21F"
+      "unit_label": "Apt 21F",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:171-N-Aberdeen-St,-Unit-813,-Chicago,-IL-60607",
@@ -3638,7 +3713,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 813"
+      "unit_label": "Unit 813",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:2-E-8th-St,-Apt-2007,-Chicago,-IL-60605",
@@ -3689,7 +3765,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 2007"
+      "unit_label": "Apt 2007",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1160-S-Michigan-Ave,-Apt-2506,-Chicago,-IL-60605",
@@ -3740,7 +3817,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 2506"
+      "unit_label": "Apt 2506",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:750-N-Dearborn-St,-Unit-1-0209,-Chicago,-IL-60654",
@@ -3791,7 +3869,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1-0209"
+      "unit_label": "Unit 1-0209",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:2-E-Oak-St,-Apt-2508,-Chicago,-IL-60611",
@@ -3842,7 +3921,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 2508"
+      "unit_label": "Apt 2508",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:166-N-Aberdeen-St,-Apt-705,-Chicago,-IL-60607",
@@ -3893,7 +3973,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 705"
+      "unit_label": "Apt 705",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:445-E-Ohio-St,-Unit-1-3710,-Chicago,-IL-60611",
@@ -3944,7 +4025,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1-3710"
+      "unit_label": "Unit 1-3710",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:750-N-Dearborn-St,-Unit-1-2610,-Chicago,-IL-60654",
@@ -3995,7 +4077,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1-2610"
+      "unit_label": "Unit 1-2610",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1221-N-Dearborn-St,-Apt-1207N,-Chicago,-IL-60610",
@@ -4046,7 +4129,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 1207N"
+      "unit_label": "Apt 1207N",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1401-S-State-St,-Unit-1903,-Chicago,-IL-60605",
@@ -4097,7 +4181,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1903"
+      "unit_label": "Unit 1903",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:108-W-Chicago-Ave,-Apt-511,-Chicago,-IL-60654",
@@ -4148,7 +4233,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 511"
+      "unit_label": "Apt 511",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:441-E-Erie-St,-Apt-2110,-Chicago,-IL-60611",
@@ -4199,7 +4285,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 2110"
+      "unit_label": "Apt 2110",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:441-E-Erie-St,-Apt-5512,-Chicago,-IL-60611",
@@ -4250,7 +4337,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 5512"
+      "unit_label": "Apt 5512",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:441-E-Erie-St,-Apt-3512,-Chicago,-IL-60611",
@@ -4301,7 +4389,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 3512"
+      "unit_label": "Apt 3512",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:2138-S-Indiana-Ave,-Unit-2009T,-Chicago,-IL-60616",
@@ -4352,7 +4441,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 2009T"
+      "unit_label": "Unit 2009T",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:25-W-Randolph-St,-Apt-1808,-Chicago,-IL-60601",
@@ -4403,7 +4493,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 1808"
+      "unit_label": "Apt 1808",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:108-W-Chicago-Ave,-Apt-416,-Chicago,-IL-60654",
@@ -4454,7 +4545,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 416"
+      "unit_label": "Apt 416",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:730-N-Milwaukee-Ave,-Apt-803,-Chicago,-IL-60642",
@@ -4505,7 +4597,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 803"
+      "unit_label": "Apt 803",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1515-W-Monroe-St,-Unit-230,-Chicago,-IL-60607",
@@ -4556,7 +4649,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 230"
+      "unit_label": "Unit 230",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:333-E-Ontario-St,-Unit-1-2611,-Chicago,-IL-60611",
@@ -4607,7 +4701,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1-2611"
+      "unit_label": "Unit 1-2611",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1922-W-Ogden-Ave,-Unit-1108,-Chicago,-IL-60612",
@@ -4658,7 +4753,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1108"
+      "unit_label": "Unit 1108",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1001-S-State-St,-Unit-909,-Chicago,-IL-60605",
@@ -4709,7 +4805,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 909"
+      "unit_label": "Unit 909",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:330-W-Illinois-St,-Unit-2,-Chicago,-IL-60654",
@@ -4760,7 +4857,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 2"
+      "unit_label": "Unit 2",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:2138-S-Indiana-Ave,-Unit-1404T,-Chicago,-IL-60616",
@@ -4811,7 +4909,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1404T"
+      "unit_label": "Unit 1404T",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:914-S-Clark-St,-Unit-3,-Chicago,-IL-60605",
@@ -4862,7 +4961,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 3"
+      "unit_label": "Unit 3",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:842-S-Clark-St,-Unit-1,-Chicago,-IL-60605",
@@ -4913,7 +5013,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1"
+      "unit_label": "Unit 1",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:117-N-Desplaines-St,-Unit-2,-Chicago,-IL-60661",
@@ -4964,7 +5065,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 2"
+      "unit_label": "Unit 2",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:200-E-Chestnut-St,-Apt-1214,-Chicago,-IL-60611",
@@ -5015,7 +5117,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 1214"
+      "unit_label": "Apt 1214",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:333-E-Ontario-St,-Unit-1-3307,-Chicago,-IL-60611",
@@ -5066,7 +5169,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1-3307"
+      "unit_label": "Unit 1-3307",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:343-W-Wolf-Point-Plz,-Unit-1209,-Chicago,-IL-60654",
@@ -5117,7 +5221,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1209"
+      "unit_label": "Unit 1209",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1122-N-Dearborn-St,-Unit-209,-Chicago,-IL-60610",
@@ -5168,7 +5273,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 209"
+      "unit_label": "Unit 209",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:235-W-Van-Buren-St,-Unit-1606,-Chicago,-IL-60607",
@@ -5219,7 +5325,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1606"
+      "unit_label": "Unit 1606",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:717-S-Clark-St,-Unit-1101,-Chicago,-IL-60605",
@@ -5270,7 +5377,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1101"
+      "unit_label": "Unit 1101",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:165-N-Desplaines-St,-Apt-1316,-Chicago,-IL-60661",
@@ -5321,7 +5429,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 1316"
+      "unit_label": "Apt 1316",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:333-E-Ontario-St,-Unit-1-3711,-Chicago,-IL-60611",
@@ -5372,7 +5481,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1-3711"
+      "unit_label": "Unit 1-3711",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1454-W-Randolph-St,-Apt-807,-Chicago,-IL-60607",
@@ -5423,7 +5533,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 807"
+      "unit_label": "Apt 807",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1545-S-State-St,-Chicago,-IL-60605",
@@ -5474,7 +5585,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": null
+      "unit_label": null,
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1220-W-Jackson-Blvd,-Chicago,-IL-60607",
@@ -5525,7 +5637,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": null
+      "unit_label": null,
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1751-W-Superior-St,-Unit-CH1,-Chicago,-IL-60622",
@@ -5576,7 +5689,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit CH1"
+      "unit_label": "Unit CH1",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1400-S-Wabash-Ave,-Apt-2508,-Chicago,-IL-60605",
@@ -5627,7 +5741,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 2508"
+      "unit_label": "Apt 2508",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:629-N-Wells-St,-Unit-3,-Chicago,-IL-60654",
@@ -5678,7 +5793,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 3"
+      "unit_label": "Unit 3",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:156-W-Superior-St,-Unit-1,-Chicago,-IL-60654",
@@ -5729,7 +5845,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1"
+      "unit_label": "Unit 1",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:210-N-Michigan-Ave,-Unit-4,-Chicago,-IL-60601",
@@ -5780,7 +5897,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 4"
+      "unit_label": "Unit 4",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:337-N-Desplaines-St,-Unit-2,-Chicago,-IL-60661",
@@ -5831,7 +5949,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 2"
+      "unit_label": "Unit 2",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1457-N-Halsted-St,-Unit-2,-Chicago,-IL-60642",
@@ -5882,7 +6001,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 2"
+      "unit_label": "Unit 2",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:728-N-Morgan-St,-Unit-3,-Chicago,-IL-60642",
@@ -5933,7 +6053,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 3"
+      "unit_label": "Unit 3",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:813-N-La-Salle-Dr,-Unit-23,-Chicago,-IL-60610",
@@ -5984,7 +6105,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 23"
+      "unit_label": "Unit 23",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:528-N-State-St,-Unit-4,-Chicago,-IL-60654",
@@ -6035,7 +6157,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 4"
+      "unit_label": "Unit 4",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:316-W-Illinois-St,-Unit-3,-Chicago,-IL-60654",
@@ -6086,7 +6209,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 3"
+      "unit_label": "Unit 3",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:232-W-Illinois-St,-Unit-2,-Chicago,-IL-60654",
@@ -6137,7 +6261,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 2"
+      "unit_label": "Unit 2",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:333-W-Wolf-Point-Plz,-Unit-2,-Chicago,-IL-60654",
@@ -6188,7 +6313,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 2"
+      "unit_label": "Unit 2",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:156-W-Superior-St,-Unit-2,-Chicago,-IL-60654",
@@ -6239,7 +6365,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 2"
+      "unit_label": "Unit 2",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:528-N-State-St,-Unit-3,-Chicago,-IL-60654",
@@ -6290,7 +6417,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 3"
+      "unit_label": "Unit 3",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:850-W-Madison-St,-Chicago,-IL-60607",
@@ -6341,7 +6469,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": null
+      "unit_label": null,
+      "city": "Chicago"
     },
     {
       "id": "rentcast:528-N-State-St,-Unit-2,-Chicago,-IL-60654",
@@ -6392,7 +6521,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 2"
+      "unit_label": "Unit 2",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1457-N-Halsted-St,-Unit-3,-Chicago,-IL-60642",
@@ -6443,7 +6573,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 3"
+      "unit_label": "Unit 3",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:433-E-Illinois-St,-Unit-2,-Chicago,-IL-60611",
@@ -6494,7 +6625,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 2"
+      "unit_label": "Unit 2",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:629-N-Wells-St,-Unit-2,-Chicago,-IL-60654",
@@ -6545,7 +6677,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 2"
+      "unit_label": "Unit 2",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:842-S-Clark-St,-Unit-3,-Chicago,-IL-60605",
@@ -6596,7 +6729,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 3"
+      "unit_label": "Unit 3",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:333-W-Wolf-Point-Plz,-Unit-3,-Chicago,-IL-60654",
@@ -6647,7 +6781,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 3"
+      "unit_label": "Unit 3",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1255-S-Michigan-Ave,-Unit-1,-Chicago,-IL-60605",
@@ -6698,7 +6833,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1"
+      "unit_label": "Unit 1",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:210-N-Wells-St,-Ste-1,-Chicago,-IL-60606",
@@ -6749,7 +6885,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": null
+      "unit_label": null,
+      "city": "Chicago"
     },
     {
       "id": "rentcast:210-N-Michigan-Ave,-Unit-2,-Chicago,-IL-60601",
@@ -6800,7 +6937,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 2"
+      "unit_label": "Unit 2",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:740-N-Aberdeen-St,-Apt-710,-Chicago,-IL-60642",
@@ -6851,7 +6989,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 710"
+      "unit_label": "Apt 710",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:232-W-Illinois-St,-Unit-5,-Chicago,-IL-60654",
@@ -6902,7 +7041,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 5"
+      "unit_label": "Unit 5",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:501-N-State-St,-Unit-1,-Chicago,-IL-60654",
@@ -6953,7 +7093,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1"
+      "unit_label": "Unit 1",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:740-N-Aberdeen-St,-Apt-518,-Chicago,-IL-60642",
@@ -7004,7 +7145,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 518"
+      "unit_label": "Apt 518",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:333-E-Ontario-St,-Unit-1-3003,-Chicago,-IL-60611",
@@ -7055,7 +7197,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1-3003"
+      "unit_label": "Unit 1-3003",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:750-N-Hudson-Ave,-Chicago,-IL-60654",
@@ -7106,7 +7249,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": null
+      "unit_label": null,
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1515-W-Monroe-St,-Unit-10,-Chicago,-IL-60607",
@@ -7157,7 +7301,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 10"
+      "unit_label": "Unit 10",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:812-W-Adams-St,-Unit-1255,-Chicago,-IL-60607",
@@ -7208,7 +7353,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1255"
+      "unit_label": "Unit 1255",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:2-E-Oak-St,-Apt-3003,-Chicago,-IL-60611",
@@ -7259,7 +7405,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 3003"
+      "unit_label": "Apt 3003",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:180-N-Ada-St,-Apt-309,-Chicago,-IL-60607",
@@ -7310,7 +7457,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 309"
+      "unit_label": "Apt 309",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:900-S-Clark-St,-Apt-2208,-Chicago,-IL-60605",
@@ -7361,7 +7509,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 2208"
+      "unit_label": "Apt 2208",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1255-S-Michigan-Ave,-Apt-3101,-Chicago,-IL-60605",
@@ -7412,7 +7561,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 3101"
+      "unit_label": "Apt 3101",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:750-N-Dearborn-St,-Unit-1-2705,-Chicago,-IL-60654",
@@ -7463,7 +7613,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1-2705"
+      "unit_label": "Unit 1-2705",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:512-N-Mcclurg-Ct,-Chicago,-IL-60611",
@@ -7514,7 +7665,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": null
+      "unit_label": null,
+      "city": "Chicago"
     },
     {
       "id": "rentcast:676-N-Lasalle-St,-Unit-603,-Chicago,-IL-60654",
@@ -7565,7 +7717,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 603"
+      "unit_label": "Unit 603",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:550-N-State-St,-Chicago,-IL-60654",
@@ -7616,7 +7769,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": null
+      "unit_label": null,
+      "city": "Chicago"
     },
     {
       "id": "rentcast:2-E-8th-St,-Apt-1504,-Chicago,-IL-60605",
@@ -7667,7 +7821,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 1504"
+      "unit_label": "Apt 1504",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1344-N-Dearborn-St,-Apt-13D,-Chicago,-IL-60610",
@@ -7718,7 +7873,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 13D"
+      "unit_label": "Apt 13D",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:234-W-Polk-St,-Unit-3111,-Chicago,-IL-60607",
@@ -7769,7 +7925,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 3111"
+      "unit_label": "Unit 3111",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1131-W-Madison-St,-Apt-3R,-Chicago,-IL-60607",
@@ -7820,7 +7977,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 3R"
+      "unit_label": "Apt 3R",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:440-N-Wabash-Ave,-Apt-2907,-Chicago,-IL-60611",
@@ -7871,7 +8029,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 2907"
+      "unit_label": "Apt 2907",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1303-W-Ohio-St,-Unit-3F,-Chicago,-IL-60642",
@@ -7922,7 +8081,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 3F"
+      "unit_label": "Unit 3F",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1211-N-Lasalle-St,-Unit-901,-Chicago,-IL-60610",
@@ -7973,7 +8133,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 901"
+      "unit_label": "Unit 901",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:195-N-Harbor-Dr,-Apt-3807,-Chicago,-IL-60601",
@@ -8024,7 +8185,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 3807"
+      "unit_label": "Apt 3807",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:180-N-Jefferson-St,-Unit-1511,-Chicago,-IL-60661",
@@ -8075,7 +8237,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1511"
+      "unit_label": "Unit 1511",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:6-S-Laflin-St,-Apt-714,-Chicago,-IL-60607",
@@ -8126,7 +8289,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 714"
+      "unit_label": "Apt 714",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:659-W-Randolph-St,-Apt-1711,-Chicago,-IL-60661",
@@ -8177,7 +8341,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 1711"
+      "unit_label": "Apt 1711",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:350-N-Orleans-St,-Chicago,-IL-60654",
@@ -8228,7 +8393,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": null
+      "unit_label": null,
+      "city": "Chicago"
     },
     {
       "id": "rentcast:70-W-Hubbard-St,-Chicago,-IL-60654",
@@ -8279,7 +8445,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": null
+      "unit_label": null,
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1212-S-Michigan-Ave,-Apt-2711,-Chicago,-IL-60605",
@@ -8330,7 +8497,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 2711"
+      "unit_label": "Apt 2711",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:51-E-14th-St,-Unit-1-1412,-Chicago,-IL-60605",
@@ -8381,7 +8549,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1-1412"
+      "unit_label": "Unit 1-1412",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:108-W-Chicago-Ave,-Apt-305,-Chicago,-IL-60654",
@@ -8432,7 +8601,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 305"
+      "unit_label": "Apt 305",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:728-N-Morgan-St,-Unit-N0812,-Chicago,-IL-60642",
@@ -8483,7 +8653,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit N0812"
+      "unit_label": "Unit N0812",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:108-W-Chicago-Ave,-Apt-516,-Chicago,-IL-60654",
@@ -8534,7 +8705,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 516"
+      "unit_label": "Apt 516",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:165-N-Desplaines-St,-Apt-717,-Chicago,-IL-60661",
@@ -8585,7 +8757,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 717"
+      "unit_label": "Apt 717",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1922-W-Ogden-Ave,-Unit-914,-Chicago,-IL-60612",
@@ -8636,7 +8809,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 914"
+      "unit_label": "Unit 914",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:676-N-Lasalle-St,-Unit-311,-Chicago,-IL-60654",
@@ -8687,7 +8861,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 311"
+      "unit_label": "Unit 311",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1001-S-State-St,-Unit-610,-Chicago,-IL-60605",
@@ -8738,7 +8913,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 610"
+      "unit_label": "Unit 610",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:233-E-Wacker-Dr,-Unit-1-0210,-Chicago,-IL-60601",
@@ -8789,7 +8965,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1-0210"
+      "unit_label": "Unit 1-0210",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1515-W-Monroe-St,-Unit-329,-Chicago,-IL-60607",
@@ -8840,7 +9017,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 329"
+      "unit_label": "Unit 329",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:441-E-Erie-St,-Apt-2712,-Chicago,-IL-60611",
@@ -8891,7 +9069,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 2712"
+      "unit_label": "Apt 2712",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:411-W-Chicago-Ave,-Apt-614,-Chicago,-IL-60654",
@@ -8942,7 +9121,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 614"
+      "unit_label": "Apt 614",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:740-N-Aberdeen-St,-Apt-615,-Chicago,-IL-60642",
@@ -8993,7 +9173,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 615"
+      "unit_label": "Apt 615",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1515-W-Monroe-St,-Unit-308,-Chicago,-IL-60607",
@@ -9044,7 +9225,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 308"
+      "unit_label": "Unit 308",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1350-N-Wells-St,-Apt-G309,-Chicago,-IL-60610",
@@ -9095,7 +9277,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt G309"
+      "unit_label": "Apt G309",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1922-W-Ogden-Ave,-Unit-704,-Chicago,-IL-60612",
@@ -9146,7 +9329,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 704"
+      "unit_label": "Unit 704",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:2-E-8th-St,-Apt-1003,-Chicago,-IL-60605",
@@ -9197,7 +9381,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 1003"
+      "unit_label": "Apt 1003",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:2-E-8th-St,-Apt-1007,-Chicago,-IL-60605",
@@ -9248,7 +9433,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 1007"
+      "unit_label": "Apt 1007",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:233-E-Wacker-Dr,-Unit-1-1510,-Chicago,-IL-60601",
@@ -9299,7 +9485,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1-1510"
+      "unit_label": "Unit 1-1510",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1001-S-State-St,-Unit-1009,-Chicago,-IL-60605",
@@ -9350,7 +9537,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1009"
+      "unit_label": "Unit 1009",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:2-E-8th-St,-Apt-2109,-Chicago,-IL-60605",
@@ -9401,7 +9589,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 2109"
+      "unit_label": "Apt 2109",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:441-E-Erie-St,-Apt-2912,-Chicago,-IL-60611",
@@ -9452,7 +9641,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 2912"
+      "unit_label": "Apt 2912",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1922-W-Ogden-Ave,-Unit-710,-Chicago,-IL-60612",
@@ -9503,7 +9693,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 710"
+      "unit_label": "Unit 710",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:808-N-Cleveland-Ave,-Unit-1-1,-Chicago,-IL-60610",
@@ -9554,7 +9745,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1-1"
+      "unit_label": "Unit 1-1",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1344-N-Dearborn-St,-Apt-12D,-Chicago,-IL-60610",
@@ -9605,7 +9797,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 12D"
+      "unit_label": "Apt 12D",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:224-S-Ashland-Ave,-Chicago,-IL-60607",
@@ -9656,7 +9849,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": null
+      "unit_label": null,
+      "city": "Chicago"
     },
     {
       "id": "rentcast:441-E-Erie-St,-Apt-1712,-Chicago,-IL-60611",
@@ -9707,7 +9901,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 1712"
+      "unit_label": "Apt 1712",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:311-W-Illinois-St,-Unit-907,-Chicago,-IL-60654",
@@ -9758,7 +9953,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 907"
+      "unit_label": "Unit 907",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:203-W-Hill-St,-Chicago,-IL-60610",
@@ -9809,7 +10005,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": null
+      "unit_label": null,
+      "city": "Chicago"
     },
     {
       "id": "rentcast:25-W-Randolph-St,-Apt-1807,-Chicago,-IL-60601",
@@ -9860,7 +10057,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 1807"
+      "unit_label": "Apt 1807",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:441-E-Erie-St,-Apt-3205,-Chicago,-IL-60611",
@@ -9911,7 +10109,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 3205"
+      "unit_label": "Apt 3205",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:25-W-Randolph-St,-Apt-2409,-Chicago,-IL-60601",
@@ -9962,7 +10161,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 2409"
+      "unit_label": "Apt 2409",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:2-E-Oak-St,-Apt-3407,-Chicago,-IL-60611",
@@ -10013,7 +10213,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 3407"
+      "unit_label": "Apt 3407",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:730-S-Clark-St,-Apt-405,-Chicago,-IL-60605",
@@ -10064,7 +10265,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 405"
+      "unit_label": "Apt 405",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:728-N-Morgan-St,-Unit-N0907,-Chicago,-IL-60642",
@@ -10115,7 +10317,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit N0907"
+      "unit_label": "Unit N0907",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1601-W-Division-St,-Unit-1105,-Chicago,-IL-60622",
@@ -10166,7 +10369,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1105"
+      "unit_label": "Unit 1105",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:717-S-Clark-St,-Unit-1817,-Chicago,-IL-60605",
@@ -10217,7 +10421,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1817"
+      "unit_label": "Unit 1817",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:233-E-Wacker-Dr,-Unit-1-0604,-Chicago,-IL-60601",
@@ -10268,7 +10473,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 1-0604"
+      "unit_label": "Unit 1-0604",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:206-W-Division-St,-Chicago,-IL-60610",
@@ -10319,7 +10525,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": null
+      "unit_label": null,
+      "city": "Chicago"
     },
     {
       "id": "rentcast:65-E-Scott-St,-Unit-6517C,-Chicago,-IL-60610",
@@ -10370,7 +10577,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 6517C"
+      "unit_label": "Unit 6517C",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:1515-W-Monroe-St,-Unit-225,-Chicago,-IL-60607",
@@ -10421,7 +10629,8 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Unit 225"
+      "unit_label": "Unit 225",
+      "city": "Chicago"
     },
     {
       "id": "rentcast:808-S-Michigan-Ave,-Apt-4007,-Chicago,-IL-60605",
@@ -10472,7 +10681,495 @@
       ],
       "layout_status": "provider_reported",
       "layout_note": "Provider reports 1 bedroom / 1 bathroom. No floor plan was retained; a separate enclosed bedroom has not been checked.",
-      "unit_label": "Apt 4007"
+      "unit_label": "Apt 4007",
+      "city": "Chicago"
+    },
+    {
+      "id": "amli-evanston",
+      "kind": "building",
+      "title": "AMLI Evanston",
+      "city": "Evanston",
+      "neighborhood": "Evanston",
+      "address": "737 Chicago Ave., Evanston, IL 60202",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floor_plan": "A420",
+      "unit_label": null,
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists A420 as 1 bedroom / 1 bathroom. Check the exact plan for a separate enclosed bedroom.",
+      "rent": 2739,
+      "advertised_price": 2743.45,
+      "advertised_price_type": "total_monthly",
+      "sqft": 810,
+      "lat": 42.03157472989,
+      "lng": -87.67881535104,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Reserved garage parking advertised; fee and space availability need confirming."
+      },
+      "charging": {
+        "status": "yes",
+        "note": "Electric-car charging stations advertised; confirm connector, access and fees."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrances, elevators and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [],
+      "source_url": "https://www.amli.com/apartments/chicago/near-north-suburbs-apartments/amli-evanston/floorplans",
+      "sources": [
+        {
+          "url": "https://www.amli.com/apartments/chicago/near-north-suburbs-apartments/amli-evanston/floorplans",
+          "supports": "Address; A420 1BR/1BA, 810 sq ft; base from $2739, published total from $2743.45.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.amli.com/apartments/chicago/near-north-suburbs-apartments/amli-evanston/amenities",
+          "supports": "Reserved garage parking and electric-car charging.",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Source lists availability now for A420. Starting prices are subject to lease terms and the desired move-in date.",
+      "history": [
+        {
+          "date": "2026-09-07",
+          "rent": 2739
+        }
+      ],
+      "coordinate_note": "U.S. Census Geocoder \u2014 interpolated street address, approximate location. Matched: 737 CHICAGO AVE, EVANSTON, IL, 60202",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=737+Chicago+Ave%2C+Evanston%2C+IL+60202&benchmark=Public_AR_Current&format=json"
+    },
+    {
+      "id": "tapestry-station",
+      "kind": "building",
+      "title": "Tapestry Station",
+      "city": "Evanston",
+      "neighborhood": "Evanston",
+      "address": "740 Main St., Evanston, IL 60202",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floor_plan": "The Main",
+      "unit_label": "Unit 212",
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists The Main as 1 bedroom / 1 bathroom. Check the exact plan for a separate enclosed bedroom.",
+      "rent": null,
+      "advertised_price": 2335,
+      "advertised_price_type": "unspecified",
+      "sqft": 520,
+      "lat": 42.03389809866,
+      "lng": -87.681190387245,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Heated garage parking advertised; pricing and spaces unverified."
+      },
+      "charging": {
+        "status": "yes",
+        "note": "Electric-car charging advertised; confirm access, connector and fees."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrances, elevators and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [],
+      "source_url": "https://chicagorentals.com/apartment/tapestry-station/",
+      "sources": [
+        {
+          "url": "https://chicagorentals.com/apartment/tapestry-station/",
+          "supports": "The Main, unit 212, 1BR/1BA, 520 sq ft, advertised rent from $2335; heated garage and EV charging.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://chicagorentals.com/evanston/",
+          "supports": "740 Main St., Evanston address.",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Source lists unit 212 for September 12, 2026, from $2335. Base-rent and fee breakdown require confirmation.",
+      "history": [],
+      "coordinate_note": "U.S. Census Geocoder \u2014 interpolated street address, approximate location. Matched: 740 MAIN ST, EVANSTON, IL, 60202",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=740+Main+St%2C+Evanston%2C+IL+60202&benchmark=Public_AR_Current&format=json"
+    },
+    {
+      "id": "the-emerson",
+      "kind": "building",
+      "title": "The Emerson",
+      "city": "Oak Park",
+      "neighborhood": "Oak Park",
+      "address": "1135 Westgate St., Oak Park, IL 60301",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floor_plan": "A1",
+      "unit_label": null,
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists A1 as 1 bedroom / 1 bathroom. Check the exact plan for a separate enclosed bedroom.",
+      "rent": null,
+      "advertised_price": 2339,
+      "advertised_price_type": "unspecified",
+      "sqft": 754,
+      "lat": 41.887765,
+      "lng": -87.8037329,
+      "parking": {
+        "status": "yes",
+        "monthly": 155,
+        "note": "Official FAQ advertises unreserved LAZ parking at $155 per month. Confirm current terms and availability."
+      },
+      "charging": {
+        "status": "unknown",
+        "note": "Resident EV charging was not established by the reviewed source; confirm with the property."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrances, elevators and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [],
+      "source_url": "https://www.trinity-pm.com/oak-park/the-emerson/conventional/",
+      "sources": [
+        {
+          "url": "https://www.trinity-pm.com/oak-park/the-emerson/conventional/",
+          "supports": "A1, 1BR/1BA, 754 sq ft; current list starting at $2339 for 13 months; map-link coordinates.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://theemerson.com/",
+          "supports": "Property address.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://theemerson.com/faqs/",
+          "supports": "Unreserved LAZ parking $155/month.",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Current management list advertises A1 from $2339 for a 13-month lease, October 23, 2026. Confirm the exact unit and fee breakdown; other cached pages show different starting prices.",
+      "history": [],
+      "coordinate_source": "https://www.trinity-pm.com/oak-park/the-emerson/conventional/",
+      "coordinate_note": "Coordinates from the official management page\u2019s map link; approximate property location."
+    },
+    {
+      "id": "park-205",
+      "kind": "building",
+      "title": "Park 205",
+      "city": "Park Ridge",
+      "neighborhood": "Park Ridge",
+      "address": "205 Touhy Ave., Park Ridge, IL 60068",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floor_plan": "Brickton B",
+      "unit_label": "Unit 320",
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists Brickton B as 1 bedroom / 1 bathroom. Check the exact plan for a separate enclosed bedroom.",
+      "rent": 2550,
+      "advertised_price": 2617.25,
+      "advertised_price_type": "total_monthly",
+      "sqft": 798,
+      "lat": 42.011233615844,
+      "lng": -87.824395366525,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Garage, reserved and temperature-controlled covered parking advertised; optional costs and availability unverified."
+      },
+      "charging": {
+        "status": "unknown",
+        "note": "Resident EV charging was not established by the reviewed source; confirm with the property."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrances, elevators and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [],
+      "source_url": "https://www.park205.com/floorplans/brickton-b",
+      "sources": [
+        {
+          "url": "https://www.park205.com/floorplans/brickton-b",
+          "supports": "Brickton B, unit 320, 1BR/1BA, 798 sq ft; base $2550 and starting total $2617.25 for a 7-month term; property address.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.park205.com/amenities",
+          "supports": "Garage and reserved/covered parking.",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Unit 320 lists base $2550 and starting total $2617.25 for a 7-month lease. Other terms cost more; variable charges and optional parking may be additional.",
+      "history": [
+        {
+          "date": "2026-09-07",
+          "rent": 2550
+        }
+      ],
+      "coordinate_note": "U.S. Census Geocoder \u2014 interpolated street address, approximate location. Matched: 205 W TOUHY AVE, PARK RIDGE, IL, 60068",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=205+Touhy+Ave%2C+Park+Ridge%2C+IL+60068&benchmark=Public_AR_Current&format=json"
+    },
+    {
+      "id": "elmhurst-255",
+      "kind": "building",
+      "title": "Elmhurst 255",
+      "city": "Elmhurst",
+      "neighborhood": "Elmhurst",
+      "address": "255 N. Addison Ave., Elmhurst, IL 60126",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floor_plan": "B",
+      "unit_label": null,
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists B as 1 bedroom / 1 bathroom. Check the exact plan for a separate enclosed bedroom.",
+      "rent": 2405,
+      "advertised_price": null,
+      "advertised_price_type": null,
+      "sqft": 693,
+      "lat": 41.904828421133,
+      "lng": -87.941441426923,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Indoor heated parking advertised; fees and space availability unverified."
+      },
+      "charging": {
+        "status": "yes",
+        "note": "Dedicated EV parking spaces advertised; connector, access and charging fees unverified."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrances, elevators and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [],
+      "source_url": "https://www.elmhurst255.com/floorplans",
+      "sources": [
+        {
+          "url": "https://www.elmhurst255.com/floorplans",
+          "supports": "Plan B, 1BR/1BA, 693 sq ft, base from $2405; November 5, 2026.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.elmhurst255.com/amenities",
+          "supports": "Address; indoor heated parking, EV spaces and in-home laundry.",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Plan B advertises base rent from $2405 and November 5, 2026 availability. Confirm the exact unit and lease terms.",
+      "history": [
+        {
+          "date": "2026-09-07",
+          "rent": 2405
+        }
+      ],
+      "coordinate_note": "U.S. Census Geocoder \u2014 interpolated street address, approximate location. Matched: 255 N ADDISON AVE, ELMHURST, IL, 60126",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=255+N+Addison+Ave%2C+Elmhurst%2C+IL+60126&benchmark=Public_AR_Current&format=json"
+    },
+    {
+      "id": "burlington-station",
+      "kind": "building",
+      "title": "Burlington Station",
+      "city": "Downers Grove",
+      "neighborhood": "Downers Grove",
+      "address": "5100 Forest Avenue, Downers Grove, IL 60515",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floor_plan": "The Dakotan 744",
+      "unit_label": null,
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists The Dakotan 744 as 1 bedroom / 1 bathroom. Check the exact plan for a separate enclosed bedroom.",
+      "rent": null,
+      "advertised_price": 2438,
+      "advertised_price_type": "unspecified",
+      "sqft": 744,
+      "lat": null,
+      "lng": null,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Heated garage parking advertised; fees and space availability unverified."
+      },
+      "charging": {
+        "status": "yes",
+        "note": "EV charging advertised; connector, access and charges unverified."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrances, elevators and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [],
+      "source_url": "https://www.liveindowners.com/floorplans",
+      "sources": [
+        {
+          "url": "https://www.liveindowners.com/floorplans",
+          "supports": "The Dakotan 744, 1BR/1BA, 744 sq ft; advertised rent from $2438; November 3, 2026.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.liveindowners.com/amenities",
+          "supports": "Heated garage and EV charging.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.liveindowners.com/contactus",
+          "supports": "5100 Forest Avenue address; coordinates not established.",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Plan shows advertised rent from $2438, with November 3, 2026 availability. Exact unit, lease term and fee-inclusive total require confirmation.",
+      "history": [],
+      "coordinate_note": "Exact coordinates unverified; use the sourced address and directions link."
+    },
+    {
+      "id": "one-arlington",
+      "kind": "building",
+      "title": "One Arlington",
+      "city": "Arlington Heights",
+      "neighborhood": "Arlington Heights",
+      "address": "3400 W. Stonegate Blvd., Arlington Heights, IL 60005",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floor_plan": "A2",
+      "unit_label": null,
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists A2 as 1 bedroom / 1 bathroom. Check the exact plan for a separate enclosed bedroom.",
+      "rent": null,
+      "advertised_price": 2335,
+      "advertised_price_type": "unspecified",
+      "sqft": null,
+      "lat": 42.090311415417,
+      "lng": -88.026488783396,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Site advertises underground assigned parking at $125 standard or $225 for a charging space; confirm billing period, current terms and electricity charges."
+      },
+      "charging": {
+        "status": "yes",
+        "note": "Charging-space parking advertised; verify connector and access."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrances, elevators and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [],
+      "source_url": "https://www.onearlington.com/",
+      "sources": [
+        {
+          "url": "https://www.onearlington.com/",
+          "supports": "Official indexed A2 result: 1BR/1BA, 803\u2013833 sq ft, from $2335 excluding additional fees; direct page does not expose the price.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.onearlington.com/Floor-Plans.aspx",
+          "supports": "Official floor-plan lookup.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.onearlington.com/Amenities.aspx",
+          "supports": "Address; underground assigned parking, charging-space fee, laundry and rooftop amenities.",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Official indexed result advertises A2 from $2335 with 803\u2013833 sq ft. The page uses an embedded leasing map; exact-unit price, layout size and availability need confirmation.",
+      "history": [],
+      "coordinate_note": "U.S. Census Geocoder \u2014 interpolated street address, approximate location. Matched: 3400 W STONEGATE BLVD, ARLINGTON HEIGHTS, IL, 60005",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=3400+W+Stonegate+Blvd%2C+Arlington+Heights%2C+IL+60005&benchmark=Public_AR_Current&format=json"
+    },
+    {
+      "id": "bristol-station",
+      "kind": "building",
+      "title": "Bristol Station",
+      "city": "Naperville",
+      "neighborhood": "Naperville",
+      "address": "704 Greenwood Circle, Naperville, IL 60563",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "floor_plan": "Union",
+      "unit_label": null,
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists Union as 1 bedroom / 1 bathroom. Check the exact plan for a separate enclosed bedroom.",
+      "rent": null,
+      "advertised_price": 1665,
+      "advertised_price_type": "unspecified",
+      "sqft": 700,
+      "lat": 41.782272808167,
+      "lng": -88.211116639941,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Individual garages advertised; price and space availability unverified."
+      },
+      "charging": {
+        "status": "unknown",
+        "note": "Resident EV charging was not established by the reviewed source; confirm with the property."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrances, elevators and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [],
+      "source_url": "https://www.bristolstation.com/floorplans",
+      "sources": [
+        {
+          "url": "https://www.bristolstation.com/floorplans",
+          "supports": "Union, 1BR/1BA, 700 sq ft; advertised rent from $1665 and availability now.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.bristolstation.com/",
+          "supports": "Individual garages.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.bristolstation.com/amenities",
+          "supports": "Address, laundry, pool and fitness center.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.bristolstation.com/faq",
+          "supports": "Route 59 area, about 3.5 miles from downtown Naperville.",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-07",
+      "availability_note": "Union plan advertises rent from $1665 and availability now. Confirm exact-unit base rent, recurring fees and lease terms. This is in the Route 59 area, not downtown Naperville.",
+      "history": [],
+      "coordinate_note": "U.S. Census Geocoder \u2014 interpolated street address, approximate location. Matched: 704 GREENWOOD CIR, NAPERVILLE, IL, 60563",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=704+Greenwood+Circle%2C+Naperville%2C+IL+60563&benchmark=Public_AR_Current&format=json"
     }
   ],
   "events": [
@@ -12046,5 +12743,56 @@
     },
     "last_attempt_at": "2026-09-07T07:50:46.615944Z",
     "errors": []
+  },
+  "search_area": {
+    "center": {
+      "lat": 41.882,
+      "lng": -87.632,
+      "label": "central Chicago"
+    },
+    "radius_miles": 35,
+    "areas": [
+      {
+        "city": "Chicago",
+        "note": "Expanded beyond the original downtown rectangle; neighborhood names remain unverified when the provider does not supply them.",
+        "source_url": "https://www.transitchicago.com/"
+      },
+      {
+        "city": "Evanston",
+        "note": "Purple Line and Metra options. Purple Line express service to the Loop runs during rush periods.",
+        "source_url": "https://www.cityofevanston.org/explore/transportation_mobility/public_transportation.php"
+      },
+      {
+        "city": "Oak Park",
+        "note": "Blue Line, Green Line and Metra Union Pacific West connections.",
+        "source_url": "https://www.oak-park.us/Services-Parking/Transportation"
+      },
+      {
+        "city": "Park Ridge",
+        "note": "Metra access at Uptown and Dee Road; check the route from the exact apartment.",
+        "source_url": "https://www.parkridge.us/resident_service/commuters/index.php"
+      },
+      {
+        "city": "Elmhurst",
+        "note": "Downtown City Centre offers shops and restaurants along the Metra Union Pacific West line.",
+        "source_url": "https://www.elmhurst.org/business/economic_development/business_districts.php"
+      },
+      {
+        "city": "Downers Grove",
+        "note": "Three BNSF Metra stops, with shopping and dining around the downtown station.",
+        "source_url": "https://www.downers.us/parking"
+      },
+      {
+        "city": "Arlington Heights",
+        "note": "Two Metra stations, Pace service and I-90/Route 53 access.",
+        "source_url": "https://www.vah.com/explore/transportation.php"
+      },
+      {
+        "city": "Naperville",
+        "note": "BNSF service at Naperville and Route 59 stations connects east to Chicago and west to Aurora.",
+        "source_url": "https://www.naperville.il.us/about-naperville/transportation-and-parking/public-transportation/"
+      }
+    ],
+    "scan_note": "One city per scheduled scan, rotating through eight cities. A full cycle takes approximately 8\u201310 days within the existing request cap; failures can delay coverage."
   }
 }

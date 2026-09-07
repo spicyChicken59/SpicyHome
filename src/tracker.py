@@ -34,10 +34,13 @@ def reserve(usage,config,reservation_id,now):
     if not isinstance(cap,int) or not 1<=cap<=30: raise ValueError('Request cap must stay within 1–30 attempts per rolling 32 days')
     if len(recent)>=cap: raise ValueError('Rolling request budget reached; existing snapshot preserved')
     if sum(x['at'][:10]==stamp(now)[:10] for x in recent)>=config['max_attempts_utc_day']: raise ValueError('Today already has a request reservation; existing snapshot preserved')
-    entry={'id':reservation_id,'at':stamp(now),'status':'reserved'}
-    return {'schema_version':1,'attempts':recent+[entry]}
+    cities=config.get('cities',[config['city']])
+    city=usage.get('next_city') if usage.get('next_city') in cities else cities[0]
+    entry={'id':reservation_id,'at':stamp(now),'status':'reserved','city':city}
+    return {'schema_version':1,'attempts':recent+[entry],'next_city':cities[(cities.index(city)+1)%len(cities)]}
 
 def build_query(config):
+    if config['city'] not in config.get('cities',[config['city']]): raise ValueError('Requested city is outside the configured rotation')
     if config['bedrooms']!=1 or config['bathrooms']!=1: raise ValueError('This tracker requires 1 bed / 1 bath')
     if not (positive(config['rent_min']) and config['rent_max']>=config['rent_min']): raise ValueError('Invalid rent range')
     if config.get('limit')!=500: raise ValueError('One page of 500 is the supported request budget')
@@ -59,6 +62,17 @@ def get_listings(key,query,opener=urllib.request.urlopen):
         return rows,total
 
 def in_bounds(lat,lng,b): return finite(lat) and finite(lng) and b['south']<=lat<=b['north'] and b['west']<=lng<=b['east']
+def distance_miles(lat,lng,center):
+    if not finite(lat) or not finite(lng):return None
+    lat1,lat2=map(math.radians,[center['lat'],lat]);dlat=lat2-lat1;dlng=math.radians(lng-center['lng'])
+    a=math.sin(dlat/2)**2+math.cos(lat1)*math.cos(lat2)*math.sin(dlng/2)**2
+    return 3958.8*2*math.asin(min(1,math.sqrt(a)))
+
+def in_search_area(lat,lng,config):
+    if not in_bounds(lat,lng,config['bounds']):return False
+    if 'radius_miles' not in config:return True
+    return distance_miles(lat,lng,config['center'])<=config['radius_miles']
+
 def layout_count(value, bedroom=False):
     return value if finite(value) and 0<=value<=20 and (value%1==0 if bedroom else value*2%1==0) else None
 
@@ -95,7 +109,7 @@ def normalize(rows,config,at):
         if not isinstance(row,dict) or not isinstance(row.get('id'),str) or not row['id'].strip() or not isinstance(row.get('formattedAddress'),str) or not row['formattedAddress'].strip(): raise ValueError('Provider listing has no stable ID or address')
         price=row.get('price')
         if not positive(price): raise ValueError('Provider listing contains an invalid rent; retaining the last complete snapshot')
-        if row.get('city','').lower()!='chicago' or row.get('state')!='IL': raise ValueError('Provider returned an unexpected city/state')
+        if str(row.get('city','')).casefold()!=config['city'].casefold() or row.get('state')!=config['state']: raise ValueError('Provider returned an unexpected city/state')
         layout=reported_layout(row)
         if layout['layout_status']!='provider_reported':
             ident='rentcast:'+row['id'];previous=excluded['layout_corrections'].get(ident)
@@ -108,12 +122,12 @@ def normalize(rows,config,at):
         if not config['rent_min']<=price<=config['rent_max']: excluded['outside_layout_or_price']+=1;continue
         lat,lng=row.get('latitude'),row.get('longitude')
         if not finite(lat) or not finite(lng) or (lat==0 and lng==0): excluded['missing_coordinates']+=1;continue
-        if not in_bounds(lat,lng,config['bounds']): excluded['outside_search_window']+=1;continue
+        if not in_search_area(lat,lng,config): excluded['outside_search_window']+=1;continue
         ident='rentcast:'+row['id']
         if ident in seen: excluded['duplicate']+=1;continue
         seen.add(ident)
         unknown={'status':'unknown','note':'Not reported by the listing provider; confirm with leasing.'}
-        homes.append({'id':ident,'kind':'listing','title':row.get('addressLine1') or row['formattedAddress'],'address':row['formattedAddress'],'neighborhood':'Downtown search area','bedrooms':1,'bathrooms':1,'rent':price,'sqft':row.get('squareFootage') if positive(row.get('squareFootage')) else None,'lat':lat,'lng':lng,'parking':{**unknown,'monthly':None},'charging':dict(unknown),'access':dict(unknown),'fees':{'monthly':None,'one_time':None},'amenities':[],'source_url':None,'sources':[{'url':'https://developers.rentcast.io/reference/property-listings','supports':'RentCast listing ID '+row['id']+'; no direct listing URL supplied by the API.'}],'observed_at':at,'provider_last_seen':row.get('lastSeenDate'),'listed_date':row.get('listedDate'),'seen_in_latest':True,'history':[{'date':at,'rent':price}]})
+        homes.append({'id':ident,'kind':'listing','title':row.get('addressLine1') or row['formattedAddress'],'address':row['formattedAddress'],'city':config['city'],'neighborhood':config['city']+' · neighborhood unverified' if config['city']=='Chicago' else config['city'],'bedrooms':1,'bathrooms':1,'rent':price,'sqft':row.get('squareFootage') if positive(row.get('squareFootage')) else None,'lat':lat,'lng':lng,'parking':{**unknown,'monthly':None},'charging':dict(unknown),'access':dict(unknown),'fees':{'monthly':None,'one_time':None},'amenities':[],'source_url':None,'sources':[{'url':'https://developers.rentcast.io/reference/property-listings','supports':'RentCast listing ID '+row['id']+'; no direct listing URL supplied by the API.'}],'observed_at':at,'provider_last_seen':row.get('lastSeenDate'),'listed_date':row.get('listedDate'),'seen_in_latest':True,'history':[{'date':at,'rent':price}]})
         homes[-1].update(layout)
         homes[-1]['unit_label']=str(row.get('addressLine2') or '')[:2000] or None
         homes[-1]['property_type']=str(row.get('propertyType') or '')[:2000] or None
@@ -121,9 +135,22 @@ def normalize(rows,config,at):
     homes=[h for h in homes if h['id'] not in excluded['layout_corrections']]
     return homes,excluded
 
-def combine(previous,seed,homes,excluded,total,returned,at,query):
+def combine(previous,seed,homes,excluded,total,returned,at,query,evidence=None):
+    scanned_city=query.get('city','Chicago')
+    if evidence is None:evidence={}
+    def remember(ident,layout):
+        if layout.get('layout_declaration') in ('studio','conflict'):
+            evidence[ident]={key:layout[key] for key in ('bedrooms','bathrooms','layout_status','layout_declaration','layout_note','layout_observed_at') if key in layout}
+        elif layout.get('layout_declaration')=='one_bed' and layout.get('bedrooms')==1 and layout.get('bathrooms')==1:
+            evidence.pop(ident,None)
+    for home in previous.get('homes',[]):
+        # A retained snapshot may predate evidence persisted during a failed
+        # publication. Only a fresh explicit response may resolve that evidence.
+        if home['kind']=='listing' and home['id'] not in evidence:remember(home['id'],home)
     old={h['id']:h for h in previous.get('homes',[]) if h['kind']=='listing'}
     for ident,layout in excluded.get('layout_corrections',{}).items():
+        if ident in evidence:layout=preserve_layout_evidence(evidence[ident],layout)
+        remember(ident,layout)
         if ident in old:
             prior=old[ident]
             if not prior.get('layout_status'):prior={**prior,**reported_layout(prior)}
@@ -132,6 +159,7 @@ def combine(previous,seed,homes,excluded,total,returned,at,query):
     events=list(previous.get('events',[]));current=[]
     for h in homes:
         prior=old.pop(h['id'],None)
+        if h['id'] in evidence:h=preserve_layout_evidence(evidence[h['id']],h)
         if prior:
             h=preserve_layout_evidence(prior,h)
             history=list(prior.get('history',[]))
@@ -142,26 +170,41 @@ def combine(previous,seed,homes,excluded,total,returned,at,query):
                 events.insert(0,{'at':at,'id':h['id'],'title':h['title'],'description':f"Observed rent changed from ${prior['rent']:,.0f} to ${h['rent']:,.0f}."})
         else:
             events.insert(0,{'at':at,'id':h['id'],'title':h['title'],'description':'First observed in the listing feed.'})
+        remember(h['id'],h)
         current.append(h)
     # Retain IDs and observed prices so saved decisions survive a capped query's omissions.
     for h in old.values():
-        if h.get('seen_in_latest',True): events.insert(0,{'at':at,'id':h['id'],'title':h['title'],'description':'Not in the latest capped snapshot; availability is unverified.'})
-        h=copy.deepcopy(h);h['seen_in_latest']=False;current.append(h)
+        h=copy.deepcopy(h)
+        if h.get('city','Chicago')==scanned_city:
+            if h.get('seen_in_latest',True): events.insert(0,{'at':at,'id':h['id'],'title':h['title'],'description':'Not in this area’s latest capped snapshot; availability is unverified.'})
+            h['seen_in_latest']=False
+        current.append(h)
     truncated=total is not None and total>returned
-    coverage=(f"One page returned {returned} of {total} Chicago matches" if total is not None else f"One page returned {returned} Chicago matches; total count unavailable")+f"; {sum(h.get('layout_status')=='provider_reported' for h in current if h.get('seen_in_latest'))} fit the downtown layout and price search."
+    accepted=sum(h.get('layout_status')=='provider_reported' for h in current if h.get('city','Chicago')==scanned_city and h.get('seen_in_latest'))
+    coverage=(f"Latest area: {scanned_city}. One page returned {returned} of {total} matches" if total is not None else f"Latest area: {scanned_city}. One page returned {returned} matches; total count unavailable")+f"; {accepted} fit the layout, budget and 35-mile search. Other cities retain their own last observations."
     if truncated or total is None and returned==500: coverage+=' Coverage is incomplete.'
     if excluded.get('missing_coordinates',0): coverage+=f" {excluded['missing_coordinates']} could not be located."
+    scans=copy.deepcopy(previous.get('provider',{}).get('area_scans',{}))
+    if not scans and previous.get('provider',{}).get('last_success'):
+        prior=previous['provider'];prior_city=prior.get('query',{}).get('city','Chicago')
+        scans[prior_city]={'last_success':prior['last_success'],'returned':prior.get('returned'),'total':prior.get('total'),'truncated':prior.get('truncated',False)}
+    scans[scanned_city]={'last_success':at,'returned':returned,'total':total,'truncated':truncated,'accepted':accepted}
     result=copy.deepcopy(seed)
-    result.update({'generated_at':at,'mode':'connected','provider':{'name':'RentCast','configured':True,'last_success':at,'status':'success','coverage':coverage,'returned':returned,'total':total,'truncated':truncated,'query':query,'exclusions':excluded},'homes':copy.deepcopy(seed['homes'])+current,'events':events[:1000]})
-    # Limit current UI history while retaining full daily snapshots in data/history.
-    live=[h for h in result['homes'] if h['kind']!='listing' or h.get('seen_in_latest')]
-    old=sorted([h for h in result['homes'] if h['kind']=='listing' and not h.get('seen_in_latest')],key=lambda h:h['observed_at'],reverse=True)
-    result['homes']=live+old[:max(0,1000-len(live))]
+    result.update({'generated_at':at,'mode':'connected','provider':{'name':'RentCast','configured':True,'last_success':at,'status':'success','coverage':coverage,'returned':returned,'total':total,'truncated':truncated,'query':query,'exclusions':excluded,'area_scans':scans},'homes':copy.deepcopy(seed['homes'])+current,'events':events[:1000]})
+    # Keep the dashboard bounded without letting a dense city evict every suburb.
+    buckets={}
+    for h in sorted(current,key=lambda h:(bool(h.get('seen_in_latest')),h['observed_at']),reverse=True):
+        buckets.setdefault(h.get('city','Chicago'),[]).append(h)
+    balanced=[]
+    for index in range(max((len(group) for group in buckets.values()),default=0)):
+        for group in buckets.values():
+            if index<len(group):balanced.append(group[index])
+    result['homes']=copy.deepcopy(seed['homes'])+balanced[:max(0,1000-len(seed['homes']))]
     result['provider']['archived_from_current_view']=len(current)+len(seed['homes'])-len(result['homes'])
     for key in ['charging_stations','transit_stops','city_context']:
         if key in previous: result[key]=previous[key]
     while len(json.dumps(result,indent=2,allow_nan=False).encode())>7_000_000:
-        oldest=next((i for i in range(len(result['homes'])-1,-1,-1) if result['homes'][i].get('seen_in_latest') is False),None)
+        oldest=next((i for i in range(len(result['homes'])-1,-1,-1) if result['homes'][i]['kind']=='listing'),None)
         if oldest is None: raise ValueError('Current snapshot exceeds the safe browser size; previous snapshot preserved')
         result['homes'].pop(oldest);result['provider']['archived_from_current_view']+=1
     return result
@@ -173,9 +216,12 @@ def reserve_command(args):
     print('Reserved one request. Persist this reservation before calling the provider.')
 
 def run_command(args):
-    cfg=read_json(ROOT/'data/search.json');query=build_query(cfg);at=stamp(now_utc());usage=read_json(ROOT/'data/usage.json')
+    cfg=read_json(ROOT/'data/search.json');at=stamp(now_utc());usage=read_json(ROOT/'data/usage.json')
     entry=next((x for x in usage['attempts'] if x['id']==args.reservation),None)
     if not entry or entry['status']!='reserved': raise ValueError('No unused request reservation; refusing provider call')
+    cfg={**cfg,'city':entry.get('city',cfg['city'])};query=build_query(cfg)
+    evidence=read_json(ROOT/'data/layout-evidence.json')
+    if evidence.get('schema_version')!=1 or not isinstance(evidence.get('records'),dict):raise ValueError('Invalid layout evidence ledger; refusing a provider request')
     reserved=dt.datetime.fromisoformat(entry['at'].replace('Z','+00:00'))
     if now_utc()-reserved>dt.timedelta(hours=1): raise ValueError('Reservation expired; refusing provider call')
     # Local consumption stops accidental repeated invocation in the same checkout.
@@ -185,7 +231,8 @@ def run_command(args):
     homes,excluded=normalize(rows,cfg,at)
     if rows and not homes and excluded['missing_coordinates']==len(rows): raise ValueError('Every listing lacks usable coordinates; retaining the last snapshot')
     previous=read_json(ROOT/'dist/data.json');seed=read_json(ROOT/'data/seed.json')
-    result=combine(previous,seed,homes,excluded,total,len(rows),at,query)
+    result=combine(previous,seed,homes,excluded,total,len(rows),at,query,evidence['records'])
+    write_json(ROOT/'data/layout-evidence.json',evidence)
     write_json(ROOT/'dist/data.json',result)
     write_json(ROOT/'dist/status.json',{'schema_version':1,'attempted_at':at,'status':'success','message':result['provider']['coverage']})
     write_json(ROOT/'data/history'/f"{at[:10]}.json",result)

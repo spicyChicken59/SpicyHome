@@ -22,7 +22,7 @@ The source repository and published website are separate. Follow the publication
 
 1. Open the [RentCast API dashboard](https://app.rentcast.io/app/api). Review the current plan, account usage and automatic overage policy before activating an API key.
 2. Add the key in GitHub repository **Settings → Secrets and variables → Actions → Secrets** as `RENTCAST_API_KEY`.
-3. Check `data/search.json`. It contains the budget, 1-bed/1-bath query, downtown search window, one-page limit and local request caps. The lower cap does not cover other callers sharing your account.
+3. Check `data/search.json`. It contains the budget, 1-bed/1-bath query, eight-city rotation, 35-mile boundary, one-page limit and local request caps. The lower cap does not cover other callers sharing your account.
 4. Add repository **variable** `SPICYHOME_TRACKING_ENABLED` with value `true`.
 5. Run **Actions → Track apartments → Run workflow** once. It reserves and commits one attempt before contacting RentCast. No commit permission means no provider request.
 6. Confirm the job succeeded and `dist/status.json` says `success`. `dist/data.json` must have a new `provider.last_success` and coverage count. The dashboard’s Sources & setup view shows both the last successful scan and the latest attempt status.
@@ -91,3 +91,14 @@ python tools/check_site.py
 ```
 
 Tests use synthetic provider responses and DOM emulation. They never spend provider quota, email leasing agents or submit applications. Actual map tiles, browser rendering and a credentialed live rental ingestion remain separate verification steps.
+
+### Expanded geography
+
+Chicago and seven selected suburbs rotate one city per reserved request. The new
+rotation begins with Evanston, then Oak Park, Park Ridge, Elmhurst, Downers Grove,
+Arlington Heights, Naperville and Chicago. At the unchanged request cap, a cycle
+usually spans 8–10 days, longer after failures. `data/usage.json` persists the next
+city even when old reservations age out. Do not reset this ledger to force a scan.
+The next permitted scheduled run starts the new coverage; changing browser filters
+or checking for updates never calls RentCast. `data/layout-evidence.json` retains
+explicit studio contradictions independently of the displayed listing limit.

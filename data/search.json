@@ -9,6 +9,27 @@
   "limit": 500,
   "max_attempts_32_days": 30,
   "max_attempts_utc_day": 1,
-  "bounds": {"south": 41.845, "north": 41.910, "west": -87.675, "east": -87.600},
-  "scope_note": "Chicago query, then a broad downtown search window from the Near South Side through River North and Streeterville, west through West Loop. This rectangle is a search boundary, not an official neighborhood boundary. Missing coordinates are counted separately, not placed downtown."
+  "bounds": {
+    "south": 41.37,
+    "north": 42.4,
+    "west": -88.33,
+    "east": -86.93
+  },
+  "scope_note": "Chicago and seven selected Illinois suburbs within 35 straight-line miles of central Chicago. One city per reserved scan; coverage is capped and is not every property within the circle.",
+  "cities": [
+    "Evanston",
+    "Oak Park",
+    "Park Ridge",
+    "Elmhurst",
+    "Downers Grove",
+    "Arlington Heights",
+    "Naperville",
+    "Chicago"
+  ],
+  "center": {
+    "lat": 41.882,
+    "lng": -87.632,
+    "label": "central Chicago"
+  },
+  "radius_miles": 35
 }

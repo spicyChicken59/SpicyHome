@@ -22,6 +22,14 @@ class ReservationTests(unittest.TestCase):
  def test_invalid_or_future_ledger_fails(self):
   for u in [{},dict(schema_version=1,attempts=[dict(at='bad')]),dict(schema_version=1,attempts=[dict(at=t.stamp(NOW+dt.timedelta(days=3)))])]:
    with self.assertRaises((ValueError,KeyError)):t.reserve(u,CFG,'new',NOW)
+ def test_city_rotation_is_persisted_even_after_failed_attempts_or_long_pauses(self):
+  usage={'schema_version':1,'attempts':[]};cities=[]
+  for day in range(9):
+   usage=t.reserve(usage,CFG,str(day),NOW+dt.timedelta(days=day));cities.append(usage['attempts'][-1]['city'])
+   usage['attempts'][-1]['status']='consumed'
+  self.assertEqual(cities[:8],CFG['cities']);self.assertEqual(cities[8],CFG['cities'][0])
+  expected=usage['next_city'];paused=t.reserve(usage,CFG,'resumed',NOW+dt.timedelta(days=60))
+  self.assertEqual(paused['attempts'][-1]['city'],expected)
 class FeedTests(unittest.TestCase):
  def test_studio_unknown_and_bool_layouts_are_not_coerced(self):
   for patch in [dict(bedrooms=0),dict(bedrooms=True),dict(bathrooms=True),dict(bedrooms=None),dict(bedrooms=1,unitLayout='Studio')]:
@@ -67,18 +75,59 @@ class FeedTests(unittest.TestCase):
   for rows in [[row(bedrooms=0),row(unitLayout='Studio')],[row(unitLayout='Studio'),row(bedrooms=0)]]:
    homes,excluded=t.normalize(rows,CFG,t.stamp(NOW));self.assertEqual(homes,[])
    self.assertEqual(excluded['layout_corrections']['rentcast:a']['layout_declaration'],'studio')
+ def test_older_snapshot_cannot_resolve_a_newer_persisted_studio_claim(self):
+  at=t.stamp(NOW);homes,excluded=t.normalize([row(unitLayout='One bedroom')],CFG,at)
+  previous=t.combine(SEED,SEED,homes,excluded,1,1,at,{'city':'Chicago'})
+  evidence={'rentcast:a':t.reported_layout(row(unitLayout='Studio'))}
+  homes,excluded=t.normalize([row()],CFG,at)
+  result=t.combine(previous,SEED,homes,excluded,1,1,at,{'city':'Chicago'},evidence)
+  self.assertEqual(next(h for h in result['homes'] if h['id']=='rentcast:a')['layout_status'],'conflict')
+  self.assertIn('rentcast:a',evidence)
  def test_numeric_only_layout_can_be_corrected_by_later_numeric_evidence(self):
   previous=SEED
   for day,fields in enumerate([{},dict(bedrooms=0),{}]):
    at=t.stamp(NOW+dt.timedelta(days=day));homes,excluded=t.normalize([row(**fields)],CFG,at)
    previous=t.combine(previous,SEED,homes,excluded,1,1,at,{})
   self.assertEqual(previous['homes'][-1]['layout_status'],'provider_reported')
+ def test_suburban_query_and_expanded_chicago_stay_one_bounded_page(self):
+  cfg={**CFG,'city':'Evanston'};query=t.build_query(cfg)
+  self.assertEqual(query['city'],'Evanston');self.assertEqual(query['offset'],0);self.assertEqual(query['limit'],500)
+  homes,_=t.normalize([row(city='Evanston',latitude=42.032,longitude=-87.68)],cfg,t.stamp(NOW))
+  self.assertEqual(homes[0]['city'],'Evanston');self.assertEqual(homes[0]['neighborhood'],'Evanston')
+  chicago,_=t.normalize([row(latitude=42.0,longitude=-87.66)],CFG,t.stamp(NOW))
+  self.assertEqual(len(chicago),1)
+ def test_rotating_scan_only_marks_omissions_in_its_own_city(self):
+  at=t.stamp(NOW);chicago,_=t.normalize([row()],CFG,at)
+  evanston,_=t.normalize([row(id='e',city='Evanston',latitude=42.032,longitude=-87.68)],{**CFG,'city':'Evanston'},at)
+  previous={**SEED,'homes':SEED['homes']+chicago+evanston}
+  result=t.combine(previous,SEED,[],{},0,0,t.stamp(NOW+dt.timedelta(days=1)),{'city':'Evanston'})
+  by_id={h['id']:h for h in result['homes']}
+  self.assertTrue(by_id['rentcast:a']['seen_in_latest']);self.assertFalse(by_id['rentcast:e']['seen_in_latest'])
+  self.assertEqual(by_id['rentcast:a']['history'],chicago[0]['history'])
+  self.assertTrue(all(e['id']!='rentcast:a' for e in result['events']))
+  self.assertEqual(result['provider']['area_scans']['Evanston']['returned'],0)
+ def test_display_eviction_cannot_erase_explicit_studio_evidence(self):
+  evidence={};at=t.stamp(NOW)
+  homes,excluded=t.normalize([row(id=str(i)) for i in range(500)],CFG,at)
+  previous=t.combine(SEED,SEED,homes,excluded,500,500,at,{'city':'Chicago'},evidence)
+  homes,excluded=t.normalize([row(id='499',unitLayout='Studio')],CFG,at)
+  previous=t.combine(previous,SEED,homes,excluded,1,1,at,{'city':'Chicago'},evidence)
+  suburbs,excluded=t.normalize([row(id='s'+str(i),city='Oak Park',latitude=41.888,longitude=-87.804) for i in range(500)],{**CFG,'city':'Oak Park'},at)
+  previous=t.combine(previous,SEED,suburbs,excluded,500,500,at,{'city':'Oak Park'},evidence)
+  self.assertLessEqual(len(previous['homes']),1000)
+  self.assertFalse(any(h['id']=='rentcast:499' for h in previous['homes']))
+  self.assertEqual(evidence['rentcast:499']['layout_declaration'],'studio')
+  for fields,expected in [({},'conflict'),({'unitLayout':'One bedroom'},'provider_reported')]:
+   homes,excluded=t.normalize([row(id='499',**fields)],CFG,at)
+   previous=t.combine(previous,SEED,homes,excluded,1,1,at,{'city':'Chicago'},evidence)
+   self.assertEqual(next(h for h in previous['homes'] if h['id']=='rentcast:499')['layout_status'],expected)
+  self.assertNotIn('rentcast:499',evidence)
  def test_query_is_one_page_without_listing_age_cutoff(self):
   q=t.build_query(CFG);self.assertEqual(q['price'],'1200:3000');self.assertEqual(q['limit'],500);self.assertNotIn('daysOld',q)
  def test_parking_and_charging_are_unknown(self):
   h,e=t.normalize([row()],CFG,t.stamp(NOW));self.assertEqual(h[0]['parking']['status'],'unknown');self.assertEqual(h[0]['charging']['status'],'unknown');self.assertIsNone(h[0]['source_url'])
- def test_non_downtown_and_missing_coordinates_are_counted(self):
-  h,e=t.normalize([row(id='a',latitude=42),row(id='b',latitude=None)],CFG,t.stamp(NOW));self.assertEqual(h,[]);self.assertEqual(e['outside_search_window'],1);self.assertEqual(e['missing_coordinates'],1)
+ def test_outside_radius_and_missing_coordinates_are_counted(self):
+  h,e=t.normalize([row(id='a',latitude=42.395),row(id='b',latitude=None)],CFG,t.stamp(NOW));self.assertEqual(h,[]);self.assertEqual(e['outside_search_window'],1);self.assertEqual(e['missing_coordinates'],1)
  def test_invalid_rent_fails_instead_of_empty_success(self):
   for v in [None,float('nan'),float('inf'),-1,True,'2400']:
    with self.assertRaises(ValueError):t.normalize([row(price=v)],CFG,t.stamp(NOW))

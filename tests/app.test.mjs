@@ -104,7 +104,7 @@ for (const preferences of [{parking:true}, {charging:true}, {neighborhood:"River
     live.homes = [...seed.homes, listing];
     const notebook = {version:1,records:{[seed.homes[0].id]:{saved:true,notes:"Keep my tour notes",snapshot:seed.homes[0]}},manual:[],events:[],preferences:{...preferences,utilityEstimate:80}};
     const d = await boot({remote:live,packaged:live,notebook});
-    assert.match(d.doc.querySelector("#result-count").textContent, /of 11 loaded places/);
+    assert(d.doc.querySelector("#result-count").textContent.includes(`of ${seed.homes.length+1} loaded places`));
     assert.match(d.doc.querySelector("#filter-summary").textContent, /1 listing snapshots loaded · 1 hidden/);
     assert.equal(d.doc.querySelector('[data-home="test-unverified-listing"]'),null);
     d.doc.querySelector("#show-unfiltered").click();
@@ -164,7 +164,7 @@ test("an older primary triggers the mirror and can discover an even newer snapsh
 });
 test("a missing bundle never discards valid published research", async () => {
   const d = await boot({ remote: seed, packaged: null });
-  assert.equal(d.doc.querySelectorAll(".home-card").length, 9);
+  assert.equal(d.doc.querySelectorAll(".home-card").length, seed.homes.length - 1);
   assert.doesNotMatch(d.doc.querySelector("#notice").textContent, /could not load/);
   d.close();
 });
@@ -199,7 +199,7 @@ test("manual refresh reloads configuration and sends uncached snapshot requests"
 });
 test("working surface renders real prospects and usable map fallback", async () => {
   const d = await boot();
-  assert.equal(d.doc.querySelectorAll(".home-card").length, 9);
+  assert.equal(d.doc.querySelectorAll(".home-card").length, seed.homes.length - 1);
   assert.match(d.doc.querySelector("#map").textContent, /could not load/);
   d.doc.querySelector("[data-map-home]").click();
   assert(d.doc.querySelector("#detail-dialog").open);
@@ -478,3 +478,23 @@ for (const attempted_at of ["2026-09-06T00:00:00Z", undefined, "2026-09-09T00:00
     d.close();
   });
 }
+
+test("suburban search, area dates and notebook state work together", async () => {
+  const live=connectedSnapshot();live.provider.area_scans={Chicago:{last_success:live.provider.last_success,returned:500,total:800,truncated:true}};
+  const d=await boot({remote:live,packaged:live});
+  assert.match(d.doc.querySelector(".area-guide").textContent,/Evanston/);
+  assert.match(d.doc.querySelector(".area-guide").textContent,/Awaiting first listing scan/);
+  const region=d.doc.querySelector("#search-region");region.value="suburbs";region.dispatchEvent(new d.w.Event("change"));
+  assert.equal(d.doc.querySelectorAll("#results .home-card").length,8);
+  assert(d.doc.querySelector('#results [data-home="amli-evanston"]'));
+  assert.equal(d.doc.querySelector('#results [data-home="amli-900"]'),null);
+  const radius=d.doc.querySelector("#search-radius");radius.value="10";radius.dispatchEvent(new d.w.Event("change"));
+  assert.equal(d.doc.querySelector('#results [data-home="amli-evanston"]'),null);
+  radius.value="0";radius.dispatchEvent(new d.w.Event("change"));
+  const save=d.doc.querySelector('#results [data-save="amli-evanston"]');save.click();
+  d.doc.querySelector("#reset-filters").click();
+  const saved=JSON.parse(d.w.localStorage.getItem("spicyhome.workspace.v1"));
+  assert.equal(saved.records['amli-evanston'].saved,true);
+  assert.equal(saved.preferences.region,"all");
+  d.close();
+});

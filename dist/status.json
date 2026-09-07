@@ -1,1 +1,6 @@
-{"schema_version":1,"attempted_at":null,"status":"not_configured","message":"The daily listing source has not been connected. Official-site building research is available."}
+{
+  "schema_version": 1,
+  "attempted_at": "2026-09-07T20:46:13.021825Z",
+  "status": "success",
+  "message": "One page returned 500 of 2703 Chicago matches; 192 fit the downtown search window. Coverage is incomplete."
+}

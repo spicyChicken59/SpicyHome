@@ -17,6 +17,14 @@ import {
 const $ = (s) => document.querySelector(s),
   KEY = "spicyhome.workspace.v1",
   CACHE = "spicyhome.feed.v1";
+// Public committed snapshots remain reachable even if a browser cannot load
+// the optional deployment configuration. These URLs never call the provider.
+const FALLBACK_FEED_CONFIG = {
+  feed_url: "https://raw.githubusercontent.com/spicyChicken59/SpicyHome/main/dist/data.json",
+  feed_mirror_url: "https://api.github.com/repos/spicyChicken59/SpicyHome/contents/dist/data.json?ref=main",
+  fallback_url: "./data.json",
+  status_url: "https://raw.githubusercontent.com/spicyChicken59/SpicyHome/main/dist/status.json",
+};
 let state = emptyWorkspace(),
   feed = null,
   config = null,
@@ -209,7 +217,7 @@ function renderDiscover() {
     ...new Set(allHomes().map((h) => h.neighborhood)),
   ].sort();
   $("#view-content").innerHTML =
-    `<form class="filters" id="filters"><div class="field"><label for="search">Building or neighborhood</label><input type="search" id="search" name="search" placeholder="Your corner of Chicago" value="${esc(prefs.search)}"></div><div class="field"><label for="min">Minimum / month</label><input type="number" id="min" name="min" min="0" max="20000" step="50" value="${prefs.min}"></div><div class="field"><label for="max">Maximum / month</label><input type="number" id="max" name="max" min="0" max="20000" step="50" value="${prefs.max}"></div><div class="field"><label for="basis">Compare budget against</label><select id="basis" name="basis"><option value="rent" ${prefs.basis === "rent" ? "selected" : ""}>Base rent</option><option value="total" ${prefs.basis === "total" ? "selected" : ""}>Known monthly subtotal</option></select></div><div class="field"><label for="neighborhood">Neighborhood</label><select id="neighborhood" name="neighborhood"><option value="all">All downtown areas</option>${neighborhoods.map((n) => `<option ${prefs.neighborhood === n ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></div></form><div class="filter-options"><label><input type="checkbox" id="filter-parking" ${prefs.parking ? "checked" : ""}>Parking advertised</label><label><input type="checkbox" id="filter-charging" ${prefs.charging ? "checked" : ""}>EV charging advertised</label><label><input type="checkbox" id="filter-unknown" ${prefs.unknown ? "checked" : ""}>Include unquoted base rent</label><button class="text-button" id="reset-filters">Reset</button><span class="meta">1 bed · 1 bath only</span></div><p class="research-note">${feed.mode === "research" ? "Start with sourced building prospects. These are research leads, not confirmed available apartments." : "Listing snapshots and sourced building prospects are shown together, each labeled by its source."} Budget is ${prefs.basis === "rent" ? "base rent; parking, utilities and other fees can take your monthly cost above it." : "a known subtotal; missing fees are never treated as free."}</p><div class="results-layout"><aside class="map-panel" aria-label="Chicago apartment map"><div class="map-heading"><h3>A neighborhood, not just a number.</h3></div><div class="map-surface" id="map" role="region" aria-label="Apartment locations"></div><ul class="map-list" id="map-list"></ul><div class="map-foot">Pins show approximate building locations. No pin means coordinates are unverified. Nearby public charging never proves resident charging access.</div></aside><div class="results-column"><div class="results-top"><strong id="result-count"></strong><label class="meta">Sort <select id="sort" aria-label="Sort apartments"><option value="rent" ${prefs.sort === "rent" ? "selected" : ""}>${prefs.basis === "rent" ? "Base rent" : "Known subtotal"}: low to high</option><option value="space" ${prefs.sort === "space" ? "selected" : ""}>More room</option><option value="recent" ${prefs.sort === "recent" ? "selected" : ""}>Recently observed</option></select></label></div><div class="home-grid" id="results"></div></div></div><div id="compare-tray"></div>`;
+    `<form class="filters" id="filters"><div class="field"><label for="search">Building or neighborhood</label><input type="search" id="search" name="search" placeholder="Your corner of Chicago" value="${esc(prefs.search)}"></div><div class="field"><label for="min">Minimum / month</label><input type="number" id="min" name="min" min="0" max="20000" step="50" value="${prefs.min}"></div><div class="field"><label for="max">Maximum / month</label><input type="number" id="max" name="max" min="0" max="20000" step="50" value="${prefs.max}"></div><div class="field"><label for="basis">Compare budget against</label><select id="basis" name="basis"><option value="rent" ${prefs.basis === "rent" ? "selected" : ""}>Base rent</option><option value="total" ${prefs.basis === "total" ? "selected" : ""}>Known monthly subtotal</option></select></div><div class="field"><label for="neighborhood">Neighborhood</label><select id="neighborhood" name="neighborhood"><option value="all">All downtown areas</option>${neighborhoods.map((n) => `<option ${prefs.neighborhood === n ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></div></form><div class="filter-options"><label><input type="checkbox" id="filter-parking" ${prefs.parking ? "checked" : ""}>Parking advertised</label><label><input type="checkbox" id="filter-charging" ${prefs.charging ? "checked" : ""}>EV charging advertised</label><label><input type="checkbox" id="filter-unknown" ${prefs.unknown ? "checked" : ""}>Include unquoted base rent</label><button class="text-button" id="reset-filters">Reset</button><span class="meta">1 bed · 1 bath only</span></div><p class="research-note">${feed.mode === "research" ? "Start with sourced building prospects. These are research leads, not confirmed available apartments." : "Listing snapshots and sourced building prospects are shown together, each labeled by its source."} Budget is ${prefs.basis === "rent" ? "base rent; parking, utilities and other fees can take your monthly cost above it." : "a known subtotal; missing fees are never treated as free."}</p><div class="filter-summary" id="filter-summary" role="status" aria-live="polite" hidden></div><div class="results-layout"><aside class="map-panel" aria-label="Chicago apartment map"><div class="map-heading"><h3>A neighborhood, not just a number.</h3></div><div class="map-surface" id="map" role="region" aria-label="Apartment locations"></div><ul class="map-list" id="map-list"></ul><div class="map-foot">Pins show approximate building locations. No pin means coordinates are unverified. Nearby public charging never proves resident charging access.</div></aside><div class="results-column"><div class="results-top"><strong id="result-count"></strong><label class="meta">Sort <select id="sort" aria-label="Sort apartments"><option value="rent" ${prefs.sort === "rent" ? "selected" : ""}>${prefs.basis === "rent" ? "Base rent" : "Known subtotal"}: low to high</option><option value="space" ${prefs.sort === "space" ? "selected" : ""}>More room</option><option value="recent" ${prefs.sort === "recent" ? "selected" : ""}>Recently observed</option></select></label></div><div class="home-grid" id="results"></div></div></div><div id="compare-tray"></div>`;
   renderResults();
   $("#filters").addEventListener("submit", (e) => e.preventDefault());
   $("#filters").addEventListener("change", updateFilters);
@@ -233,11 +241,13 @@ function renderDiscover() {
     renderResults();
     bindCards();
   });
-  $("#reset-filters").onclick = () => {
-    prefs = { ...defaults };
-    persist();
-    render();
-  };
+  $("#reset-filters").onclick = resetSearchFilters;
+}
+function resetSearchFilters() {
+  prefs = { ...defaults, utilityEstimate: prefs.utilityEstimate };
+  persist();
+  render();
+  $("#reset-filters")?.focus();
 }
 function updateFilters() {
   if (view !== "discover" || !$("#filters")) return;
@@ -266,9 +276,19 @@ function updateFilters() {
   bindCards();
 }
 function renderResults() {
-  const homes = visibleHomes(allHomes(), state, prefs);
+  const loaded = allHomes(),
+    homes = visibleHomes(loaded, state, prefs),
+    listings = loaded.filter((h) => h.kind === "listing").length,
+    shownListings = homes.filter((h) => h.kind === "listing").length,
+    hiddenListings = listings - shownListings;
   $("#result-count").textContent =
-    `${homes.length} places to explore · ${homes.filter((h) => costs(h, record(h.id), prefs).rent !== null).length} with a base-rent quote`;
+    `${homes.length} of ${loaded.length} loaded places · ${homes.filter((h) => costs(h, record(h.id), prefs).rent !== null).length} with a base-rent quote`;
+  const summary = $("#filter-summary");
+  summary.hidden = hiddenListings === 0;
+  summary.innerHTML = hiddenListings
+    ? `<div><strong>${listings} listing snapshots loaded · ${hiddenListings} hidden by your filters.</strong><p>${prefs.parking || prefs.charging ? "Parking and EV filters require advertised amenities; unverified amenities are excluded. " : ""}${prefs.neighborhood !== "all" ? "Listings without a supplied neighborhood are excluded from a named-neighborhood search. " : ""}Search filters are saved separately in each browser. Resetting them keeps your saved homes, notes and quotes.</p></div><button class="button secondary" id="show-unfiltered">Reset search filters</button>`
+    : "";
+  if (hiddenListings) $("#show-unfiltered").onclick = resetSearchFilters;
   $("#results").innerHTML = homes.length
     ? homes.map(renderCard).join("")
     : empty(
@@ -756,9 +776,20 @@ async function loadFeed(manual = false) {
   try {
     if (!config || manual) {
       try {
-        config = await fetchJSON("./config.json", { fresh: true });
+        const candidate = await fetchJSON("./config.json", { fresh: true });
+        if (!candidate || typeof candidate !== "object" || Array.isArray(candidate))
+          throw Error("Invalid feed configuration");
+        for (const key of ["feed_url", "fallback_url", "feed_mirror_url", "status_url"]) {
+          if (candidate[key] == null && ["feed_mirror_url", "status_url"].includes(key)) continue;
+          if (typeof candidate[key] !== "string" || !candidate[key].trim() ||
+              !["http:", "https:"].includes(new URL(candidate[key], location.href).protocol))
+            throw Error("Invalid feed configuration");
+        }
+        config = candidate;
       } catch (err) {
-        if (!config) throw err;
+        // Configuration is not a prerequisite for recovering the complete
+        // public feed or the snapshot included with this deployment.
+        if (!config) config = { ...FALLBACK_FEED_CONFIG };
       }
     }
     let next, remoteError, packaged;

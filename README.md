@@ -36,6 +36,13 @@ storage or the deployed bundle. An older successful response cannot silently
 replace newer saved listings. The fallback is labeled explicitly. It has no
 production build step and no browser API secrets; refreshing never calls RentCast.
 
+The loaded-versus-visible count distinguishes a stale feed from saved search
+filters. Parking, EV and named-neighborhood filters can exclude listings whose
+amenities or neighborhood are unverified. The recovery notice resets search
+filters while retaining saved homes, notes, quotes and utility estimates. If
+configuration cannot load, built-in public read URLs and the included data still
+work. The app and stylesheet URLs carry a revision to refresh browser asset caches.
+
 ## Daily operation
 
 The rental job is disabled until the repository variable `SPICYHOME_TRACKING_ENABLED` equals `true` and `RENTCAST_API_KEY` is configured. It is scheduled at **13:17 UTC**; GitHub schedules can run late. Regional context refreshes Mondays at 12:47 UTC.

@@ -1169,3 +1169,20 @@ footer {
     display: none;
   }
 }
+
+.filter-summary:not([hidden]) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  margin: 0 0 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.filter-summary p { margin: .35rem 0 0; max-width: 70ch; font-size: .875rem; }
+.filter-summary .button { flex-shrink: 0; }
+@media (max-width: 700px) {
+  .filter-summary:not([hidden]) { align-items: stretch; flex-direction: column; }
+}

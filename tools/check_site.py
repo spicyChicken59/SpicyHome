@@ -1,5 +1,5 @@
 """Validate authored static entrypoints, shared design provenance and public data."""
-import hashlib,json,pathlib,re,sys
+import hashlib,json,math,pathlib,re,sys
 from urllib.parse import urlsplit
 ROOT=pathlib.Path(__file__).resolve().parents[1];DIST=ROOT/'dist';errors=[]
 html=(DIST/'index.html').read_text()
@@ -14,7 +14,9 @@ for name,expected in manifest['files'].items():
 feed=json.loads((DIST/'data.json').read_text());ids=[]
 for h in feed['homes']:
  ids.append(h['id'])
- if h['bedrooms']!=1 or h['bathrooms']!=1:errors.append('Unexpected layout: '+h['id'])
+ for field in ['bedrooms','bathrooms']:
+  value=h.get(field)
+  if value is not None and (isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value) or not 0<=value<=20 or (value%1 if field=='bedrooms' else value*2%1)):errors.append('Invalid layout value: '+h['id'])
  if h['kind']=='building' and not h.get('sources'):errors.append('Building without sources: '+h['id'])
 if len(ids)!=len(set(ids)):errors.append('Duplicate apartment IDs')
 if (DIST/'data.json').stat().st_size>8_000_000:errors.append('Public feed exceeds browser limit')

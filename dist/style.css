@@ -1186,3 +1186,9 @@ footer {
 @media (max-width: 700px) {
   .filter-summary:not([hidden]) { align-items: stretch; flex-direction: column; }
 }
+
+.layout-controls { padding: 1rem; margin-bottom: 1.2rem; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.layout-controls label { display: block; font-weight: 600; margin-bottom: .4rem; }
+.layout-controls select { max-width: 100%; padding: .6rem; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+.layout-controls p { margin: .65rem 0 0; }
+.plan-label { font-weight: 600; font-size: .85rem; margin: -.25rem 0 .75rem; }

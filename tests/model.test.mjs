@@ -14,11 +14,50 @@ import {
   ageDays,
   changeFor,
   distanceMiles,
+  layoutEvidence,
+  planLabel,
 } from "../dist/model.js";
 const seed = JSON.parse(
   fs.readFileSync(new URL("../data/seed.json", import.meta.url)),
 );
 const home = seed.homes.find((h) => h.id === "amli-900");
+test("studios and explicit conflicts never become one-bedroom candidates", () => {
+  for (const patch of [{bedrooms:0},{bedrooms:2},{bathrooms:2},{layout_status:"conflict"},{layout_status:"other"}]) {
+    const h={...home,...patch};
+    assert(validateHome(h));
+    assert.equal(visibleHomes([h],emptyWorkspace(),defaults).length,0);
+  }
+  assert(!validateHome({...home,bedrooms:true}));
+  assert(!validateHome({...home,bathrooms:"1"}));
+});
+test("provider counts and small sizes never imply a checked bedroom", () => {
+  const h={...home,kind:"listing",floor_plan:undefined,layout_status:"provider_reported",sqft:422};
+  assert.equal(layoutEvidence(h).status,"provider_reported");
+  assert.equal(visibleHomes([h],emptyWorkspace(),{...defaults,layoutScope:"confirmed"}).length,0);
+  assert.equal(visibleHomes([h],emptyWorkspace(),defaults).length,1);
+});
+test("local studio corrections survive imported legacy snapshots without losing quotes", () => {
+  const w=emptyWorkspace();w.records[home.id]={saved:true,snapshot:home,notes:"Tour notes",rentOverride:2400,layoutReview:"studio"};
+  const imported=validateWorkspace(JSON.parse(JSON.stringify(w)));
+  assert.equal(visibleHomes([home],imported,defaults).length,0);
+  assert.equal(imported.records[home.id].rentOverride,2400);
+  assert.equal(imported.records[home.id].notes,"Tour notes");
+  assert.throws(()=>validateWorkspace({...w,records:{bad:{layoutReview:"anything"}}}));
+});
+test("only a user check enters the checked-layout search", () => {
+  const w=emptyWorkspace();w.records[home.id]={layoutReview:"one_bed"};
+  assert.equal(visibleHomes([home],w,{...defaults,layoutScope:"confirmed"}).length,1);
+  assert.equal(layoutEvidence(home).status,"source_listed");
+  assert.equal(layoutEvidence({...home,kind:"manual",bedrooms:0},{layoutReview:"one_bed"}).status,"confirmed");
+  assert.match(planLabel(home),/Trendy/);
+  assert.equal(planLabel({...home,kind:"listing",floor_plan:undefined,address:"2030 S Clark St"}),"Unit not identified by source");
+});
+test("unknown manual layout is valid without silently becoming one bedroom", () => {
+  const h={...home,kind:"manual",bedrooms:null,bathrooms:null};
+  assert(validateHome(h));assert.equal(layoutEvidence(h).status,"unverified");
+  assert.equal(visibleHomes([h],emptyWorkspace(),{...defaults,layoutScope:"confirmed"}).length,0);
+  assert.equal(layoutEvidence({...home,layout_status:"unverified"}).status,"unverified");
+});
 test("official research is valid and ten sourced map pins are present", () => {
   assert.equal(validateFeed(seed).homes.length, 10);
   assert(

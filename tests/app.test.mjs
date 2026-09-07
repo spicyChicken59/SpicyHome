@@ -11,7 +11,7 @@ const model = fs
   .replace(/^export\s+/gm, "");
 const app = fs
   .readFileSync(new URL("../dist/app.js", import.meta.url), "utf8")
-  .replace(/^import\s*\{[\s\S]*?\}\s*from\s*["']\.\/model\.js["'];?\s*/, "");
+  .replace(/^import\s*\{[\s\S]*?\}\s*from\s*["']\.\/model\.js(?:\?[^"']*)?["'];?\s*/, "");
 const seed = JSON.parse(
   fs.readFileSync(new URL("../data/seed.json", import.meta.url), "utf8"),
 );
@@ -309,6 +309,8 @@ test("search followed immediately by navigation is safe and keeps the query", as
 test("manual entry, shortlist and comparison preserve explicit no charging", async () => {
   const d = await boot();
   d.doc.querySelector("#add-home").click();
+  assert.equal(d.doc.querySelector("#add-bedrooms").value, "");
+  assert.equal(d.doc.querySelector("#add-bathrooms").value, "");
   for (const [k, v] of Object.entries({
     title: "Test home",
     address: "100 Test St, Chicago",
@@ -323,6 +325,10 @@ test("manual entry, shortlist and comparison preserve explicit no charging", asy
       new d.w.Event("submit", { bubbles: true, cancelable: true }),
     );
   assert.match(d.doc.querySelector("#view-title").textContent, /second look/);
+  const stored=JSON.parse(d.w.localStorage.getItem("spicyhome.workspace.v1"));
+  assert.equal(stored.manual[0].bedrooms,null);
+  assert.equal(stored.manual[0].bathrooms,null);
+  assert.match(d.doc.querySelector(".home-card").textContent,/Layout needs checking/);
   const box = d.doc.querySelector("[data-compare]");
   box.checked = true;
   box.dispatchEvent(new d.w.Event("change"));
@@ -331,5 +337,32 @@ test("manual entry, shortlist and comparison preserve explicit no charging", asy
     d.doc.querySelector("#compare-content").textContent,
     /Not offered/,
   );
+  d.close();
+});
+test("a studio correction hides the candidate after refresh but keeps its notebook", async () => {
+  const d=await boot();
+  const id=d.doc.querySelector('[data-detail]').getAttribute('data-detail');
+  d.doc.querySelector('[data-detail]').click();
+  d.doc.querySelector('#layoutReview').value='studio';
+  d.doc.querySelector('#notes').value='Open sleeping area, no bedroom door';
+  d.doc.querySelector('#record-form').dispatchEvent(new d.w.Event('submit',{bubbles:true,cancelable:true}));
+  assert.equal(d.doc.querySelector(`[data-home="${id}"]`),null);
+  d.doc.querySelector('#refresh').click();
+  for(let i=0;i<30&&d.doc.querySelector('#refresh').textContent==='Checking…';i++)await new Promise(r=>setTimeout(r,3));
+  assert.equal(d.doc.querySelector(`[data-home="${id}"]`),null);
+  d.doc.querySelector('[data-view="shortlist"]').click();
+  assert.match(d.doc.querySelector(`[data-home="${id}"]`).textContent,/studio \/ convertible/);
+  const stored=JSON.parse(d.w.localStorage.getItem('spicyhome.workspace.v1'));
+  assert.equal(stored.records[id].notes,'Open sleeping area, no bedroom door');
+  d.close();
+});
+test("checked-layout filter responds to an explicit floor-plan check", async () => {
+  const d=await boot();
+  d.doc.querySelector('[data-detail]').click();
+  d.doc.querySelector('#layoutReview').value='one_bed';
+  d.doc.querySelector('#record-form').dispatchEvent(new d.w.Event('submit',{bubbles:true,cancelable:true}));
+  const select=d.doc.querySelector('#layout-scope');select.value='confirmed';select.dispatchEvent(new d.w.Event('change'));
+  assert.equal(d.doc.querySelectorAll('.home-card').length,1);
+  assert.match(d.doc.querySelector('.home-card').textContent,/checked by you/);
   d.close();
 });

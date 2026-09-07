@@ -25,10 +25,10 @@ npm ci --ignore-scripts
 npm test
 npm run check
 python tools/check_site.py
-python -m http.server 8000 --directory dist
+npm run dev
 ```
 
-Open `http://localhost:8000`. The app uses the configured published feed when available and keeps bundled research as its initial fallback. It has no production build step and no browser API secrets.
+Open the local URL printed by Vite. The app uses the configured published feed when available and keeps bundled research as its initial fallback. It has no production build step and no browser API secrets.
 
 ## Daily operation
 

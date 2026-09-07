@@ -116,7 +116,10 @@ test("failed persistence leaves a visible export warning and no false saved toas
 });
 test("notes and zero-dollar quotes are persisted through the actual form", async () => {
   const d = await boot();
-  d.doc.querySelector("[data-detail]").click();
+  const opener = d.doc.querySelector("[data-detail]");
+  const homeId = opener.dataset.detail;
+  opener.focus();
+  opener.click();
   d.doc.querySelector("#notes").value = "Quiet bedroom; confirm J1772 access.";
   d.doc.querySelector("#utilities").value = "0";
   d.doc.querySelector("#rentOverride").value = "2490";
@@ -132,6 +135,39 @@ test("notes and zero-dollar quotes are persisted through the actual form", async
   assert.equal(r.quote_history.length, 1);
   assert.match(r.notes, /Quiet bedroom/);
   assert(!d.doc.querySelector("#detail-dialog").open);
+  assert.equal(d.doc.activeElement.dataset.detail, homeId);
+  d.close();
+});
+test("save preserves keyboard position and removing the last saved home focuses its view", async () => {
+  const d = await boot();
+  const save = d.doc.querySelector("[data-save]");
+  const homeId = save.dataset.save;
+  save.focus();
+  save.click();
+  assert.equal(d.doc.activeElement.dataset.save, homeId);
+  assert.equal(d.doc.activeElement.getAttribute("aria-pressed"), "true");
+  d.doc.querySelector('[data-view="shortlist"]').click();
+  const remove = d.doc.querySelector("[data-save]");
+  remove.focus();
+  remove.click();
+  assert.equal(d.doc.querySelectorAll(".home-card").length, 0);
+  assert.equal(d.doc.activeElement.id, "view-title");
+  d.close();
+});
+test("search followed immediately by navigation is safe and keeps the query", async () => {
+  const d = await boot();
+  const errors = [];
+  d.w.addEventListener("error", (e) => errors.push(e.message));
+  const search = d.doc.querySelector("#search");
+  search.value = "Loop";
+  search.dispatchEvent(new d.w.Event("input", { bubbles: true }));
+  d.doc.querySelector('[data-view="shortlist"]').click();
+  await new Promise((resolve) => setTimeout(resolve, 250));
+  assert.deepEqual(errors, []);
+  assert.equal(d.doc.querySelector('[aria-current="page"]').dataset.view, "shortlist");
+  d.doc.querySelector('[data-view="discover"]').click();
+  assert.equal(d.doc.querySelector("#search").value, "Loop");
+  assert.equal(JSON.parse(d.w.localStorage.getItem("spicyhome.workspace.v1")).preferences.search, "Loop");
   d.close();
 });
 test("manual entry, shortlist and comparison preserve explicit no charging", async () => {

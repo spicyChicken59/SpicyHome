@@ -26,7 +26,8 @@ let state = emptyWorkspace(),
   map = null,
   markers = new Map(),
   refreshing = false,
-  toastTimer;
+  toastTimer,
+  searchTimer;
 try {
   const saved = localStorage.getItem(KEY);
   if (saved) state = validateWorkspace(JSON.parse(saved));
@@ -167,6 +168,7 @@ function empty(title, text, action = "") {
   return `<div class="empty"><h3>${esc(title)}</h3><p>${esc(text)}</p>${action}</div>`;
 }
 function render() {
+  clearTimeout(searchTimer);
   if (!feed) return;
   const names = {
     discover: ["THE SEARCH", "Find your place."],
@@ -194,6 +196,14 @@ function render() {
   if (view === "setup") renderSetup();
   bindContent();
 }
+function focusHomeControl(id, attribute) {
+  const control = [...document.querySelectorAll(`[data-${attribute}]`)].find(
+    (element) => element.getAttribute(`data-${attribute}`) === id,
+  );
+  const target = control ?? $("#view-title");
+  if (!control) target.tabIndex = -1;
+  target.focus();
+}
 function renderDiscover() {
   const neighborhoods = [
     ...new Set(allHomes().map((h) => h.neighborhood)),
@@ -203,8 +213,9 @@ function renderDiscover() {
   renderResults();
   $("#filters").addEventListener("submit", (e) => e.preventDefault());
   $("#filters").addEventListener("change", updateFilters);
-  let searchTimer;
-  $("#search").addEventListener("input", () => {
+  $("#search").addEventListener("input", (e) => {
+    prefs.search = e.target.value;
+    persist();
     clearTimeout(searchTimer);
     searchTimer = setTimeout(updateFilters, 200);
   });
@@ -229,6 +240,7 @@ function renderDiscover() {
   };
 }
 function updateFilters() {
+  if (view !== "discover" || !$("#filters")) return;
   const lo = Number($("#min").value),
     hi = Number($("#max").value);
   if (
@@ -431,6 +443,7 @@ function bindCards() {
         event(id, saved ? "Added to shortlist." : "Removed from shortlist.");
         const ok = persist();
         render();
+        focusHomeControl(id, "save");
         saveNotice(ok);
       }),
   );
@@ -455,6 +468,9 @@ function bindCards() {
 function showDetail(id) {
   const h = getHome(id);
   if (!h) return;
+  const focusAttribute = document.activeElement?.hasAttribute("data-map-home")
+    ? "map-home"
+    : "detail";
   const r = record(id),
     c = costs(h, r, prefs);
   const stations = (feed.transit_stops ?? [])
@@ -515,6 +531,7 @@ function showDetail(id) {
     const ok = persist();
     $("#detail-dialog").close();
     render();
+    focusHomeControl(id, focusAttribute);
     saveNotice(ok);
   };
   if ($("#download-tour"))

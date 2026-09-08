@@ -1,6 +1,6 @@
 # SpicyHome
 
-A SpicyChicken apartment research notebook for downtown Chicago: **1 bedroom, 1 bathroom, $1,200–$3,000 base rent**, with parking and EV charging evidence kept visible.
+A SpicyChicken apartment research notebook for Chicago and seven selected suburbs: **1 bedroom, 1 bathroom, $1,200–$3,000 base rent**, with parking and EV charging evidence kept visible.
 
 Start with real, sourced building prospects; compare the known monthly cost; save homes, record quotes and tour notes; then connect a bounded daily listing feed when ready.
 
@@ -74,7 +74,24 @@ across numeric-only provider updates until explicit one-bedroom evidence resolve
 
 The rental job is disabled until the repository variable `SPICYHOME_TRACKING_ENABLED` equals `true` and `RENTCAST_API_KEY` is configured. It is scheduled at **13:17 UTC**; GitHub schedules can run late. Regional context refreshes Mondays at 12:47 UTC.
 
-One Chicago query requests at most 500 active, 1-bed/1-bath listings in the configured base-rent range. A documented geographic search rectangle then keeps the broad downtown area. Source omissions, missing coordinates and truncation remain visible. This does not establish full market coverage.
+The search covers Chicago, Evanston, Oak Park, Park Ridge, Elmhurst, Downers Grove,
+Arlington Heights and Naperville within 35 straight-line miles of the configured
+central Chicago point. Discover includes city/suburb, named-area and distance
+filters; tighter distance filters require coordinates. Eight new sourced building
+prospects are available immediately, bringing the research set to 18.
+
+Each reserved request selects one city, with up to 500 active 1-bed/1-bath listings
+in the existing base-rent range. The receipt persists the selected city and next
+city before any request, including failed attempts. Eight cities rotate through
+approximately 8–10 days per cycle; failed scans may take longer. Each city's last
+successful scan is visible. Other cities are not marked omitted when one city is
+scanned. Capped coverage and unknown coordinates remain explicit.
+
+The bounded dashboard balances retained listing records across cities. Explicit
+studio/convertible evidence is preserved separately in `data/layout-evidence.json`
+so display eviction cannot restore a known studio after a weaker source response.
+Only explicit valid one-bedroom evidence resolves that provider contradiction.
+Existing browser notes and local corrections continue to take precedence.
 
 Each request reservation is committed **before** the provider call. The integration permits one attempt per UTC day and no more than 30 in a rolling 32-day window. A failed request still consumes its reservation. This cap cannot account for other software using the same RentCast account, and the provider can charge overages automatically.
 

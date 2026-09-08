@@ -1201,3 +1201,14 @@ footer {
 .excluded-layouts { margin-top: 1.5rem; padding: 1rem; border: 1px solid var(--line); border-radius: 10px; }
 .excluded-layouts summary { cursor: pointer; font-size: 1rem; font-weight: 600; padding: .5rem 0; }
 .excluded-layouts summary:focus-visible { outline: 2px solid var(--wine); outline-offset: 4px; }
+
+.area-controls { padding: 1rem; margin-bottom: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.area-selects { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; }
+.area-controls .meta { font-size: .875rem; line-height: 1.5; }
+.area-guide summary { cursor: pointer; font-weight: 600; padding: .5rem 0; }
+.area-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; margin-top: 1rem; }
+.area-grid article { border-top: 1px solid var(--line); padding-top: .75rem; }
+.area-grid h3 { margin: 0 0 .4rem; font-size: 1rem; }
+.area-grid p { font-size: .875rem; line-height: 1.5; }
+.area-grid a { font-size: .875rem; }
+@media (max-width: 600px) { .area-selects, .area-grid { grid-template-columns: 1fr; } }

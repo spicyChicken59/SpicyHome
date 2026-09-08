@@ -17,7 +17,7 @@ GET https://api.rentcast.io/v1/listings/rental/long-term
 Accept: application/json
 X-Api-Key: <RENTCAST_API_KEY>
 
-city=Chicago
+city=<one selected city>
 state=IL
 bedrooms=1
 bathrooms=1
@@ -97,9 +97,9 @@ Implemented configuration:
 | `SPICYHOME_TRACKING_ENABLED` | Repository variable; absent/false skips both tracking and city-context jobs |
 | `SPICYHOME_PAGES_ENABLED` | Repository variable; absent/false skips website publication |
 | Daily and rolling request caps | `data/search.json`: `max_attempts_utc_day=1`, `max_attempts_32_days=30` |
-| Query city/state | `data/search.json`: `city=Chicago`, `state=IL` |
+| Query city/state | `data/search.json`: `cities` rotation and `state=IL` |
 | Rent/layout | `data/search.json`: `rent_min=1200`, `rent_max=3000`, `bedrooms=1`, `bathrooms=1` |
-| Page size and downtown rectangle | `data/search.json`: `limit=500`, `bounds`; one page per attempt |
+| Page size and 35-mile boundary | `data/search.json`: `limit=500`, `center`, `radius_miles`, `bounds`; one city/page per attempt |
 | `AFDC_API_KEY` | Optional GitHub Actions secret |
 | AFDC/CTA endpoints | `AFDC` and `CTA` constants in `src/city_context.py`; no endpoint environment variables |
 
@@ -155,3 +155,26 @@ RentCast expressly permits storing API data and displaying/distributing it, subj
 ## Implemented CTA source
 
 The production adapter uses the smaller official Chicago Data Portal [CTA station reference](https://data.cityofchicago.org/Transportation/CTA-System-Information-List-of-L-Stops/8pix-ypme), endpoint `https://data.cityofchicago.org/resource/8pix-ypme.json?$limit=1000`. Group platform rows by `map_id`, union route flags and parse string coordinates. The observed dataset had 302 platform rows / 144 distinct station IDs and source update November 19, 2025. SpicyHome fetched 37 distinct stations inside its downtown search window on September 7, 2026. This is a dated station reference, not a live service or accessibility guarantee. The initial full GTFS download exceeded the bounded fetch size; no partial archive was accepted.
+
+## Expanded suburban coverage — September 7, 2026
+
+The deployed search now includes Chicago, Evanston, Oak Park, Park Ridge, Elmhurst,
+Downers Grove, Arlington Heights and Naperville within 35 straight-line miles of
+central Chicago. One city is selected per persisted reservation, with the same
+one-page and rolling request caps. Cities rotate rather than making eight calls in
+one run. No provider request was made while implementing this expansion.
+
+City names are case-sensitive provider inputs and are not documented as multi-value
+parameters. A broad radius response is sorted by latest observation rather than
+geographic balance; therefore dedicated city queries give suburbs deliberate
+coverage. See [rental endpoint](https://developers.rentcast.io/reference/rental-listings-long-term)
+and [search semantics](https://developers.rentcast.io/reference/search-queries).
+
+The UI publishes per-city successful-scan dates and retains unscanned cities' prior
+observations. A cycle takes approximately 8–10 days, subject to failures and the
+rolling cap. Official property sources establish the eight initial suburban building
+prospects; their exact price basis, lease terms, observation date, unknowns and map
+coordinate sources are retained with each record. Building research is distinct
+from a new provider scan. Regional context still covers CTA and public charging;
+municipal links describe suburban Metra options without claiming live service or
+commute times.

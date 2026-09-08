@@ -45,7 +45,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/usage.json data/history dist/data.json dist/status.json
+          git add data/usage.json data/layout-evidence.json data/history dist/data.json dist/status.json
           if ! git diff --cached --quiet; then
             git commit -m 'data: record apartment tracking outcome'
             git pull --rebase origin main
@@ -58,6 +58,7 @@ jobs:
           name: spicyhome-tracking-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             data/usage.json
+            data/layout-evidence.json
             dist/status.json
           if-no-files-found: ignore
           retention-days: 35

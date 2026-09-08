@@ -11,7 +11,16 @@ export const defaults = {
   search: "",
   utilityEstimate: null,
   layoutScope: "all",
+  region: "all",
+  radiusMiles: 0,
 };
+export const searchCenter = { lat: 41.882, lng: -87.632 };
+export const suburbCities = ["Evanston", "Oak Park", "Park Ridge", "Elmhurst", "Downers Grove", "Arlington Heights", "Naperville"];
+export function homeCity(home) {
+  const match = home.address?.match(/,\s*([^,]+),\s*IL\b/i);
+  const candidate = home.city?.trim() || match?.[1]?.trim() || (/,\s*Chicago\s*$/i.test(home.address ?? "") ? "Chicago" : "");
+  return ["Chicago", ...suburbCities].find((city) => city.toLowerCase() === candidate.toLowerCase()) ?? candidate;
+}
 export function layoutEvidence(home, record = {}) {
   const review = record.layoutReview;
   if (["studio", "other"].includes(review))
@@ -33,8 +42,8 @@ export function layoutEvidence(home, record = {}) {
   return { status: "provider_reported", label: "1 bed · 1 bath reported — not checked", matches: true };
 }
 export function planLabel(home) {
-  if (home.floor_plan) return `Plan ${home.floor_plan}`;
   const unit = home.unit_label || home.address?.match(/\b(?:unit|apt|apartment|suite)\s*#?\s*([\w-]+)/i)?.[0];
+  if (home.floor_plan) return [`Plan ${home.floor_plan}`, unit].filter(Boolean).join(" · ");
   return unit || (home.kind === "listing" ? "Unit not identified by source" : "Floor plan not supplied");
 }
 export const statuses = [
@@ -100,6 +109,13 @@ export function costs(home, record = {}, prefs = defaults) {
 export function visibleHomes(homes, workspace, prefs) {
   return homes
     .filter((h) => {
+      const city = homeCity(h);
+      if (prefs.region === "chicago" && city !== "Chicago") return false;
+      if (prefs.region === "suburbs" && !suburbCities.includes(city)) return false;
+      if (prefs.radiusMiles) {
+        const distance = distanceMiles(h, searchCenter);
+        if (distance === null || distance > prefs.radiusMiles) return false;
+      }
       const rec = workspace.records[h.id] ?? {};
       const layout = layoutEvidence(h, rec);
       if (!layout.matches) return false;
@@ -114,7 +130,7 @@ export function visibleHomes(homes, workspace, prefs) {
         return false;
       if (prefs.parking && h.parking?.status !== "yes") return false;
       if (prefs.charging && h.charging?.status !== "yes") return false;
-      return `${h.title} ${h.address} ${h.neighborhood} ${planLabel(h)}`
+      return `${h.title} ${h.address} ${h.neighborhood} ${homeCity(h)} ${planLabel(h)}`
         .toLowerCase()
         .includes(prefs.search.toLowerCase());
     })
@@ -186,6 +202,7 @@ export function validateHome(h) {
   )
     return false;
   if (h.layout_status !== undefined && !["source_listed", "provider_reported", "unverified", "studio", "conflict", "other"].includes(h.layout_status)) return false;
+  if (h.city !== undefined && !textOk(h.city, 500)) return false;
   if (h.layout_declaration != null && !["studio", "one_bed", "conflict"].includes(h.layout_declaration)) return false;
   for (const key of ["layout_note", "unit_label", "property_type"])
     if (h[key] !== undefined && h[key] !== null && !textOk(h[key], 2000)) return false;
@@ -261,6 +278,13 @@ export function validateFeed(d) {
         ))
     )
       throw Error("This snapshot contains invalid city context.");
+  if (d.search_area !== undefined) {
+    const area = d.search_area;
+    if (!isObj(area) || !isObj(area.center) || !Number.isFinite(area.center.lat) || !Number.isFinite(area.center.lng) || !Number.isFinite(area.radius_miles) || area.radius_miles <= 0 || area.radius_miles > 100 || !Array.isArray(area.areas) || area.areas.length > 50 || !area.areas.every((a) => isObj(a) && textOk(a.city,500) && textOk(a.note,2000) && textOk(a.source_url,4000)))
+      throw Error("This snapshot contains an invalid search area.");
+  }
+  if (d.provider.area_scans !== undefined && (!isObj(d.provider.area_scans) || !Object.values(d.provider.area_scans).every((scan) => isObj(scan) && dateOk(scan.last_success) && (scan.returned == null || (Number.isInteger(scan.returned) && scan.returned >= 0 && scan.returned <= 500)) && (scan.total == null || (Number.isInteger(scan.total) && scan.total >= 0)))))
+    throw Error("This snapshot contains invalid area scan dates.");
   return d;
 }
 export function emptyWorkspace() {
@@ -321,6 +345,8 @@ export function validateWorkspace(w) {
     !["rent", "total"].includes(p.basis) ||
     !["rent", "recent", "space"].includes(p.sort) ||
     !["all", "source", "confirmed"].includes(p.layoutScope) ||
+    !["all", "chicago", "suburbs"].includes(p.region) ||
+    ![0, 10, 20, 35].includes(p.radiusMiles) ||
     !textOk(p.search, 500) ||
     !textOk(p.neighborhood, 500) ||
     !["parking", "charging", "unknown"].every(

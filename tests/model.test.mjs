@@ -16,6 +16,8 @@ import {
   distanceMiles,
   layoutEvidence,
   planLabel,
+  homeCity,
+  searchCenter,
 } from "../dist/model.js";
 const seed = JSON.parse(
   fs.readFileSync(new URL("../data/seed.json", import.meta.url)),
@@ -58,12 +60,12 @@ test("unknown manual layout is valid without silently becoming one bedroom", () 
   assert.equal(visibleHomes([h],emptyWorkspace(),{...defaults,layoutScope:"confirmed"}).length,0);
   assert.equal(layoutEvidence({...home,layout_status:"unverified"}).status,"unverified");
 });
-test("official research is valid and ten sourced map pins are present", () => {
-  assert.equal(validateFeed(seed).homes.length, 10);
+test("official city and suburban research is valid with only sourced map pins", () => {
+  assert.equal(validateFeed(seed).homes.length, 18);
   assert(
     seed.homes.every(
       (h) =>
-        Number.isFinite(h.lat) && Number.isFinite(h.lng) && h.sources.length,
+        h.sources.length && ((Number.isFinite(h.lat) && Number.isFinite(h.lng)) || (h.lat === null && h.lng === null && h.coordinate_note)),
     ),
   );
 });
@@ -107,7 +109,9 @@ test("strict rent filter removes unquoted base rents", () => {
     ...defaults,
     unknown: false,
   });
-  assert.equal(list.length, 3);
+  assert.equal(list.length, 6);
+  assert(list.every((h) => h.rent !== null));
+  assert(!list.some((h) => h.id === "tapestry-station"));
 });
 test("known subtotal budget applies quoted parking costs", () => {
   const w = emptyWorkspace();
@@ -201,4 +205,26 @@ test("plan and unit identifiers are searchable and structured declarations valid
   assert.equal(visibleHomes([listing],emptyWorkspace(),{...defaults,search:"427"}).length,1);
   assert(validateHome({...home,layout_declaration:"conflict"}));
   assert(!validateHome({...home,layout_declaration:"anything"}));
+});
+
+test("city, suburb and distance filters keep geography explicit", () => {
+  const suburban=seed.homes.find((h)=>h.id==="amli-evanston");
+  const unlocated=seed.homes.find((h)=>h.id==="burlington-station");
+  const homes=[home,suburban,unlocated];const w=emptyWorkspace();
+  assert.equal(homeCity({...home,city:undefined}),"Chicago");
+  assert.equal(homeCity({...home,city:"CHICAGO"}),"Chicago");
+  assert.equal(homeCity({...suburban,city:"evanston"}),"Evanston");
+  assert.equal(visibleHomes([{...suburban,city:"evanston"}],w,{...defaults,region:"suburbs"}).length,1);
+  assert.equal(planLabel(seed.homes.find((h)=>h.id==="tapestry-station")),"Plan The Main · Unit 212");
+  assert.deepEqual(visibleHomes(homes,w,{...defaults,region:"chicago"}).map(h=>h.id),[home.id]);
+  assert.equal(visibleHomes(homes,w,{...defaults,region:"suburbs"}).length,2);
+  assert.equal(visibleHomes([suburban],w,{...defaults,radiusMiles:10}).length,0);
+  assert.equal(visibleHomes([suburban],w,{...defaults,radiusMiles:20}).length,1);
+  assert.equal(visibleHomes([unlocated],w,{...defaults,radiusMiles:35}).length,0);
+  assert.equal(visibleHomes([unlocated],w,defaults).length,1);
+  const legacy=emptyWorkspace();delete legacy.preferences.region;delete legacy.preferences.radiusMiles;
+  assert.equal(validateWorkspace(legacy).preferences.region,"all");
+  assert.throws(()=>validateWorkspace({...legacy,preferences:{region:"anywhere"}}));
+  assert.throws(()=>validateWorkspace({...legacy,preferences:{radiusMiles:500}}));
+  assert(distanceMiles(suburban,searchCenter)>10);
 });

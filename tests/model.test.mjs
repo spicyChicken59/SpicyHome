@@ -26,6 +26,7 @@ import {
   leasingQuestions,
   moveInScenario,
   spicyPicks,
+  recipeDefaults, recipeWeights, remixPicks, apartmentTradeoffs, areaMatch, pricePulse, nextMoves,
 } from "../dist/model.js";
 const seed = JSON.parse(
   fs.readFileSync(new URL("../data/seed.json", import.meta.url)),
@@ -470,4 +471,70 @@ test('SpicyPicks separates advertised-only leads from bargains and reduces rank 
   const quoted=findPick([candidate],w);
   assert(quoted.score>unquoted.score);assert.equal(unquoted.cost.complete,false);
   assert.match(unquoted.catches.join(' '),/no resident parking.*no resident EV charging.*Still unquoted/);
+});
+
+test('Decision Studio recipe normalizes priorities without mutating the input or suppressing evidence penalties', () => {
+  const recipe={budget:5,value:0,space:0,amenities:0,rail:0,evidence:0};
+  assert.deepEqual(recipeWeights(recipe),{budget:100,value:0,space:0,amenities:0,rail:0,evidence:0});
+  assert.equal(recipe.budget,5);
+  const zero=Object.fromEntries(Object.keys(recipeDefaults).map(key=>[key,0]));
+  assert.deepEqual(recipeWeights(zero),recipeWeights(recipeDefaults));
+  const homes=[pickHome('cheap',{rent:1800,lat:41.89}),pickHome('large',{rent:2500,sqft:1100,lat:41.90})],w=emptyWorkspace();
+  const before=JSON.stringify({homes,w});
+  assert.equal(spicyPicks(homes,w,defaults,{},'balanced',pickNow,recipe).picks[0].home.id,'cheap');
+  assert.equal(spicyPicks(homes,w,defaults,{},'balanced',pickNow,{...zero,space:5}).picks[0].home.id,'large');
+  assert.equal(JSON.stringify({homes,w}),before);
+});
+test('Decision Studio tradeoffs keep layout, fresh prices, active cap and missing-cost caveats intact', () => {
+  const anchor=pickHome('anchor',{rent:2500,charging:{status:'unknown'}}),cheap=pickHome('cheap',{rent:2000,sqft:750,lat:41.89}),room=pickHome('room',{rent:2600,sqft:1000,lat:41.90}),ev=pickHome('ev',{rent:2550,sqft:850,lat:41.91});
+  const other=[pickHome('wrong-bed',{bedrooms:2,rent:1500,lat:41.92}),pickHome('old',{rent:1500,observed_at:'2026-08-20',lat:41.93}),pickHome('over-cap',{rent:3100,sqft:1300,lat:41.94})];
+  const options=apartmentTradeoffs(anchor,[anchor,cheap,room,ev,...other],emptyWorkspace(),defaults,150,pickNow);
+  assert.deepEqual(options.map(o=>[o.key,o.home.id]),[['save','cheap'],['space','room'],['ev','ev']]);
+  assert.equal(options[0].rentDelta,-500);assert.match(options[0].catches.join(' '),/50 fewer reported sq ft.*Unquoted fees/);
+  assert(!apartmentTradeoffs(anchor,[anchor,cheap,room,ev],emptyWorkspace(),defaults,0,pickNow).some(o=>o.rentDelta>0));
+  const w=emptyWorkspace();w.records.anchor={rentOverride:2500};
+  assert.equal(apartmentTradeoffs(anchor,[anchor,cheap],w,defaults,150,pickNow).length,0);
+});
+test('Decision Studio tradeoff lanes deduplicate linked location chains', () => {
+  const anchor=pickHome('anchor',{lat:41.87,rent:2500}),a=pickHome('a',{lat:41.8800,rent:2000,sqft:800}),b=pickHome('b',{lat:41.8803,rent:2500,sqft:850}),c=pickHome('c',{lat:41.8806,rent:2500,sqft:1000});
+  const options=apartmentTradeoffs(anchor,[anchor,a,b,c],emptyWorkspace(),defaults,150,pickNow);
+  assert.equal(options.length,1);assert.equal(options[0].key,'save');
+});
+test('Decision Studio area samples separate sources, deduplicate units and withhold sparse medians', () => {
+  const homes=[0,1,2].map(i=>pickHome('chicago-'+i,{lat:41.88+i*.01,rent:2000+i*200}));
+  homes.push({...homes[0],id:'another-unit',address:homes[0].address+' Apt 2',rent:2200});
+  homes.push(pickHome('building',{kind:'building',lat:41.94,rent:2800}));
+  homes.push(pickHome('elmhurst',{city:'Elmhurst',address:'1 Main St, Elmhurst, IL 60126',lat:41.9,lng:-87.94,rent:null,advertised_price:2300,bedrooms:2}));
+  const areas=areaMatch(homes,emptyWorkspace(),defaults,'1','cities',pickNow),city=areas[0];
+  assert.equal(areas.length,1);assert.equal(city.locations,4);assert.equal(city.cohorts.listing.count,3);assert.equal(city.cohorts.listing.median,2200);
+  assert.equal(city.cohorts.building.median,null);assert.equal(city.cohorts.building.min,2800);
+  const two=areaMatch(homes,emptyWorkspace(),defaults,'2','cities',pickNow)[0];
+  assert.equal(two.label,'Elmhurst');assert.equal(two.unknownRent,1);assert.equal(two.cohorts.listing.count,0);
+});
+test('Decision Studio price pulse preserves actual drop dates after unchanged scans and separates personal series', () => {
+  const home=pickHome('pulse',{rent:2300,history:[{date:'2026-09-06',rent:2500},{date:'2026-09-07',rent:2300},{date:'2026-09-08',rent:2300},{date:'2099-01-01',rent:1000}]}),w=emptyWorkspace();
+  w.records.pulse={saved:true,quote_history:[{date:'2026-09-06',rent:2400},{date:'2026-09-08',rent:2200}]};
+  const result=pricePulse([home],w,defaults,true,pickNow);
+  assert.equal(result.changes.length,2);const source=result.changes.find(c=>c.kind==='source');
+  assert.equal(source.delta,-200);assert.equal(source.latest.date,'2026-09-07T00:00:00.000Z');assert.equal(source.lastObserved,'2026-09-08T00:00:00.000Z');
+  const conflict={...home,history:[{date:'2026-09-06',rent:2400},{date:'2026-09-07',rent:2000},{date:'2026-09-07',rent:2500}]};
+  assert.equal(pricePulse([conflict],emptyWorkspace(),defaults,false,pickNow).changes.length,0);
+  assert.equal(pricePulse([home],emptyWorkspace(),defaults,true,pickNow).total,0);
+});
+test('Decision Studio next moves prioritize appointments and advance only from saved evidence', () => {
+  const homes=['tour','layout','quote','review','ruled'].map((id,i)=>pickHome(id,{lat:41.88+i*.01})),w=emptyWorkspace();
+  for(const h of homes)w.records[h.id]={saved:true,snapshot:h};
+  w.records.tour.tourDate='2026-09-09T13:30';w.records.quote.layoutReview='one_bed';w.records.review={...w.records.review,layoutReview:'one_bed',parkingCost:0,utilities:0,monthlyFees:0};w.records.ruled.status='ruled out';
+  const before=JSON.stringify(w),moves=nextMoves(homes,w,defaults,pickNow);
+  assert.deepEqual(moves.map(m=>[m.home.id,m.target]),[['tour','tour-draft-count'],['layout','layoutReview'],['quote','leasing-draft']]);
+  assert.equal(JSON.stringify(w),before);
+  w.records.layout.layoutReview='one_bed';w.records.layout.parkingCost=0;w.records.layout.utilities=0;w.records.layout.monthlyFees=0;
+  assert.equal(nextMoves([homes[1]],w,defaults,pickNow)[0].target,'tour-draft-count');
+});
+test('Decision Studio instant remix matches full scoring and preserves distinct locations and evidence penalties', () => {
+  const homes=[pickHome('cheap',{rent:1800,lat:41.89}),pickHome('large',{rent:2500,sqft:1100,lat:41.90}),pickHome('duplicate',{address:'large Main St Apt 2, Chicago, IL 60601',rent:2400,sqft:1050,lat:41.90}),pickHome('fresh',{lat:41.91})],w=emptyWorkspace();
+  const base=spicyPicks(homes,w,defaults,{},'balanced',pickNow),before=JSON.stringify(base),recipe={budget:5,value:3,space:4,amenities:0,rail:0,evidence:1};
+  const fast=remixPicks(base,recipe),full=spicyPicks(homes,w,defaults,{},'balanced',pickNow,recipe);
+  assert.deepEqual(fast.picks.map(p=>[p.home.id,p.score]),full.picks.map(p=>[p.home.id,p.score]));
+  assert.equal(new Set(fast.picks.map(p=>p.group)).size,fast.picks.length);assert.equal(JSON.stringify(base),before);
 });

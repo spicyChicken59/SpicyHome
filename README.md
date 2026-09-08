@@ -239,3 +239,40 @@ routes or neighborhood popularity. No review-rating feed is connected: review
 links help check recent resident experiences, while ratings do not affect ranks.
 No additional provider requests, API subscriptions or persisted notebook fields
 are needed. Existing notes, listing sources and request budgets are retained.
+
+## Decision Studio — September 8, 2026
+
+Open Decision Studio from the Explore controls in any Discover surface, or use
+Quick jump. Five tools share the existing apartment facts and notebook:
+
+1. **My recipe:** six adjustable priorities and four starting mixes rerank the
+   supported SpicyPicks. Evidence and approximate building groups are computed
+   once per loaded view; moving a slider only recalculates the weighted order.
+   The displayed weights explain the mix. Experiments remain in the current tab;
+   hard requirements use the existing Discover filters.
+2. **Trade-offs:** choose a starting apartment and up to $500 extra base rent to
+   consider within the search cap. Find a lower rent with at least 85% of its
+   size, at least 100 more square feet, or newly advertised resident EV charging.
+   Alternatives keep source type and bed/bath counts, require fresh quotes, show
+   cost/size differences and caveats, and open a comparison of exactly two homes.
+3. **Area match:** compare two cities or source-named Chicago neighborhoods for
+   one bedroom size. Parking/EV counts and base-rent samples stay distinct from
+   area ratings. Units at one approximate location share one contribution, source
+   types remain separate and fewer than three priced locations never get a median.
+   Unspecified neighborhoods and unquoted two-bedroom leads remain explicit.
+4. **Price pulse:** filter recorded rent drops, rises or saved homes. Public source
+   histories and private quote histories remain separate. An unchanged scan keeps
+   the most recent actual change and its original date. Missing, future or
+   conflicting same-time prices cannot manufacture a change. Old quotes and scan
+   absences have a separate recheck list; no alert subscription is created.
+5. **Next moves:** show one actionable step for each of up to three saved homes,
+   prioritizing near-term tours, layout checks, quotes, unfinished tour checks and
+   a decision note. Each action opens the relevant notebook field. Saving real
+   answers updates the next step. No leasing messages, bookings or applications
+   are sent.
+
+The studio uses compact tool navigation, responsive comparison cards and existing
+local save/compare actions. It adds no API, dependency, notebook schema or request
+budget changes. A concurrent scheduled scan is retained in the release: the
+snapshot contains 390 records, including 93 source-reported two-bedroom entries.
+These counts do not establish current availability or separately enclosed rooms.

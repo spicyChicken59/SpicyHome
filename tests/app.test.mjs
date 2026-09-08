@@ -24,6 +24,7 @@ async function boot({
   packaged = seed,
   configuration = undefined,
   attempt = undefined,
+  leaflet = undefined,
 } = {}) {
   const d = new JSDOM(html, {
       url: "https://spicyhome.test/",
@@ -69,6 +70,7 @@ async function boot({
             : packaged;
     return { ok: true, text: async () => JSON.stringify(data) };
   };
+  if (leaflet) w.L = leaflet(w);
   w.eval(model + "\n" + app);
   for (let i = 0; i < 30 && !w.document.querySelector(".home-card"); i++)
     await new Promise((r) => setTimeout(r, 3));
@@ -522,4 +524,67 @@ test("two-bedroom selection, layout correction and reload keep the notebook inta
   reloaded.doc.querySelector("#reset-filters").click();
   assert.equal(reloaded.doc.querySelector("#search-bedrooms").value,"all");
   reloaded.close();
+});
+
+function mapStub(capture) {
+  return () => {
+    const map={setView(){return this;},fitBounds(){return this;},remove(){}};
+    const makeMarker=(coords,options) => {
+      const m={coords,options,openCount:0,addTo(){return this;},bindPopup(content){this.popup=content;return this;},on(){return this;},getLatLng(){return coords;},openPopup(){this.openCount++;return this;}};
+      capture.push(m);return m;
+    };
+    return {map:()=>map,divIcon:(options)=>options,tileLayer:()=>({addTo(){}}),marker:makeMarker,circleMarker:()=>({addTo(){return this;},bindPopup(){return this;}})};
+  };
+}
+
+test("co-located map plans stay selectable with exact labels and notes", async () => {
+  const capture=[];const d=await boot({leaflet:mapStub(capture)});
+  const bristol=seed.homes.find(h=>h.id==='bristol-station');
+  const shared=capture.filter(m=>m.coords[0]===bristol.lat&&m.coords[1]===bristol.lng);
+  assert.equal(shared.length,1);
+  const marker=shared[0];assert.match(marker.options.icon.html,/3 options/);
+  assert.equal(marker.popup.querySelectorAll('[data-map-plan]').length,3);
+  const ids=['bristol-station','bristol-station-victoria','bristol-station-grand-central'];
+  for(const id of ids){
+    const button=d.doc.querySelector(`[data-map-home="${id}"]`);
+    assert.match(button.textContent,/Plan /);button.click();
+  }
+  assert.equal(marker.openCount,3);
+  const choice=marker.popup.querySelector('[data-map-plan="bristol-station-victoria"]');
+  assert.match(choice.textContent,/Victoria · Unit 816-202/);
+  assert.match(choice.textContent,/2 bed · 2 bath/);
+  assert.match(choice.textContent,/Advertised/);
+  choice.click();
+  assert.equal(d.doc.querySelector('#record-form').dataset.id,'bristol-station-victoria');
+  d.doc.querySelector('#notes').value='Check the Victoria plan';
+  d.doc.querySelector('#record-form').dispatchEvent(new d.w.Event('submit',{bubbles:true,cancelable:true}));
+  assert.equal(JSON.parse(d.w.localStorage.getItem('spicyhome.workspace.v1')).records['bristol-station-victoria'].notes,'Check the Victoria plan');
+  assert.equal(d.doc.activeElement.dataset.mapHome,'bristol-station-victoria');
+  d.doc.querySelector('[data-map-home="burlington-station"]').click();
+  assert.equal(d.doc.querySelector('#record-form').dataset.id,'burlington-station');
+  d.close();
+});
+
+test("resetting other filters preserves the selected bedroom size and evidence", async () => {
+  const d=await boot();
+  for(const [id,value] of [['#search-bedrooms','2'],['#layout-scope','source'],['#search-region','chicago']]){
+    const control=d.doc.querySelector(id);control.value=value;control.dispatchEvent(new d.w.Event('change'));
+  }
+  assert.equal(d.doc.querySelectorAll('#results .home-card').length,0);
+  d.doc.querySelector('#reset-other-filters').click();
+  assert.equal(d.doc.querySelector('#search-bedrooms').value,'2');
+  assert.equal(d.doc.querySelector('#layout-scope').value,'source');
+  assert.equal(d.doc.querySelectorAll('#results .home-card').length,4);
+  d.close();
+});
+
+test("empty bedroom coverage offers an explicit way to broaden it", async () => {
+  const one={...seed,homes:seed.homes.filter(h=>h.bedrooms===1)};
+  const d=await boot({remote:one,packaged:one});
+  const control=d.doc.querySelector('#search-bedrooms');control.value='2';control.dispatchEvent(new d.w.Event('change'));
+  assert.equal(d.doc.querySelector('#reset-other-filters'),null);
+  d.doc.querySelector('#broaden-bedrooms').click();
+  assert.equal(d.doc.querySelector('#search-bedrooms').value,'all');
+  assert(d.doc.querySelectorAll('#results .home-card').length>0);
+  d.close();
 });

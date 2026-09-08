@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import { execFileSync } from "node:child_process";
 import {
   costs,
   defaults,
@@ -18,6 +19,7 @@ import {
   planLabel,
   homeCity,
   searchCenter,
+  scanBedroomScope,
 } from "../dist/model.js";
 const seed = JSON.parse(
   fs.readFileSync(new URL("../data/seed.json", import.meta.url)),
@@ -261,4 +263,29 @@ test("malformed layout review values cannot become personal confirmation", () =>
     assert.throws(()=>validateWorkspace(w));
     assert.notEqual(layoutEvidence(home,{layoutReview}).status,"confirmed");
   }
+});
+
+test("area scope distinguishes old one-bedroom scans from broader observations", () => {
+  const provider={query:{city:"Chicago",bedrooms:1},area_scans:{Chicago:{last_success:"2026-09-07"}}};
+  assert.match(scanBedroomScope(provider,"Chicago"),/2-bedroom listing coverage pending/);
+  assert.match(scanBedroomScope(provider,"Evanston"),/First listing scan pending/);
+  provider.area_scans.Chicago.query={bedrooms:"1|2"};
+  assert.match(scanBedroomScope(provider,"Chicago"),/included 1 & 2 bedrooms/);
+  provider.area_scans.Chicago.query={bedrooms:{bad:true}};
+  assert.match(scanBedroomScope(provider,"Chicago"),/not recorded/);
+});
+test("provider-normalized malformed optional fields remain readable by the browser", () => {
+  const normalized=JSON.parse(execFileSync('python',['-c',`
+import sys,json
+sys.path.insert(0,'src')
+import tracker as t
+cfg=json.load(open('data/search.json'))
+row=dict(id='contract',formattedAddress='200 W Adams St, Chicago, IL',addressLine1={'bad':True},addressLine2=['bad'],propertyType={'bad':True},city='Chicago',state='IL',bedrooms=2,bathrooms=2,price=2400,status='Active',latitude=41.879,longitude=-87.634)
+homes,_=t.normalize([row],cfg,'2026-09-08T04:00:00Z')
+print(json.dumps(homes))
+`],{cwd:new URL('..',import.meta.url),encoding:'utf8'}));
+  assert.equal(normalized[0].title,normalized[0].address);
+  assert.equal(normalized[0].unit_label,null);
+  assert.equal(normalized[0].property_type,null);
+  assert(validateFeed({...seed,homes:normalized}));
 });

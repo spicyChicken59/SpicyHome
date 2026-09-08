@@ -143,6 +143,19 @@ class FeedTests(unittest.TestCase):
   for rows in [[row(),row(bedrooms=2,bathrooms=2)],[row(bedrooms=2,bathrooms=2),row()],[row(unitLayout='One bedroom'),row(bedrooms=2,unitLayout='Two bedrooms',status='Inactive')],[row(bathrooms=2),row()]]:
    homes,e=t.normalize(rows,CFG,t.stamp(NOW));self.assertFalse(homes)
    self.assertEqual(e['layout_corrections']['rentcast:a']['layout_declaration'],'conflict')
+ def test_invalid_optional_titles_fall_back_and_required_fields_are_bounded(self):
+  for title in [{"bad":True},42,[]," ","x"*2001,"🏠"*1001]:
+   homes,_=t.normalize([row(addressLine1=title,addressLine2={'bad':True},propertyType=['bad'])],CFG,t.stamp(NOW))
+   self.assertEqual(homes[0]['title'],homes[0]['address']);self.assertIsNone(homes[0]['unit_label']);self.assertIsNone(homes[0]['property_type'])
+  for fields in [dict(id='x'*172),dict(id='🏠'*86),dict(formattedAddress='x'*2001),dict(formattedAddress='🏠'*1001)]:
+   with self.assertRaises(ValueError):t.normalize([row(**fields)],CFG,t.stamp(NOW))
+ def test_area_scan_retains_historical_query_scope_when_rotation_advances(self):
+  previous=copy.deepcopy(SEED);previous['provider']={'last_success':t.stamp(NOW),'query':{'city':'Chicago','bedrooms':1,'bathrooms':1},'area_scans':{'Chicago':{'last_success':t.stamp(NOW),'returned':500,'total':2703}}}
+  query=t.build_query({**CFG,'city':'Evanston'});at=t.stamp(NOW+dt.timedelta(days=1))
+  result=t.combine(previous,SEED,[],{},0,0,at,query)
+  self.assertEqual(result['provider']['area_scans']['Chicago']['query']['bedrooms'],1)
+  self.assertEqual(result['provider']['area_scans']['Chicago']['last_success'],t.stamp(NOW))
+  self.assertEqual(result['provider']['area_scans']['Evanston']['query']['bedrooms'],'1|2')
  def test_parking_and_charging_are_unknown(self):
   h,e=t.normalize([row()],CFG,t.stamp(NOW));self.assertEqual(h[0]['parking']['status'],'unknown');self.assertEqual(h[0]['charging']['status'],'unknown');self.assertIsNone(h[0]['source_url'])
  def test_outside_radius_and_missing_coordinates_are_counted(self):

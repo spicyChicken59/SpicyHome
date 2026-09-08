@@ -6,8 +6,8 @@ Start with real, sourced building prospects; compare the known monthly cost; sav
 
 ## What is built
 
-- Ten official-source building prospects, researched September 7, 2026. Starting prices and advertised monthly totals retain their original meaning. These are **not guaranteed available units**.
-- Interactive OpenStreetMap/Leaflet map with ten sourced, approximate building coordinates; 37 CTA station references for nearby transit context.
+- Twenty-two official-source apartment plans at 18 buildings, researched September 7–8, 2026. Starting prices and advertised monthly totals retain their original meaning. These are **not guaranteed available units**.
+- Interactive OpenStreetMap/Leaflet map with sourced approximate building coordinates; co-located plans share a selectable marker. Unlocated plans remain in the list. Includes 37 CTA station references for nearby transit context.
 - Rent and neighborhood filters, optional advertised parking/EV filters, and explicit inclusion of unquoted base rents.
 - Three-home comparison matrix, real observed price history, saved-home snapshots, shortlist statuses, quote calculator, tour notes and personal calendar downloads.
 - Manual apartment entries and JSON notebook export/import. Personal notes stay in the browser; the source feed does not receive them.
@@ -127,3 +127,18 @@ by the official [search query documentation](https://developers.rentcast.io/refe
 Both sizes share the existing 500-result page, city rotation and request cap.
 The last scan metadata is historical; the broader query starts with the next
 permitted scheduled scan. No provider request was made to test this change.
+
+## Release audit follow-up
+
+Map pins group plans at the same exact coordinates, with separately labeled plan,
+unit, layout evidence and price basis. Each option opens its own notebook record.
+Map-list entries also identify plans, and unlocated entries still open details.
+
+“Reset other filters” keeps the selected bedroom size and evidence scope; widening
+to both bedroom sizes is a separately labeled action. The area guide distinguishes
+historical one-bedroom-only scans from later combined scans. Each future scan
+persists its query scope without changing earlier cities’ observation dates.
+
+Provider optional titles must be valid bounded text or use the valid formatted
+address. Invalid unit/type fields remain unknown; invalid required IDs or addresses
+stop publication. A Python-to-browser contract check verifies the resulting feed.

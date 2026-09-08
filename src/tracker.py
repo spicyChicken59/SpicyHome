@@ -17,6 +17,7 @@ def write_json(path,data):
     os.replace(tmp,path)
 def finite(value): return isinstance(value,(int,float)) and not isinstance(value,bool) and math.isfinite(value)
 def positive(value): return finite(value) and value>0
+def bounded_text(value,limit): return isinstance(value,str) and bool(value.strip()) and len(value.encode('utf-16-le'))//2<=limit
 
 def reserve(usage,config,reservation_id,now):
     """Each attempt stays counted even if cancelled or the provider times out."""
@@ -111,7 +112,7 @@ def normalize(rows,config,at):
     if not isinstance(rows,list) or len(rows)>500: raise ValueError('Provider did not return one valid listing page')
     homes=[];seen=set();reported_by_id={};excluded={'outside_search_window':0,'missing_coordinates':0,'outside_layout_or_price':0,'inactive':0,'duplicate':0,'layout_corrections':{}}
     for row in rows:
-        if not isinstance(row,dict) or not isinstance(row.get('id'),str) or not row['id'].strip() or not isinstance(row.get('formattedAddress'),str) or not row['formattedAddress'].strip(): raise ValueError('Provider listing has no stable ID or address')
+        if not isinstance(row,dict) or not bounded_text(row.get('id'),171) or not bounded_text(row.get('formattedAddress'),2000): raise ValueError('Provider listing has no valid bounded stable ID or address')
         price=row.get('price')
         if not positive(price): raise ValueError('Provider listing contains an invalid rent; retaining the last complete snapshot')
         if str(row.get('city','')).casefold()!=config['city'].casefold() or row.get('state')!=config['state']: raise ValueError('Provider returned an unexpected city/state')
@@ -137,10 +138,10 @@ def normalize(rows,config,at):
         if ident in seen: excluded['duplicate']+=1;continue
         seen.add(ident)
         unknown={'status':'unknown','note':'Not reported by the listing provider; confirm with leasing.'}
-        homes.append({'id':ident,'kind':'listing','title':row.get('addressLine1') or row['formattedAddress'],'address':row['formattedAddress'],'city':config['city'],'neighborhood':config['city']+' · neighborhood unverified' if config['city']=='Chicago' else config['city'],'rent':price,'sqft':row.get('squareFootage') if positive(row.get('squareFootage')) else None,'lat':lat,'lng':lng,'parking':{**unknown,'monthly':None},'charging':dict(unknown),'access':dict(unknown),'fees':{'monthly':None,'one_time':None},'amenities':[],'source_url':None,'sources':[{'url':'https://developers.rentcast.io/reference/property-listings','supports':'RentCast listing ID '+row['id']+'; no direct listing URL supplied by the API.'}],'observed_at':at,'provider_last_seen':row.get('lastSeenDate'),'listed_date':row.get('listedDate'),'seen_in_latest':True,'history':[{'date':at,'rent':price}]})
+        homes.append({'id':ident,'kind':'listing','title':row['addressLine1'] if bounded_text(row.get('addressLine1'),2000) else row['formattedAddress'],'address':row['formattedAddress'],'city':config['city'],'neighborhood':config['city']+' · neighborhood unverified' if config['city']=='Chicago' else config['city'],'rent':price,'sqft':row.get('squareFootage') if positive(row.get('squareFootage')) else None,'lat':lat,'lng':lng,'parking':{**unknown,'monthly':None},'charging':dict(unknown),'access':dict(unknown),'fees':{'monthly':None,'one_time':None},'amenities':[],'source_url':None,'sources':[{'url':'https://developers.rentcast.io/reference/property-listings','supports':'RentCast listing ID '+row['id']+'; no direct listing URL supplied by the API.'}],'observed_at':at,'provider_last_seen':row.get('lastSeenDate'),'listed_date':row.get('listedDate'),'seen_in_latest':True,'history':[{'date':at,'rent':price}]})
         homes[-1].update(layout)
-        homes[-1]['unit_label']=str(row.get('addressLine2') or '')[:2000] or None
-        homes[-1]['property_type']=str(row.get('propertyType') or '')[:2000] or None
+        homes[-1]['unit_label']=row['addressLine2'] if bounded_text(row.get('addressLine2'),2000) else None
+        homes[-1]['property_type']=row['propertyType'] if bounded_text(row.get('propertyType'),2000) else None
     # A conflicting duplicate must not leave an accepted copy in results.
     homes=[h for h in homes if h['id'] not in excluded['layout_corrections']]
     return homes,excluded
@@ -198,7 +199,10 @@ def combine(previous,seed,homes,excluded,total,returned,at,query,evidence=None):
     if not scans and previous.get('provider',{}).get('last_success'):
         prior=previous['provider'];prior_city=prior.get('query',{}).get('city','Chicago')
         scans[prior_city]={'last_success':prior['last_success'],'returned':prior.get('returned'),'total':prior.get('total'),'truncated':prior.get('truncated',False)}
-    scans[scanned_city]={'last_success':at,'returned':returned,'total':total,'truncated':truncated,'accepted':accepted}
+    prior_query=previous.get('provider',{}).get('query',{})
+    prior_city=prior_query.get('city')
+    if prior_city in scans and 'query' not in scans[prior_city]:scans[prior_city]['query']=copy.deepcopy(prior_query)
+    scans[scanned_city]={'last_success':at,'returned':returned,'total':total,'truncated':truncated,'accepted':accepted,'query':copy.deepcopy(query)}
     result=copy.deepcopy(seed)
     result.update({'generated_at':at,'mode':'connected','provider':{'name':'RentCast','configured':True,'last_success':at,'status':'success','coverage':coverage,'returned':returned,'total':total,'truncated':truncated,'query':query,'exclusions':excluded,'area_scans':scans},'homes':copy.deepcopy(seed['homes'])+current,'events':events[:1000]})
     # Keep the dashboard bounded without letting a dense city evict every suburb.

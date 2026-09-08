@@ -124,6 +124,25 @@ class FeedTests(unittest.TestCase):
   self.assertNotIn('rentcast:499',evidence)
  def test_query_is_one_page_without_listing_age_cutoff(self):
   q=t.build_query(CFG);self.assertEqual(q['price'],'1200:3000');self.assertEqual(q['limit'],500);self.assertNotIn('daysOld',q)
+ def test_both_bedroom_sizes_share_one_query_and_keep_actual_bathrooms(self):
+  q=t.build_query(CFG);self.assertEqual(q['bedrooms'],'1|2');self.assertEqual(q['bathrooms'],'1|1.5|2');self.assertEqual(q['offset'],0)
+  rows=[row(id=f'{b}-{ba}',bedrooms=b,bathrooms=ba) for b in [1,2] for ba in [1,1.5,2]]
+  homes,e=t.normalize(rows,CFG,t.stamp(NOW));self.assertEqual(len(homes),6)
+  self.assertEqual([(h['bedrooms'],h['bathrooms']) for h in homes],[(r['bedrooms'],r['bathrooms']) for r in rows])
+ def test_two_bedroom_structured_conflicts_and_numeric_mismatch_stay_excluded(self):
+  for fields in [dict(bedrooms=2,unitLayout='Studio'),dict(bedrooms=2,unitLayout='One bedroom'),dict(bedrooms=1,unitLayout='Two bedrooms'),dict(bedrooms=2,unitLayout='Two bedrooms',floorPlanType='One bedroom')]:
+   homes,e=t.normalize([row(**fields)],CFG,t.stamp(NOW));self.assertFalse(homes);self.assertEqual(e['layout_corrections']['rentcast:a']['layout_status'],'conflict')
+ def test_explicit_two_bedroom_evidence_resolves_prior_studio_but_numeric_counts_do_not(self):
+  evidence={'rentcast:a':t.reported_layout(row(unitLayout='Studio'))};previous=SEED
+  for fields,expected in [(dict(bedrooms=2,bathrooms=2),'conflict'),(dict(bedrooms=2,bathrooms=2,unitLayout='Two bedrooms'),'provider_reported')]:
+   at=t.stamp(NOW);homes,e=t.normalize([row(**fields)],CFG,at)
+   previous=t.combine(previous,SEED,homes,e,1,1,at,{'city':'Chicago'},evidence)
+   h=next(h for h in previous['homes'] if h['id']=='rentcast:a');self.assertEqual(h['layout_status'],expected)
+  self.assertNotIn('rentcast:a',evidence);self.assertEqual(h['bedrooms'],2);self.assertEqual(h['bathrooms'],2)
+ def test_duplicate_matching_sizes_do_not_hide_layout_disagreements(self):
+  for rows in [[row(),row(bedrooms=2,bathrooms=2)],[row(bedrooms=2,bathrooms=2),row()],[row(unitLayout='One bedroom'),row(bedrooms=2,unitLayout='Two bedrooms',status='Inactive')],[row(bathrooms=2),row()]]:
+   homes,e=t.normalize(rows,CFG,t.stamp(NOW));self.assertFalse(homes)
+   self.assertEqual(e['layout_corrections']['rentcast:a']['layout_declaration'],'conflict')
  def test_parking_and_charging_are_unknown(self):
   h,e=t.normalize([row()],CFG,t.stamp(NOW));self.assertEqual(h[0]['parking']['status'],'unknown');self.assertEqual(h[0]['charging']['status'],'unknown');self.assertIsNone(h[0]['source_url'])
  def test_outside_radius_and_missing_coordinates_are_counted(self):
@@ -139,7 +158,7 @@ class FeedTests(unittest.TestCase):
  def test_duplicate_ids_do_not_duplicate_homes(self):
   h,e=t.normalize([row(),row()],CFG,t.stamp(NOW));self.assertEqual(len(h),1);self.assertEqual(e['duplicate'],1)
  def test_layout_price_and_inactive_filters(self):
-  h,e=t.normalize([row(bedrooms=2),row(id='b',price=4000),row(id='c',status='Inactive')],CFG,t.stamp(NOW));self.assertFalse(h);self.assertEqual(e['outside_layout_or_price'],2);self.assertEqual(e['inactive'],1)
+  h,e=t.normalize([row(bedrooms=3),row(id='b',price=4000),row(id='c',status='Inactive')],CFG,t.stamp(NOW));self.assertFalse(h);self.assertEqual(e['outside_layout_or_price'],2);self.assertEqual(e['inactive'],1)
  def test_price_change_uses_same_id_and_preserves_actual_history(self):
   at=t.stamp(NOW);h,e=t.normalize([row()],CFG,at);first=t.combine(SEED,SEED,h,e,1,1,at,{})
   later=t.stamp(NOW+dt.timedelta(days=1));h,e=t.normalize([row(price=2300)],CFG,later);second=t.combine(first,SEED,h,e,1,1,later,{})

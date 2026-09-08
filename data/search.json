@@ -2,8 +2,15 @@
   "schema_version": 1,
   "city": "Chicago",
   "state": "IL",
-  "bedrooms": 1,
-  "bathrooms": 1,
+  "bedrooms": [
+    1,
+    2
+  ],
+  "bathrooms": [
+    1,
+    1.5,
+    2
+  ],
   "rent_min": 1200,
   "rent_max": 3000,
   "limit": 500,

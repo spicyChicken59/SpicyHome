@@ -13,6 +13,16 @@ export const defaults = {
   layoutScope: "all",
   region: "all",
   radiusMiles: 0,
+  bedrooms: "all",
+};
+// Keep the original one_bed review's exact 1/1 meaning in existing notebooks.
+export const checkedLayouts = {
+  one_bed: [1, 1],
+  one_bed_one_half_bath: [1, 1.5],
+  one_bed_two_bath: [1, 2],
+  two_bed_one_bath: [2, 1],
+  two_bed_one_half_bath: [2, 1.5],
+  two_bed_two_bath: [2, 2],
 };
 export const searchCenter = { lat: 41.882, lng: -87.632 };
 export const suburbCities = ["Evanston", "Oak Park", "Park Ridge", "Elmhurst", "Downers Grove", "Arlington Heights", "Naperville"];
@@ -25,21 +35,25 @@ export function layoutEvidence(home, record = {}) {
   const review = record.layoutReview;
   if (["studio", "other"].includes(review))
     return { status: review, label: review === "studio" ? "Marked by you: studio / convertible" : "You marked a different layout", matches: false };
-  if (review === "one_bed")
-    return { status: "confirmed", label: "1 bed · 1 bath — checked by you", matches: true };
+  if (typeof review === "string" && Object.hasOwn(checkedLayouts, review)) {
+    const [bedrooms, bathrooms] = checkedLayouts[review];
+    return { status: "confirmed", label: `${bedrooms} bed · ${bathrooms} bath — checked by you`, matches: true, bedrooms, bathrooms };
+  }
   if (home.bedrooms === 0 || home.layout_status === "studio")
-    return { status: "studio", label: "Studio · excluded from one-bedroom search", matches: false };
+    return { status: "studio", label: "Studio · excluded from 1–2 bedroom search", matches: false };
   if (home.layout_status === "conflict")
     return { status: "conflict", label: "Conflicting layout information", matches: false };
-  if (home.layout_status === "other" || (home.bedrooms != null && home.bedrooms !== 1) || (home.bathrooms != null && home.bathrooms !== 1))
+  if (home.layout_status === "other" || (home.bedrooms != null && ![1, 2].includes(home.bedrooms)) || (home.bathrooms != null && ![1, 1.5, 2].includes(home.bathrooms)))
     return { status: "other", label: "Different bed / bath layout", matches: false };
+  const counts = { bedrooms: home.bedrooms ?? null, bathrooms: home.bathrooms ?? null };
+  const label = `${counts.bedrooms ?? "?"} bed · ${counts.bathrooms ?? "?"} bath`;
   if (home.layout_status === "unverified" || home.bedrooms == null || home.bathrooms == null)
-    return { status: "unverified", label: "Layout needs checking", matches: true };
+    return { status: "unverified", label: `Layout needs checking · ${label}`, matches: true, ...counts };
   if (home.kind === "building" && home.floor_plan && home.sources?.length && home.layout_status !== "unverified")
-    return { status: "source_listed", label: "Source lists 1 bed · 1 bath", matches: true };
+    return { status: "source_listed", label: `Source lists ${label}`, matches: true, ...counts };
   if (home.kind === "manual")
-    return { status: "unverified", label: "1 bed · 1 bath entered — not checked", matches: true };
-  return { status: "provider_reported", label: "1 bed · 1 bath reported — not checked", matches: true };
+    return { status: "unverified", label: `${label} entered — not checked`, matches: true, ...counts };
+  return { status: "provider_reported", label: `${label} reported — not checked`, matches: true, ...counts };
 }
 export function planLabel(home) {
   const unit = home.unit_label || home.address?.match(/\b(?:unit|apt|apartment|suite)\s*#?\s*([\w-]+)/i)?.[0];
@@ -119,6 +133,7 @@ export function visibleHomes(homes, workspace, prefs) {
       const rec = workspace.records[h.id] ?? {};
       const layout = layoutEvidence(h, rec);
       if (!layout.matches) return false;
+      if (prefs.bedrooms && prefs.bedrooms !== "all" && layout.bedrooms !== Number(prefs.bedrooms)) return false;
       if (prefs.layoutScope === "source" && !["source_listed", "confirmed"].includes(layout.status)) return false;
       if (prefs.layoutScope === "confirmed" && layout.status !== "confirmed") return false;
       const c = costs(h, rec, prefs);
@@ -203,7 +218,7 @@ export function validateHome(h) {
     return false;
   if (h.layout_status !== undefined && !["source_listed", "provider_reported", "unverified", "studio", "conflict", "other"].includes(h.layout_status)) return false;
   if (h.city !== undefined && !textOk(h.city, 500)) return false;
-  if (h.layout_declaration != null && !["studio", "one_bed", "conflict"].includes(h.layout_declaration)) return false;
+  if (h.layout_declaration != null && !["studio", "one_bed", "two_bed", "conflict"].includes(h.layout_declaration)) return false;
   for (const key of ["layout_note", "unit_label", "property_type"])
     if (h[key] !== undefined && h[key] !== null && !textOk(h[key], 2000)) return false;
   if (!dateOk(h.observed_at) || !historyOk(h.history)) return false;
@@ -315,7 +330,7 @@ export function validateWorkspace(w) {
       (r.saved !== undefined && typeof r.saved !== "boolean")
     )
       throw Error("The backup contains an invalid record.");
-    if (r.layoutReview !== undefined && !["one_bed", "studio", "other", "unverified"].includes(r.layoutReview))
+    if (r.layoutReview !== undefined && (typeof r.layoutReview !== "string" || !Object.hasOwn(checkedLayouts, r.layoutReview) && !["studio", "other", "unverified"].includes(r.layoutReview)))
       throw Error("The backup contains an invalid layout review.");
     for (const k of [
       "rentOverride",
@@ -346,6 +361,7 @@ export function validateWorkspace(w) {
     !["rent", "recent", "space"].includes(p.sort) ||
     !["all", "source", "confirmed"].includes(p.layoutScope) ||
     !["all", "chicago", "suburbs"].includes(p.region) ||
+    !["all", "1", "2"].includes(p.bedrooms) ||
     ![0, 10, 20, 35].includes(p.radiusMiles) ||
     !textOk(p.search, 500) ||
     !textOk(p.neighborhood, 500) ||

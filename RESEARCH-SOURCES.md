@@ -96,3 +96,19 @@ Observed September 7, 2026. These are building prospects, not live unit inventor
 - [Address, Loop location, built-in shelving and apartment descriptions](https://www.experience73.com/)
 - [07a unit 2607, 1BR/1BA, 682 sq ft, base rent $3104–$4664, 12-month term and October 5 availability](https://www.experience73.com/models)
 - [Reserved garage parking and rooftop terrace](https://www.experience73.com/amenities)
+
+## Two-bedroom additions — September 8, 2026
+
+Four new plan records retain separate IDs from the original one-bedroom prospects.
+All four prices are advertised starting amounts with an unverified base-rent/fee
+breakdown, not recorded base rent. Unit availability and terms require confirmation.
+
+| Building / plan | Unit | Beds / baths | Approx. sq ft | Advertised from | Official source |
+|---|---|---|---:|---:|---|
+| Tapestry Station / The Sheridan | 417 | 2 / 1 | 774 | $2,845 | [Property plans](https://chicagorentals.com/apartment/tapestry-station/) |
+| Tapestry Station / The Dempster | 206 | 2 / 1 | 822 | $2,935 | [Property plans](https://chicagorentals.com/apartment/tapestry-station/) |
+| Bristol Station / Victoria | 816-202 | 2 / 2 | 1,091 | $2,236 | [Victoria](https://www.bristolstation.com/floorplans/victoria) |
+| Bristol Station / Grand Central | 103-310 | 2 / 2 | 1,184 | $2,303 | [Grand Central](https://www.bristolstation.com/floorplans/grand-central) |
+
+Coordinates and property-level sources are reused from the same buildings with
+their original provenance and observation dates. No history was fabricated.

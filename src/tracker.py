@@ -41,10 +41,10 @@ def reserve(usage,config,reservation_id,now):
 
 def build_query(config):
     if config['city'] not in config.get('cities',[config['city']]): raise ValueError('Requested city is outside the configured rotation')
-    if config['bedrooms']!=1 or config['bathrooms']!=1: raise ValueError('This tracker requires 1 bed / 1 bath')
+    if config['bedrooms']!=[1,2] or config['bathrooms']!=[1,1.5,2]: raise ValueError('This tracker requires 1–2 bedrooms and 1–2 bathrooms')
     if not (positive(config['rent_min']) and config['rent_max']>=config['rent_min']): raise ValueError('Invalid rent range')
     if config.get('limit')!=500: raise ValueError('One page of 500 is the supported request budget')
-    return {'city':config['city'],'state':config['state'],'bedrooms':1,'bathrooms':1,'price':f"{config['rent_min']}:{config['rent_max']}",'status':'Active','limit':500,'offset':0,'includeTotalCount':'true'}
+    return {'city':config['city'],'state':config['state'],'bedrooms':'1|2','bathrooms':'1|1.5|2','price':f"{config['rent_min']}:{config['rent_max']}",'status':'Active','limit':500,'offset':0,'includeTotalCount':'true'}
 
 def get_listings(key,query,opener=urllib.request.urlopen):
     """Exactly one call. No retry: a lost response can still consume quota."""
@@ -83,19 +83,24 @@ def reported_layout(row):
     declarations={str(row.get(key) or '').strip().lower() for key in ('unitLayout','floorPlanType')}
     compact=bool(declarations & {'studio','convertible','efficiency','studio apartment'})
     one_bed=bool(declarations & {'one bedroom','one-bedroom','1 bedroom','1-bedroom','1 bed','1br'})
-    declaration='conflict' if compact and one_bed else 'studio' if compact else 'one_bed' if one_bed else None
-    status=('studio' if beds in (None,0) else 'conflict') if compact else 'studio' if beds==0 else 'unverified' if beds is None or baths is None else 'provider_reported' if beds==1 and baths==1 else 'other'
+    two_bed=bool(declarations & {'two bedrooms','two bedroom','two-bedroom','2 bedrooms','2 bedroom','2-bedroom','2 bed','2br'})
+    contradiction=sum((compact,one_bed,two_bed))>1 or one_bed and beds not in (None,1) or two_bed and beds not in (None,2)
+    declaration='conflict' if contradiction else 'studio' if compact else 'one_bed' if one_bed else 'two_bed' if two_bed else None
+    status='conflict' if contradiction else ('studio' if beds in (None,0) else 'conflict') if compact else 'studio' if beds==0 else 'unverified' if beds is None or baths is None else 'provider_reported' if beds in (1,2) and baths in (1,1.5,2) else 'other'
     fields='; '.join(f'{key}: {str(row[key])[:200]}' for key in ('unitLayout','floorPlanType') if row.get(key))
     return {'bedrooms':beds,'bathrooms':baths,'layout_status':status,'layout_declaration':declaration,'layout_note':f'Provider bedroom/bathroom fields: {beds!s}/{baths!s}.'+(f' Structured unit information: {fields}.' if fields else ' Separate bedroom not independently checked.')}
+
+def explicit_layout_resolution(layout):
+    return layout.get('layout_status')=='provider_reported' and ((layout.get('layout_declaration')=='one_bed' and layout.get('bedrooms')==1) or (layout.get('layout_declaration')=='two_bed' and layout.get('bedrooms')==2)) and layout.get('bathrooms') in (1,1.5,2)
 
 def preserve_layout_evidence(previous,incoming):
     result=copy.deepcopy(incoming)
     explicit_studio=previous.get('layout_declaration') in ('studio','conflict')
-    explicit_resolution=incoming.get('layout_declaration')=='one_bed' and incoming.get('bedrooms')==1 and incoming.get('bathrooms')==1
+    explicit_resolution=explicit_layout_resolution(incoming)
     if explicit_studio and not explicit_resolution and incoming.get('layout_declaration') not in ('studio','conflict'):
         result['layout_declaration']=previous['layout_declaration']
         result['layout_status']='studio' if incoming.get('bedrooms')==0 else 'conflict'
-        result['layout_note']='Earlier structured unit information identified a studio/convertible; numeric counts alone do not resolve it. '+incoming.get('layout_note','')
+        result['layout_note']='Earlier structured unit information identified a studio/convertible or conflicting layout; numeric counts alone do not resolve it. '+incoming.get('layout_note','')
         if previous.get('layout_observed_at'):result['layout_observed_at']=previous['layout_observed_at']
     elif incoming.get('layout_status')=='unverified' and previous.get('layout_status') in ('studio','conflict','other'):
         for key in ('bedrooms','bathrooms','layout_status','layout_declaration','layout_note','layout_observed_at'):
@@ -104,13 +109,18 @@ def preserve_layout_evidence(previous,incoming):
 
 def normalize(rows,config,at):
     if not isinstance(rows,list) or len(rows)>500: raise ValueError('Provider did not return one valid listing page')
-    homes=[];seen=set();excluded={'outside_search_window':0,'missing_coordinates':0,'outside_layout_or_price':0,'inactive':0,'duplicate':0,'layout_corrections':{}}
+    homes=[];seen=set();reported_by_id={};excluded={'outside_search_window':0,'missing_coordinates':0,'outside_layout_or_price':0,'inactive':0,'duplicate':0,'layout_corrections':{}}
     for row in rows:
         if not isinstance(row,dict) or not isinstance(row.get('id'),str) or not row['id'].strip() or not isinstance(row.get('formattedAddress'),str) or not row['formattedAddress'].strip(): raise ValueError('Provider listing has no stable ID or address')
         price=row.get('price')
         if not positive(price): raise ValueError('Provider listing contains an invalid rent; retaining the last complete snapshot')
         if str(row.get('city','')).casefold()!=config['city'].casefold() or row.get('state')!=config['state']: raise ValueError('Provider returned an unexpected city/state')
         layout=reported_layout(row)
+        ident='rentcast:'+row['id']
+        if layout['layout_status']=='provider_reported':
+            prior_layout=reported_by_id.setdefault(ident,layout)
+            if (layout['bedrooms'],layout['bathrooms'])!=(prior_layout['bedrooms'],prior_layout['bathrooms']):
+                layout={**layout,'layout_status':'conflict','layout_declaration':'conflict','layout_note':'Duplicate provider rows disagree on bedroom/bathroom counts for this same listing ID. Confirm the exact unit layout.'}
         if layout['layout_status']!='provider_reported':
             ident='rentcast:'+row['id'];previous=excluded['layout_corrections'].get(ident)
             rank={'unverified':0,'other':1,'conflict':2,'studio':3}
@@ -127,11 +137,11 @@ def normalize(rows,config,at):
         if ident in seen: excluded['duplicate']+=1;continue
         seen.add(ident)
         unknown={'status':'unknown','note':'Not reported by the listing provider; confirm with leasing.'}
-        homes.append({'id':ident,'kind':'listing','title':row.get('addressLine1') or row['formattedAddress'],'address':row['formattedAddress'],'city':config['city'],'neighborhood':config['city']+' · neighborhood unverified' if config['city']=='Chicago' else config['city'],'bedrooms':1,'bathrooms':1,'rent':price,'sqft':row.get('squareFootage') if positive(row.get('squareFootage')) else None,'lat':lat,'lng':lng,'parking':{**unknown,'monthly':None},'charging':dict(unknown),'access':dict(unknown),'fees':{'monthly':None,'one_time':None},'amenities':[],'source_url':None,'sources':[{'url':'https://developers.rentcast.io/reference/property-listings','supports':'RentCast listing ID '+row['id']+'; no direct listing URL supplied by the API.'}],'observed_at':at,'provider_last_seen':row.get('lastSeenDate'),'listed_date':row.get('listedDate'),'seen_in_latest':True,'history':[{'date':at,'rent':price}]})
+        homes.append({'id':ident,'kind':'listing','title':row.get('addressLine1') or row['formattedAddress'],'address':row['formattedAddress'],'city':config['city'],'neighborhood':config['city']+' · neighborhood unverified' if config['city']=='Chicago' else config['city'],'rent':price,'sqft':row.get('squareFootage') if positive(row.get('squareFootage')) else None,'lat':lat,'lng':lng,'parking':{**unknown,'monthly':None},'charging':dict(unknown),'access':dict(unknown),'fees':{'monthly':None,'one_time':None},'amenities':[],'source_url':None,'sources':[{'url':'https://developers.rentcast.io/reference/property-listings','supports':'RentCast listing ID '+row['id']+'; no direct listing URL supplied by the API.'}],'observed_at':at,'provider_last_seen':row.get('lastSeenDate'),'listed_date':row.get('listedDate'),'seen_in_latest':True,'history':[{'date':at,'rent':price}]})
         homes[-1].update(layout)
         homes[-1]['unit_label']=str(row.get('addressLine2') or '')[:2000] or None
         homes[-1]['property_type']=str(row.get('propertyType') or '')[:2000] or None
-    # A conflicting duplicate must not leave an accepted 1/1 copy in results.
+    # A conflicting duplicate must not leave an accepted copy in results.
     homes=[h for h in homes if h['id'] not in excluded['layout_corrections']]
     return homes,excluded
 
@@ -141,7 +151,7 @@ def combine(previous,seed,homes,excluded,total,returned,at,query,evidence=None):
     def remember(ident,layout):
         if layout.get('layout_declaration') in ('studio','conflict'):
             evidence[ident]={key:layout[key] for key in ('bedrooms','bathrooms','layout_status','layout_declaration','layout_note','layout_observed_at') if key in layout}
-        elif layout.get('layout_declaration')=='one_bed' and layout.get('bedrooms')==1 and layout.get('bathrooms')==1:
+        elif explicit_layout_resolution(layout):
             evidence.pop(ident,None)
     for home in previous.get('homes',[]):
         # A retained snapshot may predate evidence persisted during a failed

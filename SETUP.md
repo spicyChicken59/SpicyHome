@@ -22,7 +22,7 @@ The source repository and published website are separate. Follow the publication
 
 1. Open the [RentCast API dashboard](https://app.rentcast.io/app/api). Review the current plan, account usage and automatic overage policy before activating an API key.
 2. Add the key in GitHub repository **Settings → Secrets and variables → Actions → Secrets** as `RENTCAST_API_KEY`.
-3. Check `data/search.json`. It contains the budget, 1-bed/1-bath query, eight-city rotation, 35-mile boundary, one-page limit and local request caps. The lower cap does not cover other callers sharing your account.
+3. Check `data/search.json`. It contains the budget, 1–2-bedroom / 1–2-bathroom query, eight-city rotation, 35-mile boundary, one-page limit and local request caps. The lower cap does not cover other callers sharing your account.
 4. Add repository **variable** `SPICYHOME_TRACKING_ENABLED` with value `true`.
 5. Run **Actions → Track apartments → Run workflow** once. It reserves and commits one attempt before contacting RentCast. No commit permission means no provider request.
 6. Confirm the job succeeded and `dist/status.json` says `success`. `dist/data.json` must have a new `provider.last_success` and coverage count. The dashboard’s Sources & setup view shows both the last successful scan and the latest attempt status.

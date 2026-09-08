@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-07T23:52:21.486588Z",
+  "generated_at": "2026-09-08T04:18:00.506879Z",
   "mode": "research",
   "provider": {
     "name": "Official building research",
     "configured": false,
     "last_success": null,
-    "coverage": "18 sourced building prospects across Chicago and seven selected suburbs; not an exhaustive market search",
+    "coverage": "22 sourced apartment plans across Chicago and seven selected suburbs; not an exhaustive market search",
     "status": "awaiting_key"
   },
   "homes": [
@@ -1153,6 +1153,260 @@
       ],
       "observed_at": "2026-09-07",
       "availability_note": "Union plan advertises rent from $1665 and availability now. Confirm exact-unit base rent, recurring fees and lease terms. This is in the Route 59 area, not downtown Naperville.",
+      "history": [],
+      "coordinate_note": "U.S. Census Geocoder \u2014 interpolated street address, approximate location. Matched: 704 GREENWOOD CIR, NAPERVILLE, IL, 60563",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=704+Greenwood+Circle%2C+Naperville%2C+IL+60563&benchmark=Public_AR_Current&format=json"
+    },
+    {
+      "id": "tapestry-station-sheridan",
+      "kind": "building",
+      "title": "Tapestry Station",
+      "city": "Evanston",
+      "neighborhood": "Evanston",
+      "address": "740 Main St., Evanston, IL 60202",
+      "bedrooms": 2,
+      "bathrooms": 1,
+      "floor_plan": "The Sheridan",
+      "unit_label": "Unit 417",
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists The Sheridan as 2 bedrooms / 1 bathroom(s), 774 sq ft. Check the exact unit plan for separate enclosed bedrooms.",
+      "rent": null,
+      "advertised_price": 2845,
+      "advertised_price_type": "unspecified",
+      "sqft": 774,
+      "lat": 42.03389809866,
+      "lng": -87.681190387245,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Heated garage parking advertised; pricing and spaces unverified."
+      },
+      "charging": {
+        "status": "yes",
+        "note": "Electric-car charging advertised; confirm access, connector and fees."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrances, elevators and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [],
+      "source_url": "https://chicagorentals.com/apartment/tapestry-station/",
+      "sources": [
+        {
+          "url": "https://chicagorentals.com/apartment/tapestry-station/",
+          "supports": "The Sheridan, unit 417, 2BR/1BA, 774 sq ft; advertised starting rent $2,845 and available-unit listing. Base-rent and mandatory-fee breakdown not established.",
+          "observed_at": "2026-09-08"
+        },
+        {
+          "url": "https://chicagorentals.com/evanston/",
+          "supports": "740 Main St., Evanston address.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://chicagorentals.com/apartment/tapestry-station/",
+          "supports": "Heated garage parking and EV charging; price, allocation, connector and access require confirmation.",
+          "observed_at": "2026-09-08"
+        }
+      ],
+      "observed_at": "2026-09-08",
+      "availability_note": "Official source lists unit 417 among available apartments from $2,845, observed September 8, 2026. Confirm current availability, move-in date, lease term and the base-rent/fee breakdown.",
+      "history": [],
+      "coordinate_note": "U.S. Census Geocoder \u2014 interpolated street address, approximate location. Matched: 740 MAIN ST, EVANSTON, IL, 60202",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=740+Main+St%2C+Evanston%2C+IL+60202&benchmark=Public_AR_Current&format=json"
+    },
+    {
+      "id": "tapestry-station-dempster",
+      "kind": "building",
+      "title": "Tapestry Station",
+      "city": "Evanston",
+      "neighborhood": "Evanston",
+      "address": "740 Main St., Evanston, IL 60202",
+      "bedrooms": 2,
+      "bathrooms": 1,
+      "floor_plan": "The Dempster",
+      "unit_label": "Unit 206",
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists The Dempster as 2 bedrooms / 1 bathroom(s), 822 sq ft. Check the exact unit plan for separate enclosed bedrooms.",
+      "rent": null,
+      "advertised_price": 2935,
+      "advertised_price_type": "unspecified",
+      "sqft": 822,
+      "lat": 42.03389809866,
+      "lng": -87.681190387245,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Heated garage parking advertised; pricing and spaces unverified."
+      },
+      "charging": {
+        "status": "yes",
+        "note": "Electric-car charging advertised; confirm access, connector and fees."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrances, elevators and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [],
+      "source_url": "https://chicagorentals.com/apartment/tapestry-station/",
+      "sources": [
+        {
+          "url": "https://chicagorentals.com/apartment/tapestry-station/",
+          "supports": "The Dempster, unit 206, 2BR/1BA, 822 sq ft; advertised starting rent $2,935 and available-unit listing. Base-rent and mandatory-fee breakdown not established.",
+          "observed_at": "2026-09-08"
+        },
+        {
+          "url": "https://chicagorentals.com/evanston/",
+          "supports": "740 Main St., Evanston address.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://chicagorentals.com/apartment/tapestry-station/",
+          "supports": "Heated garage parking and EV charging; price, allocation, connector and access require confirmation.",
+          "observed_at": "2026-09-08"
+        }
+      ],
+      "observed_at": "2026-09-08",
+      "availability_note": "Official source lists unit 206 among available apartments from $2,935, observed September 8, 2026. Confirm current availability, move-in date, lease term and the base-rent/fee breakdown.",
+      "history": [],
+      "coordinate_note": "U.S. Census Geocoder \u2014 interpolated street address, approximate location. Matched: 740 MAIN ST, EVANSTON, IL, 60202",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=740+Main+St%2C+Evanston%2C+IL+60202&benchmark=Public_AR_Current&format=json"
+    },
+    {
+      "id": "bristol-station-victoria",
+      "kind": "building",
+      "title": "Bristol Station",
+      "city": "Naperville",
+      "neighborhood": "Naperville",
+      "address": "704 Greenwood Circle, Naperville, IL 60563",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "floor_plan": "Victoria",
+      "unit_label": "Unit 816-202",
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists Victoria as 2 bedrooms / 2 bathroom(s), 1,091 sq ft. Check the exact unit plan for separate enclosed bedrooms.",
+      "rent": null,
+      "advertised_price": 2236,
+      "advertised_price_type": "unspecified",
+      "sqft": 1091,
+      "lat": 41.782272808167,
+      "lng": -88.211116639941,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Individual garages advertised; price and space availability unverified."
+      },
+      "charging": {
+        "status": "unknown",
+        "note": "Resident EV charging was not established by the reviewed source; confirm with the property."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrances, elevators and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [],
+      "source_url": "https://www.bristolstation.com/floorplans/victoria",
+      "sources": [
+        {
+          "url": "https://www.bristolstation.com/floorplans/victoria",
+          "supports": "Victoria, unit 816-202, 2BR/2BA, 1,091 sq ft; advertised starting rent $2,236 and available-unit listing. Base-rent and mandatory-fee breakdown not established.",
+          "observed_at": "2026-09-08"
+        },
+        {
+          "url": "https://www.bristolstation.com/",
+          "supports": "Individual garages.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.bristolstation.com/amenities",
+          "supports": "Address, laundry, pool and fitness center.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.bristolstation.com/faq",
+          "supports": "Route 59 area, about 3.5 miles from downtown Naperville.",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-08",
+      "availability_note": "Official source lists unit 816-202 among available apartments from $2,236, observed September 8, 2026. Confirm current availability, move-in date, lease term and the base-rent/fee breakdown. This is in the Route 59 area, not downtown Naperville; other units and terms can exceed $3,000.",
+      "history": [],
+      "coordinate_note": "U.S. Census Geocoder \u2014 interpolated street address, approximate location. Matched: 704 GREENWOOD CIR, NAPERVILLE, IL, 60563",
+      "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=704+Greenwood+Circle%2C+Naperville%2C+IL+60563&benchmark=Public_AR_Current&format=json"
+    },
+    {
+      "id": "bristol-station-grand-central",
+      "kind": "building",
+      "title": "Bristol Station",
+      "city": "Naperville",
+      "neighborhood": "Naperville",
+      "address": "704 Greenwood Circle, Naperville, IL 60563",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "floor_plan": "Grand Central",
+      "unit_label": "Unit 103-310",
+      "layout_status": "source_listed",
+      "layout_note": "The official source lists Grand Central as 2 bedrooms / 2 bathroom(s), 1,184 sq ft. Check the exact unit plan for separate enclosed bedrooms.",
+      "rent": null,
+      "advertised_price": 2303,
+      "advertised_price_type": "unspecified",
+      "sqft": 1184,
+      "lat": 41.782272808167,
+      "lng": -88.211116639941,
+      "parking": {
+        "status": "yes",
+        "monthly": null,
+        "note": "Individual garages advertised; price and space availability unverified."
+      },
+      "charging": {
+        "status": "unknown",
+        "note": "Resident EV charging was not established by the reviewed source; confirm with the property."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Confirm step-free entrances, elevators and the route from parking to the apartment."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [],
+      "source_url": "https://www.bristolstation.com/floorplans/grand-central",
+      "sources": [
+        {
+          "url": "https://www.bristolstation.com/floorplans/grand-central",
+          "supports": "Grand Central, unit 103-310, 2BR/2BA, 1,184 sq ft; advertised starting rent $2,303 and available-unit listing. Base-rent and mandatory-fee breakdown not established.",
+          "observed_at": "2026-09-08"
+        },
+        {
+          "url": "https://www.bristolstation.com/",
+          "supports": "Individual garages.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.bristolstation.com/amenities",
+          "supports": "Address, laundry, pool and fitness center.",
+          "observed_at": "2026-09-07"
+        },
+        {
+          "url": "https://www.bristolstation.com/faq",
+          "supports": "Route 59 area, about 3.5 miles from downtown Naperville.",
+          "observed_at": "2026-09-07"
+        }
+      ],
+      "observed_at": "2026-09-08",
+      "availability_note": "Official source lists unit 103-310 among available apartments from $2,303, observed September 8, 2026. Confirm current availability, move-in date, lease term and the base-rent/fee breakdown. This is in the Route 59 area, not downtown Naperville; other units and terms can exceed $3,000.",
       "history": [],
       "coordinate_note": "U.S. Census Geocoder \u2014 interpolated street address, approximate location. Matched: 704 GREENWOOD CIR, NAPERVILLE, IL, 60563",
       "coordinate_source": "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=704+Greenwood+Circle%2C+Naperville%2C+IL+60563&benchmark=Public_AR_Current&format=json"

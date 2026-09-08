@@ -485,7 +485,7 @@ test("suburban search, area dates and notebook state work together", async () =>
   assert.match(d.doc.querySelector(".area-guide").textContent,/Evanston/);
   assert.match(d.doc.querySelector(".area-guide").textContent,/Awaiting first listing scan/);
   const region=d.doc.querySelector("#search-region");region.value="suburbs";region.dispatchEvent(new d.w.Event("change"));
-  assert.equal(d.doc.querySelectorAll("#results .home-card").length,8);
+  assert.equal(d.doc.querySelectorAll("#results .home-card").length,12);
   assert(d.doc.querySelector('#results [data-home="amli-evanston"]'));
   assert.equal(d.doc.querySelector('#results [data-home="amli-900"]'),null);
   const radius=d.doc.querySelector("#search-radius");radius.value="10";radius.dispatchEvent(new d.w.Event("change"));
@@ -497,4 +497,29 @@ test("suburban search, area dates and notebook state work together", async () =>
   assert.equal(saved.records['amli-evanston'].saved,true);
   assert.equal(saved.preferences.region,"all");
   d.close();
+});
+
+test("two-bedroom selection, layout correction and reload keep the notebook intact", async () => {
+  const d=await boot();
+  const bedrooms=d.doc.querySelector("#search-bedrooms");
+  assert.equal(bedrooms.value,"all");
+  bedrooms.value="2";bedrooms.dispatchEvent(new d.w.Event("change"));
+  assert.equal(d.doc.querySelectorAll("#results .home-card").length,4);
+  const id="bristol-station-victoria";
+  assert.match(d.doc.querySelector(`#results [data-home="${id}"]`).closest('.home-card').textContent,/2 bed · 2 bath/);
+  d.doc.querySelector(`#results [data-detail="${id}"]`).click();
+  d.doc.querySelector("#layoutReview").value="two_bed_one_bath";
+  d.doc.querySelector("#notes").value="Checked the exact plan";
+  d.doc.querySelector("#record-form").dispatchEvent(new d.w.Event("submit",{bubbles:true,cancelable:true}));
+  const stored=JSON.parse(d.w.localStorage.getItem("spicyhome.workspace.v1"));
+  assert.equal(stored.records[id].layoutReview,"two_bed_one_bath");
+  assert.equal(stored.records[id].notes,"Checked the exact plan");
+  assert.equal(stored.preferences.bedrooms,"2");
+  d.close();
+  const reloaded=await boot({notebook:stored});
+  assert.equal(reloaded.doc.querySelector("#search-bedrooms").value,"2");
+  assert.match(reloaded.doc.querySelector(`#results [data-home="${id}"]`).closest('.home-card').textContent,/2 bed · 1 bath — checked by you/);
+  reloaded.doc.querySelector("#reset-filters").click();
+  assert.equal(reloaded.doc.querySelector("#search-bedrooms").value,"all");
+  reloaded.close();
 });

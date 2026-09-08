@@ -1,6 +1,6 @@
 # SpicyHome
 
-A SpicyChicken apartment research notebook for Chicago and seven selected suburbs: **1 bedroom, 1 bathroom, $1,200–$3,000 base rent**, with parking and EV charging evidence kept visible.
+A SpicyChicken apartment research notebook for Chicago and seven selected suburbs: **1–2 bedrooms, 1–2 bathrooms, $1,200–$3,000 base rent**, with parking and EV charging evidence kept visible.
 
 Start with real, sourced building prospects; compare the known monthly cost; save homes, record quotes and tour notes; then connect a bounded daily listing feed when ready.
 
@@ -68,7 +68,7 @@ Conflicting tabs offer export and explicit reload; unreadable saved notebooks ar
 protected with a raw-data download and backup import. Search text is bounded before
 saving. Tracking status is compared with the selected scan date so an older failure
 cannot contradict a newer success. Explicit structured studio evidence is retained
-across numeric-only provider updates until explicit one-bedroom evidence resolves it.
+across numeric-only provider updates until explicit matching one- or two-bedroom evidence resolves it.
 
 ## Daily operation
 
@@ -77,10 +77,10 @@ The rental job is disabled until the repository variable `SPICYHOME_TRACKING_ENA
 The search covers Chicago, Evanston, Oak Park, Park Ridge, Elmhurst, Downers Grove,
 Arlington Heights and Naperville within 35 straight-line miles of the configured
 central Chicago point. Discover includes city/suburb, named-area and distance
-filters; tighter distance filters require coordinates. Eight new sourced building
-prospects are available immediately, bringing the research set to 18.
+filters; tighter distance filters require coordinates. Eighteen sourced one-bedroom plans and four two-bedroom plans are available
+immediately, bringing the research set to 22.
 
-Each reserved request selects one city, with up to 500 active 1-bed/1-bath listings
+Each reserved request selects one city, with up to 500 active listings with 1–2 bedrooms and 1–2 bathrooms
 in the existing base-rent range. The receipt persists the selected city and next
 city before any request, including failed attempts. Eight cities rotate through
 approximately 8–10 days per cycle; failed scans may take longer. Each city's last
@@ -90,7 +90,7 @@ scanned. Capped coverage and unknown coordinates remain explicit.
 The bounded dashboard balances retained listing records across cities. Explicit
 studio/convertible evidence is preserved separately in `data/layout-evidence.json`
 so display eviction cannot restore a known studio after a weaker source response.
-Only explicit valid one-bedroom evidence resolves that provider contradiction.
+Only explicit valid one- or two-bedroom evidence resolves that provider contradiction.
 Existing browser notes and local corrections continue to take precedence.
 
 Each request reservation is committed **before** the provider call. The integration permits one attempt per UTC day and no more than 30 in a rolling 32-day window. A failed request still consumes its reservation. This cap cannot account for other software using the same RentCast account, and the provider can charge overages automatically.
@@ -114,3 +114,16 @@ The GitHub feed must be public for the static private Sites app to fetch it with
 Rent, leasing dates and amenities can change. An advertised charger is not a guarantee of a usable, compatible or available charger for your lease. A nearby public charger is not a building amenity. Station distances are straight-line reference distances, not commute or walking times. Step-free access, noise and comfort require direct verification.
 
 No rental application, tour booking, leasing message, API subscription or paid provider request is sent by the app. A calendar download creates a personal reminder only.
+
+## One- and two-bedroom search
+
+The bedroom selector defaults to both sizes. Exact-size searches use the reported
+count or your personal correction; unknown bedroom counts appear only with both
+sizes selected. Bathrooms are preserved as 1, 1.5 or 2, including in user checks.
+Existing one-bedroom checks keep their original 1-bed/1-bath meaning.
+
+A single RentCast request uses `bedrooms=1|2` and `bathrooms=1|1.5|2`, as supported
+by the official [search query documentation](https://developers.rentcast.io/reference/search-queries).
+Both sizes share the existing 500-result page, city rotation and request cap.
+The last scan metadata is historical; the broader query starts with the next
+permitted scheduled scan. No provider request was made to test this change.

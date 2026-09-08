@@ -28,3 +28,17 @@
 - No full browser/visual QA or real map-tile interaction is claimed. The supervised preview starts successfully, but the browser connection was unresponsive during this publication attempt. Responsive CSS, semantic controls, native dialogs, focus styles and reduced-motion rules are implemented; DOM checks do not establish browser layout quality.
 - Public GitHub Pages publication remains disabled; its post-tracking publication job was correctly skipped. Private Sites publication is already verified and reads the committed live feed independently.
 - No leasing message, rental application or tour booking was sent.
+
+## Two-bedroom expansion — September 8, 2026
+
+- 106 automated checks pass: 66 JavaScript model/app checks and 40 Python checks.
+  Required syntax/static validation passes; all 22 shared assets retain their hashes.
+- Bedroom selection defaults to both sizes; exact selections, source counts, 1.5/2
+  bathroom labels, local corrections, imported legacy reviews and reload are covered.
+- Independent review found differing duplicate provider layouts and non-string
+  imported layout checks; both are fixed with regression coverage.
+- Four official-source 2-bedroom plans added under separate IDs. All 210 existing
+  records, provider scan metadata, events, request usage and evidence ledgers are
+  unchanged. New advertised prices remain separate from unknown base rent.
+- Both bedroom sizes share one scheduled 500-result query and the existing city
+  rotation. No paid provider request or live browser verification was performed.

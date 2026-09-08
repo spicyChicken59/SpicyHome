@@ -23,8 +23,8 @@ const seed = JSON.parse(
   fs.readFileSync(new URL("../data/seed.json", import.meta.url)),
 );
 const home = seed.homes.find((h) => h.id === "amli-900");
-test("studios and explicit conflicts never become one-bedroom candidates", () => {
-  for (const patch of [{bedrooms:0},{bedrooms:2},{bathrooms:2},{layout_status:"conflict"},{layout_status:"other"}]) {
+test("studios and explicit conflicts never become one- or two-bedroom candidates", () => {
+  for (const patch of [{bedrooms:0},{bedrooms:3},{bathrooms:2.5},{layout_status:"conflict"},{layout_status:"other"}]) {
     const h={...home,...patch};
     assert(validateHome(h));
     assert.equal(visibleHomes([h],emptyWorkspace(),defaults).length,0);
@@ -61,7 +61,7 @@ test("unknown manual layout is valid without silently becoming one bedroom", () 
   assert.equal(layoutEvidence({...home,layout_status:"unverified"}).status,"unverified");
 });
 test("official city and suburban research is valid with only sourced map pins", () => {
-  assert.equal(validateFeed(seed).homes.length, 18);
+  assert.equal(validateFeed(seed).homes.length, 22);
   assert(
     seed.homes.every(
       (h) =>
@@ -227,4 +227,38 @@ test("city, suburb and distance filters keep geography explicit", () => {
   assert.throws(()=>validateWorkspace({...legacy,preferences:{region:"anywhere"}}));
   assert.throws(()=>validateWorkspace({...legacy,preferences:{radiusMiles:500}}));
   assert(distanceMiles(suburban,searchCenter)>10);
+});
+
+test("bedroom filters use exact counts and preserve bathroom labels", () => {
+  const w=emptyWorkspace();
+  const two={...home,id:"two",bedrooms:2,bathrooms:2};
+  const unknown={...home,id:"unknown",bedrooms:null,bathrooms:null};
+  const homes=[home,two,unknown];
+  assert.equal(visibleHomes(homes,w,defaults).length,3);
+  assert.deepEqual(visibleHomes(homes,w,{...defaults,bedrooms:"1"}).map(h=>h.id),[home.id]);
+  assert.deepEqual(visibleHomes(homes,w,{...defaults,bedrooms:"2"}).map(h=>h.id),["two"]);
+  assert.match(layoutEvidence(two).label,/2 bed · 2 bath/);
+  assert.equal(visibleHomes([{...two,bathrooms:1.5}],w,{...defaults,bedrooms:"2"}).length,1);
+});
+test("two-bedroom checks override source counts while legacy checks retain their exact meaning", () => {
+  const w=emptyWorkspace();delete w.preferences.bedrooms;
+  w.records[home.id]={saved:true,snapshot:home,layoutReview:"two_bed_two_bath",notes:"Keep my notes",rentOverride:2500};
+  const imported=validateWorkspace(JSON.parse(JSON.stringify(w)));
+  assert.equal(imported.preferences.bedrooms,"all");
+  assert.equal(visibleHomes([home],imported,{...defaults,bedrooms:"2",layoutScope:"confirmed"}).length,1);
+  assert.equal(visibleHomes([home],imported,{...defaults,bedrooms:"1"}).length,0);
+  assert.match(layoutEvidence(home,imported.records[home.id]).label,/2 bed · 2 bath/);
+  assert.equal(imported.records[home.id].notes,"Keep my notes");
+  assert.equal(imported.records[home.id].rentOverride,2500);
+  imported.records[home.id].layoutReview="one_bed";
+  assert.deepEqual([layoutEvidence({...home,bedrooms:2,bathrooms:2},imported.records[home.id]).bedrooms,layoutEvidence(home,imported.records[home.id]).bathrooms],[1,1]);
+  assert.throws(()=>validateWorkspace({...w,preferences:{...defaults,bedrooms:"3"}}));
+});
+
+test("malformed layout review values cannot become personal confirmation", () => {
+  for (const layoutReview of [["two_bed_two_bath"],{},null,2]) {
+    const w=emptyWorkspace();w.records[home.id]={layoutReview};
+    assert.throws(()=>validateWorkspace(w));
+    assert.notEqual(layoutEvidence(home,{layoutReview}).status,"confirmed");
+  }
 });

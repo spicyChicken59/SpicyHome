@@ -142,3 +142,27 @@ persists its query scope without changing earlier cities’ observation dates.
 Provider optional titles must be valid bounded text or use the valid formatted
 address. Invalid unit/type fields remain unknown; invalid required IDs or addresses
 stop publication. A Python-to-browser contract check verifies the resulting feed.
+
+## Five experience upgrades — September 8, 2026
+
+1. **Explore cockpit:** a compact search summary, bedroom shortcuts, List + Map /
+   List / Map / Focus modes, collapsible advanced filters and source freshness.
+   Important data warnings expand automatically. Mobile navigation stays within
+   reach, with safe-area spacing and controls that wrap at narrow widths.
+2. **Focus:** review one matching, unsaved apartment at a time. Save, skip for this
+   tab, undo the last Focus action, or clear skips. Skips never hide Discover
+   records or change listing status. Saved homes enter the existing notebook.
+3. **Cost Lab:** pick an apartment and try monthly rent, parking, fees, utilities
+   and charging assumptions over 1–36 months. Unknown costs remain explicit;
+   missing base rent prevents a misleading total. Scenarios last in the tab and
+   never become saved quotes or price history. Deposit/move-in costs are excluded.
+4. **Decision board:** saved homes grouped by all seven existing stages, with
+   accessible stage selectors, stage filters, comparison, tours and Cost Lab
+   shortcuts. Ruled-out homes remain recoverable. No leasing messages are sent.
+5. **Tour companion:** eight personal review checks saved alongside existing
+   notes, quote history and tour dates. Checkbox completion means reviewed by the
+   user, not independently certified amenities, accessibility or layout.
+
+Existing version-1 backups remain compatible. New tour-check fields validate
+before import; search surface preferences are bounded. Notes, feed observations,
+source facts, request caps and provider workflows remain unchanged.

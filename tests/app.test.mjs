@@ -528,7 +528,7 @@ test("two-bedroom selection, layout correction and reload keep the notebook inta
 
 function mapStub(capture) {
   return () => {
-    const map={setView(){return this;},fitBounds(){return this;},remove(){}};
+    const map={setView(){return this;},fitBounds(){return this;},remove(){},invalidateSize(){capture.invalidations=(capture.invalidations??0)+1;return this;}};
     const makeMarker=(coords,options) => {
       const m={coords,options,openCount:0,addTo(){return this;},bindPopup(content){this.popup=content;return this;},on(){return this;},getLatLng(){return coords;},openPopup(){this.openCount++;return this;}};
       capture.push(m);return m;
@@ -587,4 +587,135 @@ test("empty bedroom coverage offers an explicit way to broaden it", async () => 
   assert.equal(d.doc.querySelector('#search-bedrooms').value,'all');
   assert(d.doc.querySelectorAll('#results .home-card').length>0);
   d.close();
+});
+
+test("Explore offers compact filters and working List Map Focus switches", async () => {
+  const capture=[];const d=await boot({leaflet:mapStub(capture)});
+  assert.equal(d.doc.querySelector('#search-controls').open,false);
+  assert.match(d.doc.querySelector('#search-scope').textContent,/1 & 2 bedrooms/);
+  d.doc.querySelector('[data-bed="2"]').click();
+  assert.equal(d.doc.querySelectorAll('#results .home-card').length,4);
+  assert.equal(d.doc.querySelector('#search-bedrooms').value,'2');
+  d.doc.querySelector('button[data-surface="list"]').click();
+  assert.equal(d.doc.querySelector('.map-panel').hidden,true);
+  d.doc.querySelector('button[data-surface="map"]').click();
+  assert.equal(d.doc.querySelector('.map-panel').hidden,false);
+  assert.equal(d.doc.querySelector('.results-column').hidden,true);
+  assert(capture.invalidations>=2);
+  d.doc.querySelector('button[data-surface="focus"]').click();
+  assert.equal(d.doc.querySelector('#explore-results').hidden,true);
+  assert.equal(d.doc.querySelectorAll('#focus-surface .home-card').length,1);
+  d.doc.querySelector('#open-search-controls').click();
+  assert.equal(d.doc.querySelector('#search-controls').open,true);
+  assert.equal(d.doc.activeElement.id,'min');
+  d.close();
+});
+test("Focus skip and save can be undone without losing notes or hiding Discover homes", async () => {
+  const d=await boot();d.doc.querySelector('button[data-surface="focus"]').click();
+  const first=d.doc.querySelector('#focus-surface [data-home]').dataset.home;
+  d.doc.querySelector('#focus-skip').click();
+  assert.notEqual(d.doc.querySelector('#focus-surface [data-home]').dataset.home,first);
+  assert(d.doc.querySelector(`#results [data-home="${first}"]`));
+  d.doc.querySelector('#focus-undo').click();
+  assert.equal(d.doc.querySelector('#focus-surface [data-home]').dataset.home,first);
+  d.doc.querySelector('#focus-save').click();
+  let notebook=JSON.parse(d.w.localStorage.getItem('spicyhome.workspace.v1'));
+  assert.equal(notebook.records[first].saved,true);
+  d.doc.querySelector('#focus-undo').click();
+  notebook=JSON.parse(d.w.localStorage.getItem('spicyhome.workspace.v1'));
+  assert.equal(notebook.records[first].saved,false);
+  assert.equal(d.doc.querySelector('#focus-surface [data-home]').dataset.home,first);
+  d.doc.querySelector('#focus-skip').click();d.close();
+  const again=await boot({notebook});
+  assert.equal(again.doc.querySelector('#focus-surface [data-home]').dataset.home,first);
+  again.close();
+});
+test("decision board moves a saved home through stages while preserving notebook values", async () => {
+  const h=seed.homes[0];const notebook={version:1,manual:[],events:[],preferences:{},records:{[h.id]:{saved:true,snapshot:h,status:'researching',notes:'Keep this note',rentOverride:2200,tourChecks:{light:true}}}};
+  const d=await boot({notebook});d.doc.querySelector('[data-view="shortlist"]').click();
+  let stage=d.doc.querySelector('[data-stage]');stage.value='tour scheduled';stage.dispatchEvent(new d.w.Event('change'));
+  let stored=JSON.parse(d.w.localStorage.getItem('spicyhome.workspace.v1'));
+  assert.equal(stored.records[h.id].status,'tour scheduled');
+  assert.equal(stored.records[h.id].notes,'Keep this note');
+  assert.equal(stored.records[h.id].rentOverride,2200);
+  assert.equal(stored.records[h.id].tourChecks.light,true);
+  assert.equal(d.doc.activeElement.dataset.stage,h.id);
+  stage=d.doc.querySelector('[data-stage]');stage.value='ruled out';stage.dispatchEvent(new d.w.Event('change'));
+  d.doc.querySelector('[data-board-stage="ruled out"]').click();
+  assert.equal(d.doc.querySelector('[data-home]').dataset.home,h.id);
+  d.close();
+});
+test("tour companion saves personal checks alongside notes and later quotes", async () => {
+  const d=await boot();const id=d.doc.querySelector('[data-tour]').dataset.tour;
+  d.doc.querySelector('[data-tour]').click();
+  assert.equal(d.doc.querySelector('#tour-companion').open,true);
+  d.doc.querySelector('[data-tour-check="layout"]').checked=true;
+  d.doc.querySelector('[data-tour-check="charging"]').checked=true;
+  d.doc.querySelector('#notes').value='Charger needs an adapter; ask about fees.';
+  d.doc.querySelector('#record-form').dispatchEvent(new d.w.Event('submit',{bubbles:true,cancelable:true}));
+  d.doc.querySelector(`[data-detail="${id}"]`).click();
+  assert.equal(d.doc.querySelector('[data-tour-check="charging"]').checked,true);
+  d.doc.querySelector('#rentOverride').value='2250';
+  d.doc.querySelector('#record-form').dispatchEvent(new d.w.Event('submit',{bubbles:true,cancelable:true}));
+  const record=JSON.parse(d.w.localStorage.getItem('spicyhome.workspace.v1')).records[id];
+  assert.equal(record.tourChecks.layout,true);assert.equal(record.tourChecks.charging,true);
+  assert.equal(record.rentOverride,2250);assert.match(record.notes,/adapter/);
+  assert.notEqual(record.layoutReview,'one_bed');
+  d.close();
+});
+test("Cost Lab computes scenarios without saving assumptions as apartment quotes", async () => {
+  const d=await boot();d.doc.querySelector('[data-view="lab"]').click();
+  const select=d.doc.querySelector('#lab-home');select.value='bristol-station-victoria';select.dispatchEvent(new d.w.Event('change'));
+  assert.match(d.doc.querySelector('#lab-output').textContent,/Base rent needed/);
+  for(const [key,value] of Object.entries({rent:2200,parking:100,fees:0,utilities:80,charging:25})){
+    const input=d.doc.querySelector('#lab-'+key);input.value=String(value);input.dispatchEvent(new d.w.Event('input'));
+  }
+  assert.match(d.doc.querySelector('.lab-number').textContent,/2,405/);
+  assert.match(d.doc.querySelector('.lab-bottom').textContent,/28,860/);
+  assert.match(d.doc.querySelector('#lab-output').textContent,/YOUR WHAT-IF SCENARIO/);
+  const stored=d.w.localStorage.getItem('spicyhome.workspace.v1');
+  assert(stored===null||!JSON.parse(stored).records['bristol-station-victoria']);
+  const months=d.doc.querySelector('#lab-months');months.value='6';months.dispatchEvent(new d.w.Event('input'));
+  assert.match(d.doc.querySelector('.lab-bottom').textContent,/14,430/);
+  const current=d.doc.querySelector('#lab-home');current.value='bristol-station';current.dispatchEvent(new d.w.Event('change'));
+  assert.equal(d.doc.querySelector('#lab-rent').value,'');
+  assert.match(d.doc.querySelector('#lab-output').textContent,/Base rent needed/);
+  d.close();
+});
+
+test("Focus actions refresh counts and restore focus to a visible action", async () => {
+  const only={...seed,homes:[seed.homes[0]]};
+  const d=await boot({remote:only,packaged:only});
+  d.doc.querySelector('button[data-surface="focus"]').click();
+  d.doc.querySelector('#focus-save').focus();d.doc.querySelector('#focus-save').click();
+  assert.equal(d.doc.querySelector('#saved-count').textContent,'1');
+  assert.equal(d.doc.activeElement.id,'focus-undo');
+  d.doc.querySelector('#focus-undo').click();
+  assert.equal(d.doc.querySelector('#saved-count').textContent,'0');
+  const heart=d.doc.querySelector('#focus-surface [data-save]');heart.focus();heart.click();
+  assert.notEqual(d.doc.activeElement.tagName,'BODY');
+  assert.equal(d.doc.activeElement.closest('[hidden]'),null);
+  d.close();
+});
+test("Cost Lab keeps invalid-field feedback when another field changes", async () => {
+  const d=await boot();d.doc.querySelector('[data-view="lab"]').click();
+  const before=d.doc.querySelector('.lab-number').textContent;
+  const rent=d.doc.querySelector('#lab-rent');rent.value='-1';rent.dispatchEvent(new d.w.Event('input'));
+  const parking=d.doc.querySelector('#lab-parking');parking.value='150';parking.dispatchEvent(new d.w.Event('input'));
+  assert.match(d.doc.querySelector('#lab-error').textContent,/last valid scenario/);
+  assert.equal(rent.getAttribute('aria-invalid'),'true');
+  assert.equal(d.doc.querySelector('.lab-number').textContent,before);
+  rent.value='2200';rent.dispatchEvent(new d.w.Event('input'));
+  assert.equal(d.doc.querySelector('#lab-error').textContent,'');
+  assert.equal(rent.getAttribute('aria-invalid'),'false');
+  d.close();
+});
+
+test("source details stay compact when healthy and expand for a failed refresh", async () => {
+  const healthy=await boot();assert.equal(healthy.doc.querySelector('#source-status').open,false);healthy.close();
+  const failed=await boot({remote:null,packaged:seed});
+  assert.equal(failed.doc.querySelector('#source-status').open,true);
+  assert.match(failed.doc.querySelector('#source-status-label').textContent,/attention/);
+  assert.match(failed.doc.querySelector('#notice').textContent,/unavailable/);
+  failed.close();
 });

@@ -192,3 +192,21 @@ source facts, request caps and provider workflows remain unchanged.
 
 The new fields remain compatible with version-1 notebooks. Listing observations,
 source histories, scan/request budgets and shared design assets are unchanged.
+
+## Faster everyday use — September 8, 2026
+
+- **Quick jump:** use the header button or Cmd/Ctrl + K to search loaded homes,
+  exact plans and screens. Arrow keys and Enter work; an open apartment notebook
+  blocks the shortcut so unfinished notes remain in place.
+- **Quick scan:** switch Discover between full cards and compact rows. Both retain
+  price basis, layout evidence, source dates, save and comparison actions. List
+  style travels with saved searches and version-1 backups.
+- **Final three:** pin up to three saved homes above the decision board and compare
+  them directly. Unpinning keeps notes; unsaving clears a pin. Imports validate
+  the cap before mutation, including when combining two notebooks.
+- **Tour agenda:** saved tour dates are grouped into upcoming and past appointments
+  in Chicago time. Offset timestamps normalize consistently in editing/calendar
+  export. Date-only entries request a time instead of inventing one. Directions,
+  notes and calendar reminders stay within reach; no appointment is booked.
+- **Apartment dock:** jump directly to layout, costs, tour checks, notes, history
+  and sources, or save the existing notebook form from its sticky controls.

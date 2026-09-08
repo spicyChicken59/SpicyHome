@@ -101,3 +101,19 @@
 - Interaction verification uses DOM emulation; CSS audits cover responsive
   wrapping, chart hit areas, dark-theme labels and mobile chart text. This does
   not claim a real browser, map network, or physical phone visual test.
+
+## Lean usability round — September 8, 2026
+
+- One bounded independent audit; no second audit/verification-agent round.
+- The audit and first regression pass exposed a shared density-selector event
+  bubbling defect. The selector now binds only buttons. Targeted rechecks cover
+  real checkbox clicks and saved-card focus after the fix.
+- 100 JavaScript checks plus 42 Python checks cover the prior features and seven
+  new cases: jump navigation/open-dialog protection, compact-list controls,
+  finalist limits and notebook preservation, Chicago-time agenda/calendar inputs,
+  section-dock navigation/saving, and legacy backup compatibility.
+- Initial full-suite failures were followed by scoped rechecks of the affected
+  paths. Required repository CI runs the full suite on the release revision.
+- Static validation confirms 214 unchanged apartments and 22 immutable design
+  assets. Source data, request ledgers and workflows remain unchanged. No paid
+  calls or leasing messages were made. No browser/physical-phone visual QA.

@@ -15,6 +15,7 @@ export const defaults = {
   radiusMiles: 0,
   bedrooms: "all",
   surface: "split",
+  density: "cards",
 };
 export const tourChecks = [
   ["layout", "Walk the exact layout", "Check bedroom doors, dimensions and where your furniture fits."],
@@ -28,6 +29,22 @@ export const tourChecks = [
 ];
 export function tourProgress(record = {}) {
   return tourChecks.filter(([key]) => record.tourChecks?.[key] === true).length;
+}
+export function chicagoTime(value) {
+  if (value == null || value === "") return null;
+  if (typeof value === "string" && !/T\d{2}:\d{2}/.test(value)) return null;
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/.test(value)) return Number.isFinite(Date.parse(value)) ? value.slice(0,16) : null;
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return null;
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US",{timeZone:"America/Chicago",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(date).map((part)=>[part.type,part.value]));
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+}
+export function tourAgenda(homes, records, now = new Date()) {
+  const clock = chicagoTime(now);
+  return homes.flatMap((home) => {
+    const rec = records[home.id] ?? {}, at = rec.tourDate ? chicagoTime(rec.tourDate) : null;
+    return rec.saved && rec.status !== "ruled out" && at ? [{home,at,past:at < clock,record:rec}] : [];
+  }).sort((a,b)=>a.at.localeCompare(b.at));
 }
 export const scenarioFields = [
   ["rent", "Base rent"], ["parking", "Parking"], ["fees", "Recurring fees"],
@@ -405,7 +422,9 @@ export function validateWorkspace(w) {
       !isObj(r) ||
       (r.status && !statuses.includes(r.status)) ||
       (r.notes !== undefined && !textOk(r.notes, 20000)) ||
-      (r.saved !== undefined && typeof r.saved !== "boolean")
+      (r.saved !== undefined && typeof r.saved !== "boolean") ||
+      (r.finalist !== undefined && typeof r.finalist !== "boolean") ||
+      (r.finalist === true && r.saved !== true)
     )
       throw Error("The backup contains an invalid record.");
     if (r.layoutReview !== undefined && (typeof r.layoutReview !== "string" || !Object.hasOwn(checkedLayouts, r.layoutReview) && !["studio", "other", "unverified"].includes(r.layoutReview)))
@@ -430,6 +449,8 @@ export function validateWorkspace(w) {
     )
       throw Error("The backup contains an invalid saved home or quote.");
   }
+  if (Object.values(w.records).filter((r) => r.finalist).length > 3)
+    throw Error("A notebook can pin at most three finalists. Unpin one before combining these notebooks.");
   const p = validatePreferences(w.preferences);
   const savedSearches = w.savedSearches === undefined ? [] : w.savedSearches;
   if (!Array.isArray(savedSearches) || savedSearches.length > 8 || savedSearches.some((s) => !isObj(s) || !textOk(s.name, 60) || !s.name.trim() || !isObj(s.preferences)) || new Set(savedSearches.map((s) => s.name.trim().toLowerCase())).size !== savedSearches.length)
@@ -450,6 +471,7 @@ export function validatePreferences(preferences) {
     !["all", "chicago", "suburbs"].includes(p.region) ||
     !["all", "1", "2"].includes(p.bedrooms) ||
     !["split", "list", "map", "focus", "atlas"].includes(p.surface) ||
+    !["cards", "scan"].includes(p.density) ||
     ![0, 10, 20, 35].includes(p.radiusMiles) ||
     !textOk(p.search, 500) ||
     !textOk(p.neighborhood, 500) ||

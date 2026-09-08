@@ -719,3 +719,113 @@ test("source details stay compact when healthy and expand for a failed refresh",
   assert.match(failed.doc.querySelector('#notice').textContent,/unavailable/);
   failed.close();
 });
+
+test("named searches switch all filters and view while retaining notebook and current utility estimate", async () => {
+  const h=seed.homes[0];
+  const notebook={version:1,records:{[h.id]:{saved:true,notes:"Keep this",snapshot:h}},manual:[],events:[],preferences:{utilityEstimate:90}};
+  const d=await boot({notebook});
+  d.doc.querySelector('[data-bed="2"]').click();
+  const region=d.doc.querySelector('#search-region');region.value='suburbs';region.dispatchEvent(new d.w.Event('change'));
+  d.doc.querySelector('[data-surface="atlas"]').click();
+  d.doc.querySelector('#search-name').value='Suburban two-bed';
+  d.doc.querySelector('#save-search-form').dispatchEvent(new d.w.Event('submit',{cancelable:true}));
+  d.doc.querySelector('#reset-filters').click();
+  d.doc.querySelector('[data-surface="list"]').click();
+  d.doc.querySelector('[data-search-load="0"]').click();
+  const saved=JSON.parse(d.w.localStorage.getItem('spicyhome.workspace.v1'));
+  assert.equal(saved.preferences.bedrooms,'2');assert.equal(saved.preferences.region,'suburbs');
+  assert.equal(saved.preferences.surface,'atlas');assert.equal(saved.preferences.utilityEstimate,90);
+  assert.equal(saved.records[h.id].notes,'Keep this');assert.equal(saved.savedSearches.length,1);
+  assert.equal(d.doc.querySelector('#atlas-surface').hidden,false);
+  assert.equal(d.doc.activeElement.dataset.searchLoad,'0');
+  d.close();
+});
+test("saved-search import merges names and rejects invalid or over-capacity imports atomically", async () => {
+  const search={name:'First',preferences:{bedrooms:'1'}};
+  const d=await boot({notebook:{version:1,records:{},manual:[],events:[],preferences:{},savedSearches:[search]}});
+  async function importSearches(savedSearches) {
+    const text=JSON.stringify({version:1,records:{},manual:[],events:[],preferences:{},savedSearches});
+    await d.doc.querySelector('#import-file').onchange({target:{files:[{size:text.length,text:async()=>text}],value:''}});
+  }
+  await importSearches([{name:'FIRST',preferences:{bedrooms:'2'}}]);
+  let saved=JSON.parse(d.w.localStorage.getItem('spicyhome.workspace.v1'));
+  assert.equal(saved.savedSearches.length,1);assert.equal(saved.savedSearches[0].preferences.bedrooms,'2');
+  const before=JSON.stringify(saved);
+  await importSearches([{name:'Broken',preferences:{surface:'bad'}}]);
+  assert.equal(d.w.localStorage.getItem('spicyhome.workspace.v1'),before);
+  await importSearches(Array.from({length:8},(_,i)=>({name:'Extra '+i,preferences:{}})));
+  assert.equal(d.w.localStorage.getItem('spicyhome.workspace.v1'),before);
+  d.close();
+});
+test("atlas selects overlapping exact plans, excludes unknown numbers, and keeps all homes in list mode", async () => {
+  const base={...seed.homes[0],rent:2000,sqft:800};
+  const homes=[{...base,id:'atlas-a',floor_plan:'A'},{...base,id:'atlas-b',floor_plan:'B'},{...base,id:'atlas-unknown',rent:null,advertised_price:2200}];
+  const snapshot={...seed,homes};const d=await boot({remote:snapshot,packaged:snapshot,notebook:{version:1,records:{"atlas-b":{rentOverride:2100,quoteDate:"2026-09-08"}},manual:[],events:[],preferences:{}}});
+  d.doc.querySelector('[data-surface="atlas"]').click();
+  assert.equal(d.doc.querySelector('#atlas-home').options.length,2);
+  assert.equal(d.doc.querySelector('#explore-results').hidden,true);
+  assert.match(d.doc.querySelector('#atlas-surface').textContent,/1 need base rent or size/);
+  const picker=d.doc.querySelector('#atlas-home');picker.value='atlas-b';picker.dispatchEvent(new d.w.Event('change'));
+  assert.match(d.doc.querySelector('.atlas-selection').textContent,/Your base-rent quote: Sep 8, 2026/);
+  assert.match(d.doc.querySelector('.atlas-selection').textContent,/Source observed:/);
+  d.doc.querySelector('.atlas-selection [data-detail]').click();
+  assert.match(d.doc.querySelector('.detail-sub').textContent,/Plan B/);
+  d.doc.querySelector('#detail-content [data-close]').click();
+  d.doc.querySelector('.atlas-selection [data-save]').click();
+  assert.equal(JSON.parse(d.w.localStorage.getItem('spicyhome.workspace.v1')).records['atlas-b'].saved,true);
+  assert.equal(d.doc.activeElement.dataset.save,'atlas-b');
+  assert.equal(d.doc.activeElement.closest('[hidden]'),null);
+  d.doc.querySelector('[data-surface="list"]').click();
+  assert.equal(d.doc.querySelectorAll('#results .home-card').length,3);
+  assert.equal(d.doc.querySelector('#atlas-surface').children.length,0);
+  d.close();
+});
+test("comparison keeps exact plan identity and differences toggle works for phone and desktop facts", async () => {
+  const base={...seed.homes[0],rent:2000,sqft:800};
+  const homes=[{...base,id:'compare-a',floor_plan:'A'},{...base,id:'compare-b',floor_plan:'B',rent:2200}];
+  const d=await boot({remote:{...seed,homes},packaged:{...seed,homes}});
+  for (const checkbox of d.doc.querySelectorAll('#results [data-compare]')) {checkbox.checked=true;checkbox.dispatchEvent(new d.w.Event('change'));}
+  d.doc.querySelector('#open-compare').click();
+  assert.match(d.doc.querySelector('.compare-identities').textContent,/Plan A/);assert.match(d.doc.querySelector('.compare-identities').textContent,/Plan B/);
+  const before=d.doc.querySelectorAll('.compare-metric').length;
+  const toggle=d.doc.querySelector('#compare-differences');toggle.checked=true;toggle.dispatchEvent(new d.w.Event('change'));
+  assert(d.doc.querySelectorAll('.compare-metric').length<before);
+  assert.match(d.doc.querySelector('.compare-mobile').textContent,/Base rent/);
+  assert.doesNotMatch(d.doc.querySelector('.compare-mobile').textContent,/EV charging/);
+  assert.equal(d.doc.querySelectorAll('.matrix tbody tr').length,d.doc.querySelectorAll('.compare-metric').length);
+  assert.equal(d.doc.activeElement.id,'compare-differences');
+  d.close();
+});
+test("Ask next has a manual-copy fallback, preserves draft privacy and moves to notes without saving", async () => {
+  const h=seed.homes[0];
+  const d=await boot({notebook:{version:1,records:{[h.id]:{saved:true,notes:'Private notes stay here',snapshot:h}},manual:[],events:[],preferences:{}}});
+  d.doc.querySelector(`[data-detail="${h.id}"]`).click();
+  assert.doesNotMatch(d.doc.querySelector('#leasing-draft').value,/Private notes/);
+  await d.doc.querySelector('#copy-questions').onclick();
+  assert.match(d.doc.querySelector('#questions-copy-status').textContent,/Select and copy/);
+  assert.equal(d.doc.activeElement.id,'leasing-draft');
+  const before=d.w.localStorage.getItem('spicyhome.workspace.v1');
+  d.doc.querySelector('#questions-to-notes').click();
+  assert.equal(d.doc.activeElement.id,'notes');assert.equal(d.w.localStorage.getItem('spicyhome.workspace.v1'),before);
+  d.close();
+});
+test("move-in scratchpad validates every field, updates cash only and clears for another home", async () => {
+  const d=await boot();d.doc.querySelector('[data-view="lab"]').click();
+  const enter=(id,value)=>{const input=d.doc.querySelector('#'+id);input.value=String(value);input.dispatchEvent(new d.w.Event('input'));};
+  for (const [key,value] of Object.entries({rent:2000,parking:100,fees:50,utilities:100,charging:50})) enter('lab-'+key,value);
+  for (const [key,value] of Object.entries({deposit:2000,oneTime:300,moving:500,prepaid:2000})) enter('move-in-'+key,value);
+  assert.match(d.doc.querySelector('.move-in-total').textContent,/7,100/);
+  assert.match(d.doc.querySelector('.lab-bottom').textContent,/27,600/);
+  const valid=d.doc.querySelector('#lab-output').textContent;
+  enter('move-in-deposit',-1);enter('lab-parking',150);
+  assert.match(d.doc.querySelector('#lab-error').textContent,/last valid scenario/);
+  assert.equal(d.doc.querySelector('#lab-output').textContent,valid);
+  enter('move-in-deposit',2000);
+  assert.equal(d.doc.querySelector('#lab-error').textContent,'');
+  assert.match(d.doc.querySelector('.move-in-total').textContent,/7,150/);
+  const select=d.doc.querySelector('#lab-home');select.selectedIndex=1;select.dispatchEvent(new d.w.Event('change'));
+  assert.equal(d.doc.querySelector('#move-in-deposit').value,'');
+  assert.equal(d.doc.querySelector('#lab-rent').value,'');
+  assert.equal(d.w.localStorage.getItem('spicyhome.workspace.v1'),null);
+  d.close();
+});

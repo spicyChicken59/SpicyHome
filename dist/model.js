@@ -45,6 +45,43 @@ export function costScenario(home, record = {}, assumptions = {}, months = 12) {
   const term = Number.isInteger(months) && months >= 1 && months <= 36 ? months : 12;
   return { items, missing, subtotal, monthly: hasRent ? subtotal : null, term, termTotal: hasRent ? subtotal * term : null, complete: !missing.length };
 }
+export const moveInFields = [
+  ["deposit", "Refundable deposit"], ["oneTime", "Nonrefundable one-time fees"],
+  ["moving", "Moving costs"], ["prepaid", "Extra prepaid rent beyond month one"],
+];
+export function moveInScenario(home, record = {}, monthly, assumptions = {}) {
+  const items = moveInFields.map(([key, label]) => {
+    const assumed = amount(assumptions[key]);
+    return { key, label, value: assumed ?? (key === "oneTime" ? costs(home, record).upfront : null), assumed: assumed !== null };
+  });
+  const missing = [...monthly.missing, ...items.filter((item) => item.value === null).map((item) => item.label)];
+  return { items, missing, complete: !missing.length, total: monthly.monthly === null ? null : monthly.monthly + items.reduce((sum, item) => sum + (item.value ?? 0), 0) };
+}
+export function atlasPoints(homes, records = {}) {
+  return homes.flatMap((home) => {
+    const rent = costs(home, records[home.id]).rent;
+    return rent !== null && Number.isFinite(home.sqft) && home.sqft > 0
+      ? [{ home, rent, sqft: home.sqft, perFoot: rent / home.sqft, bedrooms: layoutEvidence(home, records[home.id]).bedrooms }]
+      : [];
+  });
+}
+export function leasingQuestions(home, record = {}, now = new Date()) {
+  const layout = layoutEvidence(home, record), c = costs(home, record, defaults);
+  const exactMoney = (value) => value.toLocaleString("en-US", {style:"currency", currency:"USD", minimumFractionDigits: value % 1 ? 2 : 0, maximumFractionDigits:2});
+  const questions = ["Is this exact unit or floor plan available for my move-in date, and for which lease lengths?"];
+  if (layout.status !== "confirmed") questions.push("Can you send the exact floor plan and confirm the number of enclosed bedrooms and bathrooms? I want to rule out a studio or convertible.");
+  if (c.rent === null) questions.push("What is the base rent before concessions? Please separate it from any advertised monthly total.");
+  else questions.push(`Is the ${exactMoney(c.rent)} base rent still current for this exact unit? What concessions or lease conditions apply?`);
+  if (c.parking === null) questions.push("Is a resident parking space available, and what is its monthly cost?");
+  else questions.push(`Can you confirm a resident parking space and the ${exactMoney(c.parking)} monthly parking amount?`);
+  questions.push("Is resident EV charging available now? Please confirm connector, access rules, waitlist, charging fees and whether those fees overlap parking or utilities.");
+  if (c.fees === null || c.utilities === null) questions.push("Please itemize every recurring fee and utility charge, including anything billed separately or based on usage.");
+  questions.push("What deposits, nonrefundable fees and prepaid rent are required, and when is each due?");
+  if (home.access?.status !== "yes" || !record.tourChecks?.access) questions.push("Can you confirm the step-free route from the street and garage to this unit, including elevator access?");
+  const quoteDate = amount(record.rentOverride) !== null ? record.quoteDate : home.observed_at;
+  if (ageDays(quoteDate, now) === null || ageDays(quoteDate, now) > 7) questions.push("Please provide a fresh, dated written quote with its expiration date.");
+  return questions;
+}
 // Keep the original one_bed review's exact 1/1 meaning in existing notebooks.
 export const checkedLayouts = {
   one_bed: [1, 1],
@@ -349,6 +386,7 @@ export function emptyWorkspace() {
     manual: [],
     events: [],
     preferences: { ...defaults },
+    savedSearches: [],
   };
 }
 export function validateWorkspace(w) {
@@ -392,7 +430,14 @@ export function validateWorkspace(w) {
     )
       throw Error("The backup contains an invalid saved home or quote.");
   }
-  const p = { ...defaults, ...(isObj(w.preferences) ? w.preferences : {}) };
+  const p = validatePreferences(w.preferences);
+  const savedSearches = w.savedSearches === undefined ? [] : w.savedSearches;
+  if (!Array.isArray(savedSearches) || savedSearches.length > 8 || savedSearches.some((s) => !isObj(s) || !textOk(s.name, 60) || !s.name.trim() || !isObj(s.preferences)) || new Set(savedSearches.map((s) => s.name.trim().toLowerCase())).size !== savedSearches.length)
+    throw Error("The backup contains invalid saved searches (maximum eight unique names).");
+  return { ...w, preferences: p, savedSearches: savedSearches.map((s) => ({ name: s.name.trim(), preferences: validatePreferences(s.preferences) })) };
+}
+export function validatePreferences(preferences) {
+  const p = { ...defaults, ...(isObj(preferences) ? preferences : {}) };
   if (
     !Number.isFinite(p.min) ||
     !Number.isFinite(p.max) ||
@@ -404,7 +449,7 @@ export function validateWorkspace(w) {
     !["all", "source", "confirmed"].includes(p.layoutScope) ||
     !["all", "chicago", "suburbs"].includes(p.region) ||
     !["all", "1", "2"].includes(p.bedrooms) ||
-    !["split", "list", "map", "focus"].includes(p.surface) ||
+    !["split", "list", "map", "focus", "atlas"].includes(p.surface) ||
     ![0, 10, 20, 35].includes(p.radiusMiles) ||
     !textOk(p.search, 500) ||
     !textOk(p.neighborhood, 500) ||
@@ -414,7 +459,7 @@ export function validateWorkspace(w) {
     !nullableAmount(p.utilityEstimate)
   )
     throw Error("The backup contains invalid search preferences.");
-  return { ...w, preferences: p };
+  return Object.fromEntries(Object.keys(defaults).map((key) => [key, p[key]]));
 }
 export function ageDays(date, now = new Date()) {
   const time = Date.parse(date);

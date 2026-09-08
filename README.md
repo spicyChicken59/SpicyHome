@@ -166,3 +166,29 @@ stop publication. A Python-to-browser contract check verifies the resulting feed
 Existing version-1 backups remain compatible. New tour-check fields validate
 before import; search surface preferences are bounded. Notes, feed observations,
 source facts, request caps and provider workflows remain unchanged.
+
+## Five more decision tools — September 8, 2026
+
+1. **Saved searches:** up to eight named filter/view combinations in Discover,
+   with current match counts and one-tap restore. Loading keeps the current
+   utility estimate and apartment records. Reusing a name updates it; backups
+   merge searches by name and reject invalid or over-capacity unions atomically.
+2. **Rent × space Atlas:** a fifth Explore surface plots known base rent against
+   positive reported square footage. Saved quotes take precedence and show their
+   own dates separately. Unknown rent/size is excluded with a count, never replaced
+   by an advertised total. The picker reaches overlapping plans; List retains all
+   filtered homes. Mobile axes use readable text outside the chart.
+3. **Apartment face-off:** exact plan identities, stacked phone comparison facts,
+   desktop matrix, differences-only toggle and existing print action. Shared
+   unknowns are hidden by differences-only just like other matching facts.
+4. **Ask next:** each apartment's details include a copyable leasing-question draft
+   based on unresolved layout, costs, resident charging, access and quote dates.
+   Quoted cents are preserved. Personal notes are excluded; copying has a manual
+   fallback. Nothing is sent and recording answers uses the existing notebook.
+5. **Move-in cash planner:** Cost Lab separately combines one month of its current
+   recurring scenario with refundable deposit, nonrefundable fees, moving costs
+   and extra prepaid rent. Unknowns stay visible. These tab-local assumptions
+   neither modify saved quotes nor add to the recurring lease projection.
+
+The new fields remain compatible with version-1 notebooks. Listing observations,
+source histories, scan/request budgets and shared design assets are unchanged.

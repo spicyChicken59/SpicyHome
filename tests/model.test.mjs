@@ -22,6 +22,9 @@ import {
   scanBedroomScope,
   costScenario,
   tourProgress,
+  atlasPoints,
+  leasingQuestions,
+  moveInScenario,
 } from "../dist/model.js";
 const seed = JSON.parse(
   fs.readFileSync(new URL("../data/seed.json", import.meta.url)),
@@ -324,4 +327,52 @@ test("tour checklists survive backup round trips without implying layout confirm
   for(const tourChecks of [{unknown:true},{layout:'yes'},[],null])assert.throws(()=>validateWorkspace({...w,records:{[home.id]:{tourChecks}}}));
   delete w.preferences.surface;assert.equal(validateWorkspace(w).preferences.surface,'split');
   assert.throws(()=>validateWorkspace({...w,preferences:{...defaults,surface:'unknown'}}));
+});
+
+test("saved searches validate legacy backups, unique bounded names and full preferences", () => {
+  const legacy={version:1,records:{},manual:[],events:[],preferences:{}};
+  assert.deepEqual(validateWorkspace(legacy).savedSearches,[]);
+  const search={name:" Suburbs ",preferences:{...defaults,region:"suburbs",surface:"atlas"}};
+  assert.equal(validateWorkspace({...legacy,savedSearches:[search]}).savedSearches[0].name,"Suburbs");
+  for (const savedSearches of [[search,{...search,name:"suburbs"}], [{...search,name:" "}], [{...search,preferences:{...defaults,max:-1}}], Array.from({length:9},(_,i)=>({...search,name:String(i)})), "invalid", null]) {
+    assert.throws(()=>validateWorkspace({...legacy,savedSearches}));
+  }
+});
+test("atlas uses base rent, positive reported area and personal quotes without substituting advertised totals", () => {
+  const a={...home,id:"a",rent:null,advertised_price:2400,sqft:1000};
+  const b={...home,id:"b",rent:2000,sqft:800};
+  assert.deepEqual(atlasPoints([a,{...b,sqft:0}]),[]);
+  const points=atlasPoints([a,b],{a:{rentOverride:2100}});
+  assert.equal(points[0].rent,2100);assert.equal(points[0].perFoot,2.1);
+  assert.equal(points[1].perFoot,2.5);assert.equal(a.rent,null);
+});
+test("leasing draft preserves unresolved facts even after tour checks and never includes private notes", () => {
+  const h={...home,rent:null,observed_at:"2026-01-01",parking:{status:"yes"},charging:{status:"yes"}};
+  const r={notes:"PRIVATE PHONE 555",tourChecks:{layout:true,charging:true,parking:true}};
+  const draft=leasingQuestions(h,r,new Date("2026-09-08")).join(" ");
+  assert.match(draft,/enclosed bedrooms/);assert.match(draft,/base rent before concessions/);
+  assert.match(draft,/connector, access rules, waitlist/);assert.match(draft,/fresh, dated written quote/);
+  assert.doesNotMatch(draft,/PRIVATE PHONE/);
+  const exact=leasingQuestions({...h,observed_at:"2026-09-08"},{rentOverride:1999.99,parkingCost:99.50},new Date("2026-09-08")).join(" ");
+  assert.match(exact,/\$1,999\.99/);assert.match(exact,/\$99\.50/);assert.match(exact,/fresh, dated written quote/);
+});
+test("move-in plan adds first month once, keeps refundable and prepaid cash separate from recurring lease costs", () => {
+  const record={oneTimeFees:300};
+  const monthly=costScenario(home,record,{rent:2000,parking:100,fees:50,utilities:100,charging:50},12);
+  const before=JSON.stringify(monthly);
+  const cash=moveInScenario(home,record,monthly,{deposit:2000,moving:500,prepaid:2000});
+  assert.equal(monthly.monthly,2300);assert.equal(monthly.termTotal,27600);
+  assert.equal(cash.total,7100);assert.equal(cash.complete,true);
+  assert.equal(cash.items.find(item=>item.key==="oneTime").assumed,false);
+  assert.equal(JSON.stringify(monthly),before);assert.deepEqual(record,{oneTimeFees:300});
+});
+test("move-in unknowns are not zero, zero assumptions are valid, and missing base rent blocks a total", () => {
+  const h={...home,rent:null,advertised_price:2400};
+  const monthly=costScenario(h);
+  assert.equal(moveInScenario(h,{},monthly,{deposit:0,oneTime:0,moving:0,prepaid:0}).total,null);
+  const complete=costScenario(h,{}, {rent:2000,parking:0,fees:0,utilities:0,charging:0});
+  const partial=moveInScenario(h,{},complete);
+  assert.equal(partial.complete,false);assert(partial.missing.includes("Refundable deposit"));
+  const zero=moveInScenario(h,{},complete,{deposit:0,oneTime:0,moving:0,prepaid:0});
+  assert.equal(zero.complete,true);assert.equal(zero.total,2000);
 });

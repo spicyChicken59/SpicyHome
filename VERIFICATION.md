@@ -81,3 +81,23 @@
   boards, 44px controls, 16px fields and bottom navigation with safe-area spacing.
   DOM interaction checks use a Leaflet stub; real browser, map-tile and iPhone
   visual QA are not claimed by these automated checks.
+
+## Second five-feature round — September 8, 2026
+
+- 135 automated checks: 93 JavaScript and 42 Python. Added coverage for search
+  save/restore/import, atomic over-capacity rejection, Atlas plan selection and
+  missing data, mobile/desktop comparison parity, clipboard fallback and note
+  privacy, move-in cash arithmetic and validation across both cost forms.
+- Two independent reviewers found four bounded issues: two-bedroom hit circles
+  rendered visibly, long mobile comparison identities could clip, copied quotes
+  rounded cents, and the Atlas used a source date alongside a personal quote.
+  All four were fixed and passed focused independent verification.
+- Explicit null saved searches reject while legacy omission stays compatible.
+  Undated personal quotes require a fresh quote; Atlas labels source and personal
+  quote dates separately. Monthly lease costs and move-in cash stay separate.
+- Static verification confirms 214 unchanged apartments and 22 immutable shared
+  assets. Data observations, scan/evidence/usage ledgers and workflows are unchanged.
+  No paid calls, leasing messages or appointments were made.
+- Interaction verification uses DOM emulation; CSS audits cover responsive
+  wrapping, chart hit areas, dark-theme labels and mobile chart text. This does
+  not claim a real browser, map network, or physical phone visual test.

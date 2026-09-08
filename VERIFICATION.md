@@ -136,3 +136,29 @@
 - UI interaction checks use DOM emulation. Responsive CSS includes a horizontal
   mobile card row, wrapping content and 44px controls; no real-browser, live-map
   or physical-phone visual test is claimed.
+
+## Decision Studio — September 8, 2026
+
+- One bounded independent model audit found two issues: unchanged scans hid a
+  recent price drop, and tradeoff lanes could repeat members of a linked building
+  group. Both are fixed with deterministic regression cases. No second audit.
+- The complete initial run passed 119 JavaScript checks and all 42 Python checks.
+  A subsequent optimization reuses computed evidence for recipe changes; all 12
+  focused Studio checks passed, including an added equivalence regression for
+  fast remix versus full ranking. The final suite contains 120 JavaScript checks;
+  required release CI runs that suite plus all 42 Python checks.
+- New interaction coverage includes recipe changes and snapshot saving, exact
+  two-home comparisons, sparse/empty area views, price filters and history focus,
+  and advancing a next move after a saved layout check. Model coverage verifies
+  quote freshness, current filters, grouping, sample medians, historical changes,
+  priorities and nonmutation of inputs.
+- The concurrent scheduled scan on GitHub was incorporated before release:
+  390 apartment records, including 93 reported two-bedroom entries. Static
+  validation passes with all 22 immutable design assets intact. This feature
+  change does not modify source observations, usage reservations or workflows.
+- Recipe scoring on the 390-record snapshot reuses its comparison evidence:
+  approximately 0.27 ms per remix in Node locally, excluding DOM rendering and
+  initial evidence computation. This is not a phone/browser performance claim.
+- UI verification uses DOM emulation. Responsive rules cover wrapping, narrow
+  layouts, internal tool navigation and 44px controls. No browser or physical-phone
+  visual QA is claimed. No paid requests were made for development or validation.

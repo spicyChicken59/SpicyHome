@@ -944,3 +944,67 @@ test('SpicyPicks leaves map, Focus and Atlas surfaces clear and restores on List
   d.doc.querySelector('button[data-surface="list"]').click();
   assert.equal(d.doc.querySelector('#spicy-picks').hidden,false);assert.equal(d.doc.querySelectorAll('.pick-card').length,3);d.close();
 });
+
+function studioSnapshot() {
+  const snapshot=picksSnapshot(),h=snapshot.homes[0];
+  snapshot.homes=[
+    {...h,id:'studio-anchor',title:'Starting Place',kind:'listing',floor_plan:undefined,address:'100 Main St, Chicago, IL 60601',city:'Chicago',layout_status:'provider_reported',rent:2500,sqft:800,lat:41.87,lng:-87.63,charging:{status:'unknown'}},
+    {...h,id:'studio-cheap',title:'Budget Place',kind:'listing',floor_plan:undefined,address:'200 Main St, Chicago, IL 60601',city:'Chicago',layout_status:'provider_reported',rent:2000,sqft:750,lat:41.88,lng:-87.63},
+    {...h,id:'studio-room',title:'Roomy Place',kind:'listing',floor_plan:undefined,address:'300 Main St, Chicago, IL 60601',city:'Chicago',layout_status:'provider_reported',rent:2600,sqft:1000,lat:41.90,lng:-87.63},
+    {...h,id:'studio-ev',title:'EV Place',kind:'listing',floor_plan:undefined,address:'400 Main St, Elmhurst, IL 60126',city:'Elmhurst',layout_status:'provider_reported',rent:2550,sqft:850,lat:41.9,lng:-87.94},
+  ];
+  const before=new Date(Date.now()-86400000).toISOString();snapshot.homes.forEach(home=>home.history=[{date:before,rent:home.rent+100},{date:snapshot.generated_at,rent:home.rent}]);
+  return snapshot;
+}
+async function bootStudio(notebook=null) {
+  const snapshot=studioSnapshot(),d=await boot({remote:snapshot,packaged:snapshot,notebook});
+  d.doc.querySelector('[data-open-studio]').click();return {...d,snapshot};
+}
+test('Decision Studio recipe controls change results without altering the notebook and saving keeps the chosen snapshot', async () => {
+  const d=await bootStudio();assert.equal(d.doc.querySelectorAll('[data-studio-tab]').length,5);
+  const before=d.w.localStorage.getItem('spicyhome.workspace.v1');
+  d.doc.querySelector('[data-recipe-preset="space"]').click();
+  assert.equal(d.doc.activeElement.dataset.recipePreset,'space');
+  assert.equal(d.doc.querySelector('#recipe-results .pick-card').dataset.pickHome,'studio-room');
+  const input=d.doc.querySelector('#recipe-space');input.value='0';input.dispatchEvent(new d.w.Event('input'));
+  assert.equal(d.doc.querySelector('#recipe-value-space').textContent,'0');assert.equal(d.w.localStorage.getItem('spicyhome.workspace.v1'),before);
+  const card=d.doc.querySelector('#recipe-results .pick-card'),id=card.dataset.pickHome;card.querySelector('[data-save]').click();
+  const saved=JSON.parse(d.w.localStorage.getItem('spicyhome.workspace.v1')).records[id];
+  assert.equal(saved.saved,true);assert.equal(saved.snapshot.id,id);d.close();
+});
+test('Decision Studio tradeoff controls compare exactly the anchor and the selected alternative', async () => {
+  const d=await bootStudio();d.doc.querySelector('[data-studio-tab="trade"]').click();
+  const select=d.doc.querySelector('#trade-anchor');select.value='studio-anchor';select.dispatchEvent(new d.w.Event('change'));
+  assert.equal(d.doc.querySelectorAll('.trade-option').length,3);
+  assert.match(d.doc.querySelector('.trade-option').textContent,/500 less base.*50 sq ft less/s);
+  const button=d.doc.querySelector('[data-trade-compare]'),id=button.dataset.tradeCompare;button.click();
+  assert.equal(d.doc.querySelector('#compare-dialog').open,true);
+  const identities=d.doc.querySelector('.compare-identities').textContent;
+  assert.match(identities,/Starting Place/);assert(identities.includes(d.snapshot.homes.find(h=>h.id===id).title));
+  assert.equal(d.doc.querySelectorAll('.compare-identities article').length,2);d.close();
+});
+test('Decision Studio area comparison keeps sparse counts clear and survives an empty bedroom selection', async () => {
+  const d=await bootStudio();d.doc.querySelector('[data-studio-tab="areas"]').click();
+  assert.equal(d.doc.querySelectorAll('.area-profile').length,2);assert.match(d.doc.querySelector('#area-match-results').textContent,/Chicago.*sample median.*Elmhurst.*too few for a median/s);
+  const select=d.doc.querySelector('#area-match-beds');select.value='2';select.dispatchEvent(new d.w.Event('change'));
+  assert.match(d.doc.querySelector('#area-match-results').textContent,/No areas match/);
+  const back=d.doc.querySelector('#area-match-beds');back.value='1';back.dispatchEvent(new d.w.Event('change'));
+  assert.equal(d.doc.querySelectorAll('.area-profile').length,2);assert.equal(d.doc.activeElement.id,'area-match-beds');d.close();
+});
+test('Decision Studio price pulse filters real changes and opens their recorded history', async () => {
+  const d=await bootStudio();d.doc.querySelector('[data-studio-tab="pulse"]').click();
+  assert.equal(d.doc.querySelectorAll('.pulse-row').length,4);assert.match(d.doc.querySelector('.pulse-row').textContent,/100.*Source observations/s);
+  d.doc.querySelector('[data-pulse="rises"]').click();assert.equal(d.doc.querySelectorAll('.pulse-row').length,0);
+  d.doc.querySelector('[data-pulse="drops"]').click();d.doc.querySelector('.pulse-row [data-studio-task]').click();
+  assert.equal(d.doc.querySelector('#detail-dialog').open,true);assert.equal(d.doc.activeElement.id,'detail-history');d.doc.querySelector('#detail-content [data-close]').click();
+  d.doc.querySelector('#pulse-saved').click();assert.equal(d.doc.querySelectorAll('.pulse-row').length,0);assert.equal(d.doc.activeElement.id,'pulse-saved');d.close();
+});
+test('Decision Studio next moves open the right field and advance after saving a real layout check', async () => {
+  const h=studioSnapshot().homes[0],notebook={version:1,manual:[],events:[],preferences:{},records:{[h.id]:{saved:true,snapshot:h,notes:'Keep my note'}}};
+  const d=await bootStudio(notebook);d.doc.querySelector('[data-studio-tab="moves"]').click();
+  assert.match(d.doc.querySelector('.next-move').textContent,/Check the exact layout/);
+  d.doc.querySelector('.next-move [data-studio-task]').click();assert.equal(d.doc.activeElement.id,'layoutReview');
+  d.doc.querySelector('#layoutReview').value='one_bed';d.doc.querySelector('.layout-review [type="submit"]').click();
+  assert.match(d.doc.querySelector('.next-move').textContent,/Get a fresh, complete quote/);
+  assert.equal(JSON.parse(d.w.localStorage.getItem('spicyhome.workspace.v1')).records[h.id].notes,'Keep my note');d.close();
+});

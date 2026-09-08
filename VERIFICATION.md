@@ -117,3 +117,22 @@
 - Static validation confirms 214 unchanged apartments and 22 immutable design
   assets. Source data, request ledgers and workflows remain unchanged. No paid
   calls or leasing messages were made. No browser/physical-phone visual QA.
+
+## SpicyPicks — September 8, 2026
+
+- One bounded independent ranking audit. Both findings were fixed: all linked
+  building members now deduplicate before comparison, and future-dated source,
+  quote and CTA evidence cannot receive freshness credit. No second audit round.
+- Eight new regression cases cover valid local comparison cohorts, minimum sample
+  size and duplicate locations, date gates, layout/status/filter exclusions,
+  unknown base rents, cost uncertainty, priority switching and exact plan labels,
+  saving snapshots, synchronized comparison controls, and Explore surface changes.
+- The initial full JavaScript run passed 107 of 108 checks; the new two-bedroom
+  lead check exposed a missing visible layout label. That label is added, and all
+  eight focused SpicyPicks regressions pass. Required CI runs the full release
+  suite. The 42 Python checks and static site validation also pass.
+- All 214 apartments, source observations, scan/usage/evidence ledgers, workflows
+  and 22 immutable design assets are unchanged. No paid provider calls were made.
+- UI interaction checks use DOM emulation. Responsive CSS includes a horizontal
+  mobile card row, wrapping content and 44px controls; no real-browser, live-map
+  or physical-phone visual test is claimed.

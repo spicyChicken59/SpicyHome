@@ -25,6 +25,7 @@ import {
   atlasPoints,
   leasingQuestions,
   moveInScenario,
+  spicyPicks,
 } from "../dist/model.js";
 const seed = JSON.parse(
   fs.readFileSync(new URL("../data/seed.json", import.meta.url)),
@@ -397,4 +398,76 @@ test("finalist pins require saved homes, cap at three and remain compatible with
   assert.throws(()=>validateWorkspace({...w,records:{a:{...record,saved:false}}}));
   assert.throws(()=>validateWorkspace({...w,records:{a:{...record,finalist:'true'}}}));
   assert.throws(()=>validateWorkspace({...w,preferences:{density:'invalid'}}));
+});
+
+const pickNow = new Date('2026-09-08T12:00:00Z');
+function pickHome(id, patch={}) {
+  return {...home,id,title:id,address:`${id} Main St, Chicago, IL 60601`,city:'Chicago',
+    kind:'listing',layout_status:'provider_reported',floor_plan:undefined,
+    bedrooms:1,bathrooms:1,sqft:800,rent:2400,lat:41.88,lng:-87.63,
+    observed_at:'2026-09-07',...patch};
+}
+const pickPeers = () => Array.from({length:5},(_,i)=>pickHome(`peer-${i}`,{lat:41.885+i*.002,rent:2400}));
+const findPick = (homes,workspace=emptyWorkspace(),context={},lens='budget') =>
+  spicyPicks(homes,workspace,{...defaults,search:'candidate'},context,lens,pickNow).picks[0];
+test('SpicyPicks uses five other matching locations and base rent, independent of search or ruled-out preferences', () => {
+  const candidate=pickHome('candidate',{rent:1600,advertised_price:3000}),peers=pickPeers();
+  const extras=[
+    {kind:'building'}, {city:'Evanston'}, {bedrooms:2}, {bathrooms:2},
+    {sqft:500}, {lat:42.5}, {observed_at:'2026-08-20'}, {rent:null,advertised_price:100},
+  ].map((patch,i)=>pickHome(`excluded-${i}`,{lat:41.90+i*.002,rent:500,...patch}));
+  const w=emptyWorkspace();w.records[peers[0].id]={status:'ruled out'};
+  const all=[candidate,...peers,...extras],before=JSON.stringify({all,w});
+  const pick=findPick(all,w);
+  assert.equal(pick.peerCount,5);assert.equal(pick.peerMedian,3);
+  assert(Math.abs(pick.saving-1/3)<1e-9);assert.match(pick.reasons[0],/33% lower base rent per sq ft/);
+  assert.equal(JSON.stringify({all,w}),before);
+  assert.equal(findPick([candidate,...peers.slice(0,4)]).saving,null);
+  const duplicate=pickHome('peer-unit',{address:peers[0].address+' Apt 2',lat:peers[0].lat,rent:3200});
+  assert.equal(findPick([candidate,...peers,duplicate]).peerCount,5);
+});
+test('SpicyPicks merges every linked building member before excluding own-building comparables', () => {
+  const a=pickHome('building-a',{lat:41.8800}), b=pickHome('building-b',{address:'500 Main St Apt 1, Chicago, IL 60601',lat:41.8803});
+  const candidate=pickHome('candidate',{address:'500 Main St Apt 2, Chicago, IL 60601',lat:41.8806,rent:1600});
+  const pick=findPick([a,b,candidate,...pickPeers().slice(0,4)]);
+  assert.equal(pick.peerCount,4);assert.equal(pick.saving,null);
+  assert.equal(spicyPicks([a,b,candidate],emptyWorkspace(),defaults,{},'budget',pickNow).picks.length,1);
+});
+test('SpicyPicks rejects future source and quote dates and stale or future CTA evidence', () => {
+  const candidate=pickHome('candidate',{rent:1600});
+  assert.equal(findPick([{...candidate,observed_at:'2099-01-01'},...pickPeers()]),undefined);
+  const w=emptyWorkspace();w.records.candidate={rentOverride:1400,quoteDate:'2099-01-01'};
+  assert.equal(findPick([candidate,...pickPeers()],w),undefined);
+  w.records={};w.records['peer-0']={rentOverride:2500,quoteDate:'2099-01-01'};
+  assert.equal(findPick([candidate,...pickPeers()],w).peerCount,4);
+  w.records={candidate:{rentOverride:1400}};
+  assert.equal(findPick([candidate,...pickPeers()],w).saving,null);
+  const context={transit_stops:[{title:'Test',lat:41.881,lng:-87.63}],city_context:{cta:{updated_at:'2026-09-07'}}};
+  assert(findPick([candidate],emptyWorkspace(),context,'rail').nearby.distance<.5);
+  for(const at of ['2099-01-01','2026-07-01',null]) {
+    context.city_context.cta.updated_at=at;
+    assert.equal(findPick([candidate],emptyWorkspace(),context,'rail'),undefined);
+  }
+});
+test('SpicyPicks excludes unsupported or rejected candidates and respects current bedroom, area and amenity filters', () => {
+  const patches=[{bedrooms:0},{layout_status:'conflict'},{notebook_only:true},{seen_in_latest:false},{observed_at:'2026-07-01'},{sqft:null},{rent:0}];
+  const homes=patches.map((patch,i)=>pickHome(`invalid-${i}`,patch));
+  const one=pickHome('valid-one'),two=pickHome('valid-two',{bedrooms:2,city:'Elmhurst',address:'100 First St, Elmhurst, IL 60126',lat:41.9,lng:-87.94});
+  const w=emptyWorkspace();w.records['valid-one']={status:'ruled out'};
+  let result=spicyPicks([...homes,one,two],w,defaults,{},'balanced',pickNow);
+  assert.deepEqual(result.picks.map(p=>p.home.id),['valid-two']);
+  result=spicyPicks([one,two],emptyWorkspace(),{...defaults,bedrooms:'2',region:'suburbs',charging:true}, {}, 'ev',pickNow);
+  assert.deepEqual(result.picks.map(p=>p.home.id),['valid-two']);
+  assert.equal(spicyPicks([two],emptyWorkspace(),{...defaults,region:'chicago'}, {},'budget',pickNow).picks.length,0);
+});
+test('SpicyPicks separates advertised-only leads from bargains and reduces rank for missing quotes', () => {
+  const lead=pickHome('lead',{bedrooms:2,rent:null,advertised_price:2200});
+  const result=spicyPicks([lead],emptyWorkspace(),{...defaults,bedrooms:'2'}, {},'budget',pickNow);
+  assert.equal(result.picks.length,0);assert.equal(result.leads[0].id,'lead');
+  const candidate=pickHome('candidate',{parking:{status:'no',monthly:null},charging:{status:'no'},fees:{monthly:null}});
+  const unquoted=findPick([candidate]);
+  const w=emptyWorkspace();w.records.candidate={parkingCost:0,monthlyFees:0,utilities:0};
+  const quoted=findPick([candidate],w);
+  assert(quoted.score>unquoted.score);assert.equal(unquoted.cost.complete,false);
+  assert.match(unquoted.catches.join(' '),/no resident parking.*no resident EV charging.*Still unquoted/);
 });

@@ -61,3 +61,23 @@
   The normalized output passes the actual browser feed validator.
 - Existing listing observations, scan dates, source facts, histories, events and
   request/evidence ledgers are unchanged. No paid provider call was made.
+
+## Five-feature experience audit — September 8, 2026
+
+- 124 automated checks: 82 JavaScript and 42 Python. Includes prior regression
+  coverage plus Explore modes, map resizing, Focus save/skip/undo, stage moves,
+  tour checklist/quote roundtrips, Cost Lab unknowns/zeroes/term arithmetic and
+  invalid-field handling. No source data or paid-provider request was changed.
+- Independent flow and data reviewers reproduced stale Focus counts, hidden or
+  lost keyboard focus and a Cost Lab error-clearing bug. Fixes have regression
+  coverage and passed focused independent confirmation.
+- Existing map grouped-plan selection and saved-note focus checks exposed a
+  surface-selector event bubbling issue; handlers now target only the buttons.
+  A queued disclosure event also now uses its connected event target safely.
+- Source health details collapse routine context and expand unavailable/stale
+  observations. All 214 apartment records, source dates, histories, request
+  reservations and evidence ledgers are byte-for-byte unchanged.
+- Mobile CSS includes wrapping/min-width safeguards, single-column cards and
+  boards, 44px controls, 16px fields and bottom navigation with safe-area spacing.
+  DOM interaction checks use a Leaflet stub; real browser, map-tile and iPhone
+  visual QA are not claimed by these automated checks.

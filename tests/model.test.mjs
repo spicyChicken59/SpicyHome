@@ -20,6 +20,8 @@ import {
   homeCity,
   searchCenter,
   scanBedroomScope,
+  costScenario,
+  tourProgress,
 } from "../dist/model.js";
 const seed = JSON.parse(
   fs.readFileSync(new URL("../data/seed.json", import.meta.url)),
@@ -288,4 +290,38 @@ print(json.dumps(homes))
   assert.equal(normalized[0].unit_label,null);
   assert.equal(normalized[0].property_type,null);
   assert(validateFeed({...seed,homes:normalized}));
+});
+
+test("cost scenarios keep assumed amounts separate and preserve unknowns", () => {
+  const h={...home,rent:null,parking:{status:'unknown',monthly:null},fees:{monthly:null}};
+  const rec={notes:'Do not change',rentOverride:null};
+  const baseline=costScenario(h,rec,{});
+  assert.equal(baseline.monthly,null);
+  assert.equal(baseline.complete,false);
+  assert(baseline.missing.includes('Base rent'));
+  const result=costScenario(h,rec,{rent:2200,parking:100,fees:0,utilities:80,charging:25},12);
+  assert.equal(result.monthly,2405);
+  assert.equal(result.termTotal,28860);
+  assert.equal(result.complete,true);
+  assert.equal(result.items.filter(i=>i.assumed).length,5);
+  assert.equal(h.rent,null);assert.equal(rec.rentOverride,null);assert.equal(rec.notes,'Do not change');
+  assert.equal(costScenario(h,rec,{rent:2200},12).complete,false);
+});
+test("scenario quotes, zeroes and chosen month counts remain explicit", () => {
+  const rec={rentOverride:2300,parkingCost:0,monthlyFees:0,utilities:80};
+  const result=costScenario(home,rec,{charging:0},6);
+  assert.equal(result.monthly,2380);assert.equal(result.termTotal,14280);
+  assert.equal(result.items[0].assumed,false);
+  assert.equal(result.items[4].assumed,true);
+  assert.equal(costScenario(home,rec,{rent:-1}).items[0].value,2300);
+  assert.equal(costScenario(home,rec,{},0).term,12);
+});
+test("tour checklists survive backup round trips without implying layout confirmation", () => {
+  const w=emptyWorkspace();w.records[home.id]={saved:true,snapshot:home,notes:'Daylight first',tourChecks:{layout:true,light:true,charging:false}};
+  const imported=validateWorkspace(JSON.parse(JSON.stringify(w)));
+  assert.equal(tourProgress(imported.records[home.id]),2);
+  assert.equal(layoutEvidence(home,imported.records[home.id]).status,'source_listed');
+  for(const tourChecks of [{unknown:true},{layout:'yes'},[],null])assert.throws(()=>validateWorkspace({...w,records:{[home.id]:{tourChecks}}}));
+  delete w.preferences.surface;assert.equal(validateWorkspace(w).preferences.surface,'split');
+  assert.throws(()=>validateWorkspace({...w,preferences:{...defaults,surface:'unknown'}}));
 });

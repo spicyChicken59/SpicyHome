@@ -14,7 +14,37 @@ export const defaults = {
   region: "all",
   radiusMiles: 0,
   bedrooms: "all",
+  surface: "split",
 };
+export const tourChecks = [
+  ["layout", "Walk the exact layout", "Check bedroom doors, dimensions and where your furniture fits."],
+  ["light", "Check the light", "Look at windows, daylight and the view from the actual unit."],
+  ["noise", "Listen with windows closed", "Check street, hallway, neighbor and mechanical noise."],
+  ["parking", "Walk the parking route", "Confirm the space, monthly price, clearance and route indoors."],
+  ["charging", "Inspect the charger", "Confirm connector, access, pricing, shared use and any waitlist."],
+  ["access", "Try the everyday route", "Check steps, elevators, doors, laundry and the trip with groceries."],
+  ["condition", "Test the basics", "Look at storage, appliances, water pressure and heating/cooling."],
+  ["lease", "Review the full quote", "Check lease term, move-in date, deposits and every recurring fee."],
+];
+export function tourProgress(record = {}) {
+  return tourChecks.filter(([key]) => record.tourChecks?.[key] === true).length;
+}
+export const scenarioFields = [
+  ["rent", "Base rent"], ["parking", "Parking"], ["fees", "Recurring fees"],
+  ["utilities", "Utilities"], ["charging", "EV charging"],
+];
+export function costScenario(home, record = {}, assumptions = {}, months = 12) {
+  const known = costs(home, record, { ...defaults, utilityEstimate: null });
+  const items = scenarioFields.map(([key, label]) => {
+    const assumed = amount(assumptions[key]);
+    return { key, label, value: assumed ?? (key === "charging" ? null : known[key]), assumed: assumed !== null };
+  });
+  const missing = items.filter((item) => item.value === null).map((item) => item.label);
+  const subtotal = items.reduce((sum, item) => sum + (item.value ?? 0), 0);
+  const hasRent = items[0].value !== null;
+  const term = Number.isInteger(months) && months >= 1 && months <= 36 ? months : 12;
+  return { items, missing, subtotal, monthly: hasRent ? subtotal : null, term, termTotal: hasRent ? subtotal * term : null, complete: !missing.length };
+}
 // Keep the original one_bed review's exact 1/1 meaning in existing notebooks.
 export const checkedLayouts = {
   one_bed: [1, 1],
@@ -342,6 +372,8 @@ export function validateWorkspace(w) {
       throw Error("The backup contains an invalid record.");
     if (r.layoutReview !== undefined && (typeof r.layoutReview !== "string" || !Object.hasOwn(checkedLayouts, r.layoutReview) && !["studio", "other", "unverified"].includes(r.layoutReview)))
       throw Error("The backup contains an invalid layout review.");
+    if (r.tourChecks !== undefined && (!isObj(r.tourChecks) || Object.entries(r.tourChecks).some(([key, value]) => !tourChecks.some(([known]) => known === key) || typeof value !== "boolean")))
+      throw Error("The backup contains an invalid tour checklist.");
     for (const k of [
       "rentOverride",
       "parkingCost",
@@ -372,6 +404,7 @@ export function validateWorkspace(w) {
     !["all", "source", "confirmed"].includes(p.layoutScope) ||
     !["all", "chicago", "suburbs"].includes(p.region) ||
     !["all", "1", "2"].includes(p.bedrooms) ||
+    !["split", "list", "map", "focus"].includes(p.surface) ||
     ![0, 10, 20, 35].includes(p.radiusMiles) ||
     !textOk(p.search, 500) ||
     !textOk(p.neighborhood, 500) ||

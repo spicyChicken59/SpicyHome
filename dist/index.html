@@ -12,10 +12,10 @@
     <link rel="icon" href="./design-system/assets/favicon.ico" />
     <link rel="stylesheet" href="./design-system/sc.css" />
     <link rel="stylesheet" href="./vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="./style.css?v=20260908-audit" />
+    <link rel="stylesheet" href="./style.css?v=20260908-experience" />
     <script src="./vendor/leaflet/leaflet.js" defer></script>
     <script src="./design-system/sc-theme.js" defer></script>
-    <script type="module" src="./app.js?v=20260908-audit"></script>
+    <script type="module" src="./app.js?v=20260908-experience"></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to apartments</a>
@@ -35,7 +35,7 @@
         <button data-view="discover" aria-current="page">Discover</button
         ><button data-view="shortlist">
           Shortlist <span id="saved-count">0</span></button
-        ><button data-view="timeline">Activity</button
+        ><button data-view="lab">Cost Lab</button><button data-view="timeline">Activity</button
         ><button data-view="setup">Sources & setup</button>
       </nav>
       <button
@@ -50,9 +50,9 @@
       <section class="intro">
         <div>
           <p class="eyebrow">YOUR NEXT CHAPTER / CHICAGO + SUBURBS</p>
-          <h1>A little room.<br /><em>A lot of possibility.</em></h1>
+          <h1>Your next place.<br /><em>Your kind of life.</em></h1>
           <p class="intro-copy">
-            One or two bedrooms. City energy or a suburban change of pace. A place for the car, too.
+            Find it. Compare the real costs. Make it yours.
           </p>
           <div class="criteria">
             <span>$1,200–$3,000 / month</span><span>1–2 beds · 1–2 baths</span
@@ -68,11 +68,11 @@
           />
           <div>
             <span>HOME SEARCH 01</span><strong>Chicago + seven suburbs</strong
-            ><small id="photo-credit"></small>
+            >
           </div>
         </div>
       </section>
-      <div id="notice" role="status" aria-live="polite"></div>
+      <details id="source-status" class="source-status"><summary id="source-status-label">Loading source status…</summary><div id="notice" role="status" aria-live="polite"></div></details>
       <section id="workspace" aria-label="Apartment research">
         <div class="workspace-heading">
           <div>
@@ -93,7 +93,7 @@
       ><span
         >Research supports your decision. Confirm rent, fees and charger access
         with leasing.</span
-      ><a
+      ><small id="photo-credit"></small><a
         href="https://github.com/spicyChicken59/SpicyHome"
         target="_blank"
         rel="noopener noreferrer"

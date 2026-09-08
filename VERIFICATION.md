@@ -42,3 +42,22 @@
   unchanged. New advertised prices remain separate from unknown base rent.
 - Both bedroom sizes share one scheduled 500-result query and the existing city
   rotation. No paid provider request or live browser verification was performed.
+
+## Published release audit — September 8, 2026
+
+- The two-bedroom release was merged in PR #6 and successfully published through
+  Sites before this follow-up audit.
+- Independent UX and data audits identified four bounded improvements: overlapping
+  plan pins, bedroom choice lost in scoped recovery, malformed optional provider
+  text and missing historical bedroom scope per city. All four are implemented.
+- 113 automated checks pass: 71 JavaScript and 42 Python. Focused independent
+  verification also passed for the reported findings. Static validation confirms
+  214 unchanged apartment records and 22 unchanged immutable design assets.
+- Map interactions use DOM emulation with a Leaflet stub: correct grouped options,
+  plan-specific notes, focus restoration and unlocated fallback are exercised.
+  This does not claim visual browser QA or real tile/network interaction.
+- Provider required text is bounded using JavaScript-compatible UTF-16 lengths;
+  malformed optional fields retain a valid address fallback or unknown value.
+  The normalized output passes the actual browser feed validator.
+- Existing listing observations, scan dates, source facts, histories, events and
+  request/evidence ledgers are unchanged. No paid provider call was made.

@@ -1212,3 +1212,11 @@ footer {
 .area-grid p { font-size: .875rem; line-height: 1.5; }
 .area-grid a { font-size: .875rem; }
 @media (max-width: 780px) { .area-selects, .area-grid { grid-template-columns: 1fr; } }
+
+/* Every plan remains selectable when several homes share a map coordinate. */
+.map-place { display: grid; gap: .15rem; min-width: 0; overflow-wrap: anywhere; }
+.map-list button { font-size: .875rem; align-items: flex-start; }
+.map-index { flex-shrink: 0; }
+.map-options { font-size: .875rem; }
+.map-plan { display: grid; gap: .3rem; width: 100%; padding: .7rem 0; text-align: left; color: var(--ink); background: none; border: 0; border-top: 1px solid var(--line); font: inherit; overflow-wrap: anywhere; cursor: pointer; }
+.map-open { text-decoration: underline; }

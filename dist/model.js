@@ -26,6 +26,16 @@ export const checkedLayouts = {
 };
 export const searchCenter = { lat: 41.882, lng: -87.632 };
 export const suburbCities = ["Evanston", "Oak Park", "Park Ridge", "Elmhurst", "Downers Grove", "Arlington Heights", "Naperville"];
+export function scanBedroomScope(provider, city) {
+  const scan = provider?.area_scans?.[city];
+  if (!scan) return "First listing scan pending · will include 1 & 2 bedrooms";
+  const query = scan.query ?? (provider.query?.city === city ? provider.query : null);
+  const value = query?.bedrooms;
+  const beds = Array.isArray(value) ? value : typeof value === "number" ? [value] : typeof value === "string" ? value.split("|").map(Number) : [];
+  if (beds.length && beds.every((b) => b === 1)) return "1-bedroom scan · 2-bedroom listing coverage pending";
+  if (beds.length && beds.every((b) => [1, 2].includes(b)) && beds.includes(1) && beds.includes(2)) return "Listing scan included 1 & 2 bedrooms";
+  return "Bedroom coverage not recorded · next scan includes both sizes";
+}
 export function homeCity(home) {
   const match = home.address?.match(/,\s*([^,]+),\s*IL\b/i);
   const candidate = home.city?.trim() || match?.[1]?.trim() || (/,\s*Chicago\s*$/i.test(home.address ?? "") ? "Chicago" : "");

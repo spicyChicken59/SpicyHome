@@ -376,3 +376,25 @@ test("move-in unknowns are not zero, zero assumptions are valid, and missing bas
   const zero=moveInScenario(h,{},complete,{deposit:0,oneTime:0,moving:0,prepaid:0});
   assert.equal(zero.complete,true);assert.equal(zero.total,2000);
 });
+
+test("tour agenda uses Chicago wall time, normalizes offset timestamps and excludes ruled-out homes", async () => {
+  const {chicagoTime,tourAgenda}=await import('../dist/model.js');
+  assert.equal(chicagoTime('2026-09-08T18:30:00Z'),'2026-09-08T13:30');
+  assert.equal(chicagoTime('2026-01-08T18:30:00Z'),'2026-01-08T12:30');
+  assert.equal(chicagoTime('2026-09-08T13:30'),'2026-09-08T13:30');
+  assert.equal(chicagoTime(null),null);assert.equal(chicagoTime('2026-09-08'),null);assert.equal(chicagoTime('2026-99-99T30:99'),null);
+  const homes=['past','future','ruled','unsaved'].map(id=>({...home,id}));
+  const records={past:{saved:true,tourDate:'2026-09-08T09:00'},future:{saved:true,tourDate:'2026-09-08T18:30:00Z'},ruled:{saved:true,status:'ruled out',tourDate:'2026-09-09T12:00'},unsaved:{tourDate:'2026-09-09T12:00'}};
+  const agenda=tourAgenda(homes,records,new Date('2026-09-08T17:00:00Z'));
+  assert.deepEqual(agenda.map(item=>[item.home.id,item.past]),[['past',true],['future',false]]);
+});
+test("finalist pins require saved homes, cap at three and remain compatible with older notebooks", () => {
+  const legacy=emptyWorkspace();assert.equal(validateWorkspace(legacy).preferences.density,'cards');
+  const record={saved:true,finalist:true,snapshot:home,notes:'Keep this quote',rentOverride:2300};
+  const w={...legacy,records:{a:record,b:record,c:record},preferences:{density:'scan'}};
+  assert.equal(validateWorkspace(w).records.a.notes,'Keep this quote');
+  assert.throws(()=>validateWorkspace({...w,records:{...w.records,d:record}}));
+  assert.throws(()=>validateWorkspace({...w,records:{a:{...record,saved:false}}}));
+  assert.throws(()=>validateWorkspace({...w,records:{a:{...record,finalist:'true'}}}));
+  assert.throws(()=>validateWorkspace({...w,preferences:{density:'invalid'}}));
+});

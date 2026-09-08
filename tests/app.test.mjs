@@ -829,3 +829,73 @@ test("move-in scratchpad validates every field, updates cash only and clears for
   assert.equal(d.w.localStorage.getItem('spicyhome.workspace.v1'),null);
   d.close();
 });
+
+test("quick jump searches excluded plans, navigates by keyboard and respects an open notebook dialog", async () => {
+  const h={...seed.homes[0],id:'jump-excluded',title:'Hidden Studio',bedrooms:0,layout_status:'studio'};
+  const snapshot={...seed,homes:[...seed.homes,h]};const d=await boot({remote:snapshot,packaged:snapshot});
+  d.doc.dispatchEvent(new d.w.KeyboardEvent('keydown',{key:'k',ctrlKey:true,bubbles:true}));
+  assert.equal(d.doc.querySelector('#jump-dialog').open,true);assert.equal(d.doc.activeElement.id,'jump-search');
+  const search=d.doc.querySelector('#jump-search');search.value='Hidden Studio';search.dispatchEvent(new d.w.Event('input'));
+  assert.match(d.doc.querySelector('#jump-results').textContent,/Studio/);
+  search.dispatchEvent(new d.w.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}));
+  assert.equal(d.doc.activeElement.dataset.jumpHome,'jump-excluded');d.doc.activeElement.click();
+  assert.equal(d.doc.querySelector('#jump-dialog').open,false);assert.equal(d.doc.querySelector('#detail-dialog').open,true);
+  d.doc.querySelector('#notes').value='Uncommitted note';
+  d.doc.dispatchEvent(new d.w.KeyboardEvent('keydown',{key:'k',ctrlKey:true,bubbles:true}));
+  assert.equal(d.doc.querySelector('#jump-dialog').open,false);assert.equal(d.doc.querySelector('#notes').value,'Uncommitted note');
+  d.doc.querySelector('#detail-content [data-close]').click();
+  d.doc.querySelector('#open-jump').click();const input=d.doc.querySelector('#jump-search');input.value='Cost Lab';input.dispatchEvent(new d.w.Event('input'));input.dispatchEvent(new d.w.KeyboardEvent('keydown',{key:'Enter',bubbles:true}));
+  assert(d.doc.querySelector('#lab-home'));assert.equal(d.doc.activeElement.id,'view-title');
+  d.close();
+});
+test("quick scan keeps price basis and layout visible and preserves saving and comparison", async () => {
+  const d=await boot();const count=d.doc.querySelectorAll('#results .home-card').length;
+  d.doc.querySelector('[data-density="scan"]').click();
+  assert.equal(d.doc.querySelectorAll('#results .scan-card').length,count);
+  const first=d.doc.querySelector('#results .scan-card'),id=first.dataset.home;
+  assert(first.querySelector('.price-kind').textContent);assert.match(first.querySelector('.meta').textContent,/bed/);
+  first.querySelector('[data-save]').click();
+  const rec=JSON.parse(d.w.localStorage.getItem('spicyhome.workspace.v1'));
+  assert.equal(rec.preferences.density,'scan');assert.equal(rec.records[id].saved,true);
+  assert.equal(d.doc.activeElement.dataset.save,id);
+  const compare=d.doc.querySelector('#results [data-compare]');compare.click();
+  assert.match(d.doc.querySelector('#compare-tray').textContent,/1 of 3/);
+  d.doc.querySelector('[data-density="cards"]').click();assert.equal(d.doc.querySelectorAll('#results .scan-card').length,0);
+  d.close();
+});
+test("finalist pins cap at three, compare the pinned set and unpin on unsave without erasing notes", async () => {
+  const homes=seed.homes.slice(0,4),records=Object.fromEntries(homes.map(h=>[h.id,{saved:true,snapshot:h,notes:'Personal quote',rentOverride:2300}]));
+  const d=await boot({notebook:{version:1,manual:[],events:[],preferences:{},records}});d.doc.querySelector('[data-view="shortlist"]').click();
+  for(const home of homes.slice(0,3)) d.doc.querySelector(`.board-controls [data-finalist="${home.id}"]`).click();
+  d.doc.querySelector(`.board-controls [data-finalist="${homes[3].id}"]`).click();
+  assert.match(d.doc.querySelector('#toast').textContent,/Three finalists/);
+  let notebook=JSON.parse(d.w.localStorage.getItem('spicyhome.workspace.v1'));
+  assert.equal(Object.values(notebook.records).filter(r=>r.finalist).length,3);
+  d.doc.querySelector('#compare-finalists').click();assert.equal(d.doc.querySelectorAll('.compare-identities article').length,3);
+  d.doc.querySelector('#compare-content [data-close]').click();
+  d.doc.querySelector(`.board-home [data-save="${homes[0].id}"]`).click();
+  notebook=JSON.parse(d.w.localStorage.getItem('spicyhome.workspace.v1'));
+  assert.equal(notebook.records[homes[0].id].finalist,false);assert.equal(notebook.records[homes[0].id].notes,'Personal quote');
+  assert.equal(d.doc.querySelectorAll('.finalist-grid article').length,2);
+  d.close();
+});
+test("tour agenda shows saved appointments and imported offset times edit consistently", async () => {
+  const h=seed.homes[0],notebook={version:1,manual:[],events:[],preferences:{},records:{[h.id]:{saved:true,snapshot:h,tourDate:'2099-09-08T18:30:00Z',tourChecks:{layout:true}}}};
+  const d=await boot({notebook});d.doc.querySelector('[data-view="shortlist"]').click();
+  assert.match(d.doc.querySelector('.tour-agenda').textContent,/1 upcoming/);
+  assert.match(d.doc.querySelector('.agenda-row').textContent,/13:30 · Chicago/);
+  d.doc.querySelector('.agenda-row [data-tour]').click();assert.equal(d.doc.querySelector('#tourDate').value,'2099-09-08T13:30');
+  assert.equal(d.doc.querySelector('#tour-companion').open,true);
+  d.close();
+});
+test("detail dock jumps to notes and tour checks and saves the same notebook form", async () => {
+  const d=await boot();d.doc.querySelector('#results [data-detail]').click();
+  const form=d.doc.querySelector('#record-form'),id=form.dataset.id;
+  d.doc.querySelector('[data-detail-jump="tour-draft-count"]').click();assert.equal(d.doc.querySelector('#tour-companion').open,true);assert.equal(d.doc.activeElement.id,'tour-draft-count');
+  d.doc.querySelector('[data-detail-jump="notes"]').click();assert.equal(d.doc.activeElement.id,'notes');
+  d.doc.querySelector('#notes').value='Saved through the quick dock';
+  d.doc.querySelector('.detail-dock [form="record-form"]').click();
+  const saved=JSON.parse(d.w.localStorage.getItem('spicyhome.workspace.v1'));
+  assert.equal(saved.records[id].notes,'Saved through the quick dock');assert.equal(d.doc.querySelector('#detail-dialog').open,false);
+  d.close();
+});

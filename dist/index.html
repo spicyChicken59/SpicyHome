@@ -12,10 +12,10 @@
     <link rel="icon" href="./design-system/assets/favicon.ico" />
     <link rel="stylesheet" href="./design-system/sc.css" />
     <link rel="stylesheet" href="./vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="./style.css?v=20260908-discovery" />
+    <link rel="stylesheet" href="./style.css?v=20260908-flow" />
     <script src="./vendor/leaflet/leaflet.js" defer></script>
     <script src="./design-system/sc-theme.js" defer></script>
-    <script type="module" src="./app.js?v=20260908-discovery"></script>
+    <script type="module" src="./app.js?v=20260908-flow"></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to apartments</a>
@@ -38,6 +38,7 @@
         ><button data-view="lab">Cost Lab</button><button data-view="timeline">Activity</button
         ><button data-view="setup">Sources & setup</button>
       </nav>
+      <button id="open-jump" class="jump-trigger" aria-haspopup="dialog">Jump to…</button>
       <button
         id="theme-toggle"
         class="icon-button"
@@ -109,6 +110,7 @@
     <dialog id="compare-dialog" aria-labelledby="compare-title">
       <div id="compare-content"></div>
     </dialog>
+    <dialog id="jump-dialog" aria-labelledby="jump-title"><div class="dialog-body"><div class="dialog-header"><h2 id="jump-title">Where to?</h2><button id="close-jump" class="dialog-close" aria-label="Close quick jump">×</button></div><label for="jump-search">Find an apartment, plan, city or screen</label><input id="jump-search" type="search" maxlength="120" autocomplete="off" placeholder="Try a building, Evanston or Cost Lab"><p id="jump-count" class="meta" role="status"></p><div id="jump-results"></div><p class="meta">Searches every loaded home, including saved and excluded layouts. Cmd/Ctrl + K opens this search.</p></div></dialog>
     <input type="file" id="import-file" accept="application/json" hidden />
     <div id="toast" role="status" aria-live="polite"></div>
   </body>

@@ -1477,3 +1477,76 @@ input, select, textarea { font-size: 1rem; }
 .compare-metric dt > span:last-child { min-width: 0; overflow-wrap: anywhere; }
 .atlas-mobile-axis { display: none; }
 @media (max-width: 780px) { .atlas-mobile-axis { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: .875rem; padding: 4px 10px; color: #d4e0ed; }.atlas-chart svg text { display: none; } }
+
+/* Faster navigation and a quieter way to scan the same apartment facts. */
+.jump-trigger { border: 1px solid #71839d; border-radius: 8px; padding: 8px 12px; min-height: 44px; background: #1d304b; color: #fff; white-space: nowrap; cursor: pointer; }
+#jump-dialog { width: min(720px,calc(100vw - 24px)); }
+#jump-search { width: 100%; margin-top: 10px; font-size: 1rem; }
+.jump-screens { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
+.jump-screens button { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-height: 44px; background: var(--blue-wash); color: var(--ink); text-align: left; cursor: pointer; }
+.jump-homes { display: grid; gap: 8px; }
+.jump-homes button { display: grid; grid-template-columns: minmax(0,1.5fr) minmax(0,1fr); gap: 16px; padding: 16px; width: 100%; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.jump-homes strong { font-size: 1rem; }
+.jump-homes small { display: block; margin-top: 4px; color: var(--muted); font-size: .875rem; }
+.scan-toolbar { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 12px; }
+.scan-toolbar > span { color: var(--muted); font-size: .875rem; }
+.scan-toolbar .segmented { background: var(--surface); border: 1px solid var(--line); color: var(--ink); }
+.scan-toolbar .segmented button { color: var(--ink); min-height: 44px; }
+.scan-toolbar .segmented button[aria-pressed="true"] { background: var(--blue-wash); color: var(--blue); }
+#results[data-density="scan"] { grid-template-columns: 1fr; gap: 10px; }
+.home-card.scan-card { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); gap: 12px 20px; padding: 18px; border-radius: 12px; }
+.scan-card h3 { font-size: 1.35rem; margin: 6px 0; }
+.scan-card p { margin: 5px 0; }
+.scan-price { min-width: 0; }
+.scan-price > strong { font-size: 1.6rem; overflow-wrap: anywhere; }
+.scan-price > strong small { font-size: .875rem; font-weight: 400; }
+.scan-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; grid-column: 1/-1; padding-top: 8px; border-top: 1px solid var(--line); }
+.scan-actions .compare-label { margin-left: auto; }
+.finalist-shelf { padding: 24px; border-radius: 18px; background: #111f31; color: #f0f5ff; margin: 18px 0; }
+.finalist-heading { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.finalist-heading .eyebrow { color: #bdd1ed; }
+.finalist-heading h3 { font: 1.8rem "DM Serif Display",Georgia,serif; margin: 5px 0; }
+.finalist-heading > span { white-space: nowrap; color: #c4d6ed; }
+.finalist-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; margin: 18px 0; }
+.finalist-grid article { display: flex; align-items: start; gap: 10px; border: 1px solid #5c708a; border-radius: 12px; padding: 16px; min-width: 0; overflow-wrap: anywhere; }
+.finalist-grid article > div { min-width: 0; }
+.finalist-number { font: 1rem "IBM Plex Mono",monospace; color: #f7a391; }
+.finalist-grid h4 { font-size: 1.1rem; margin: 0; }
+.finalist-grid p { font-size: .875rem; margin: 8px 0; color: #cfdded; }
+.finalist-grid .actions { flex-wrap: wrap; }
+.finalist-grid .button.secondary { color: #fff; background: #233d5c; border-color: #8aa1bc; }
+.finalist-grid .text-button { color: #d9e7fa; }
+.finalist-shelf > .button { background: #f0f5ff; border-color: #f0f5ff; color: #111f31; }
+.tour-agenda { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; margin-bottom: 20px; padding: 16px 20px; }
+.tour-agenda summary { padding: 8px 0; min-height: 44px; cursor: pointer; font-weight: 700; }
+.tour-agenda summary > span { color: var(--muted); font-weight: 400; font-size: .875rem; margin-left: 8px; }
+.agenda-row { display: grid; grid-template-columns: minmax(120px,.35fr) minmax(0,1fr); gap: 18px; padding: 18px 0; border-top: 1px solid var(--line); }
+.agenda-row time { display: grid; align-content: start; gap: 5px; font-size: .875rem; color: var(--blue); }
+.agenda-row h4 { margin: 0; font-size: 1.1rem; overflow-wrap: anywhere; }
+.agenda-row p { margin: 6px 0; overflow-wrap: anywhere; }
+.agenda-row .actions { flex-wrap: wrap; }
+.detail-dock { position: sticky; top: 0; z-index: 20; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; margin: 12px 0; background: var(--surface); border-block: 1px solid var(--line); }
+.detail-dock > div { display: flex; gap: 4px; flex-wrap: wrap; }
+.detail-dock button { min-height: 44px; }
+.detail-dock > div button { padding: 8px 10px; background: transparent; color: var(--blue); border: 0; border-radius: 8px; cursor: pointer; }
+#detail-content section, #detail-content input, #detail-content select, #detail-content textarea, #tour-draft-count { scroll-margin-top: 130px; }
+@media (max-width: 1000px) { .finalist-grid { grid-template-columns: 1fr; } }
+@media (max-width: 780px) {
+  .jump-trigger { margin-left: auto; font-size: .875rem; padding: 8px; }
+  .scan-toolbar .segmented { display: flex; }
+  .home-card.scan-card { grid-template-columns: 1fr; gap: 10px; padding: 16px; }
+  .scan-price { display: grid; grid-template-columns: 1fr; }
+  .finalist-shelf { padding: 18px; }
+  .finalist-heading { align-items: start; }
+  .finalist-heading h3 { font-size: 1.5rem; }
+  .tour-agenda { padding: 12px 16px; }
+  .tour-agenda summary > span { display: block; margin: 4px 0 0; }
+  .agenda-row { grid-template-columns: 1fr; gap: 8px; }
+  .agenda-row time { display: flex; gap: 12px; flex-wrap: wrap; }
+  .detail-dock { flex-wrap: wrap; gap: 6px; }
+  .detail-dock > div { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); width: 100%; }
+  .detail-dock > .button { width: 100%; }
+  #detail-content section, #detail-content input, #detail-content select, #detail-content textarea, #tour-draft-count { scroll-margin-top: 190px; }
+  .jump-homes button { grid-template-columns: 1fr; gap: 8px; }
+}
+@media print { .jump-trigger, .detail-dock, .scan-toolbar, .scan-actions, .finalist-shelf { display: none !important; } }

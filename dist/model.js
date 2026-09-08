@@ -504,3 +504,114 @@ export function changeFor(h) {
   if (points.length < 2) return null;
   return points.at(-1).rent - points.at(-2).rent;
 }
+
+// SpicyPicks is a transparent shortlist heuristic, not a market valuation.
+export const pickLenses = [
+  ["balanced","Best fit"], ["budget","Budget wins"], ["space","More space"],
+  ["ev","EV + parking"], ["rail","Near CTA"],
+];
+const pickWeights = {
+  balanced:{budget:35,value:20,space:10,amenities:25,evidence:10},
+  budget:{budget:65,value:25,space:0,amenities:0,evidence:10},
+  space:{budget:15,value:20,space:55,amenities:0,evidence:10},
+  ev:{budget:30,value:10,space:5,amenities:45,evidence:10},
+  rail:{budget:25,value:10,space:5,amenities:5,evidence:10,rail:45},
+};
+const clampPick = (value) => Math.max(0,Math.min(1,value));
+const medianPick = (values) => { const sorted=[...values].sort((a,b)=>a-b), middle=Math.floor(sorted.length/2);return sorted.length%2 ? sorted[middle] : (sorted[middle-1]+sorted[middle])/2; };
+function pickAddress(home) {
+  return (home.address ?? home.id).toLowerCase().replace(/\b(?:apt|unit|suite|apartment)\s*#?\s*[\w-]+/g,"").replace(/#\s*[\w-]+/g,"").replace(/[.,]/g," ").replace(/\s+/g," ").trim();
+}
+function samePickPlace(a,b) {
+  const distance=distanceMiles(a,b);
+  return pickAddress(a)===pickAddress(b) || distance!==null && distance<0.03;
+}
+function pickAge(value, now) {
+  const timestamp=Date.parse(value);
+  return Number.isFinite(timestamp) && timestamp<=now.getTime() ? Math.floor((now.getTime()-timestamp)/86400000) : null;
+}
+export function spicyPicks(homes, workspace, prefs=defaults, context={}, lens="balanced", now=new Date()) {
+  const records=workspace.records ?? {}, weight=pickWeights[lens] ?? pickWeights.balanced;
+  const observed = homes.filter((home)=>{
+    const rec=records[home.id] ?? {}, layout=layoutEvidence(home,rec), age=pickAge(home.observed_at,now);
+    return !home.notebook_only && home.seen_in_latest!==false && !(amount(rec.rentOverride)!==null && Date.parse(rec.quoteDate)>now.getTime()) && layout.matches && [1,2].includes(layout.bedrooms) && [1,1.5,2].includes(layout.bathrooms) && age!==null && age<=30;
+  });
+  const current=observed.filter((home)=>(records[home.id] ?? {}).status!=="ruled out");
+  const scoped=visibleHomes(current,workspace,prefs);
+  const priced=observed.filter((home)=>costs(home,records[home.id],prefs).rent>0);
+  const matches=scoped.filter((home)=>costs(home,records[home.id],prefs).rent>0 && (["source_listed","confirmed"].includes(layoutEvidence(home,records[home.id]).status) || home.sqft>0));
+  const parents=priced.map((_,index)=>index);
+  const root=(index)=>{while(parents[index]!==index){parents[index]=parents[parents[index]];index=parents[index];}return index;};
+  for(let i=0;i<priced.length;i++)for(let j=0;j<i;j++)if(samePickPlace(priced[i],priced[j]))parents[root(i)]=root(j);
+  const references=priced.map((home,index)=>{
+    const rec=records[home.id] ?? {};
+    return {home,group:root(index),layout:layoutEvidence(home,rec),cost:costs(home,rec,prefs),quoteAge:pickAge(amount(rec.rentOverride)!==null ? rec.quoteDate : home.observed_at,now)};
+  });
+  const groupsById=new Map(references.map((entry)=>[entry.home.id,entry.group]));
+  const ctaAge=pickAge(context.city_context?.cta?.updated_at,now);
+  const stations=ctaAge!==null && ctaAge<=30 ? context.transit_stops ?? [] : [];
+  const ranked=matches.map((home)=>{
+    const rec=records[home.id] ?? {}, cost=costs(home,rec,prefs), layout=layoutEvidence(home,rec);
+    const sourceAge=pickAge(home.observed_at,now);
+    const quoted=amount(rec.rentOverride)!==null;
+    const quoteAge=quoted ? pickAge(rec.quoteDate,now) : sourceAge;
+    const fresh=quoteAge!==null && quoteAge<=7;
+    const peerGroups=new Map();
+    if(home.sqft>0 && homeCity(home)) for(const entry of references){
+      const other=entry.home, distance=distanceMiles(home,other);
+      if(entry.group===groupsById.get(home.id) || other.kind!==home.kind || homeCity(other)!==homeCity(home) || entry.layout.bedrooms!==layout.bedrooms || entry.layout.bathrooms!==layout.bathrooms || !(other.sqft>=home.sqft*.8 && other.sqft<=home.sqft*1.2) || distance===null || distance>3 || entry.quoteAge===null || entry.quoteAge>7)continue;
+      if(!peerGroups.has(entry.group))peerGroups.set(entry.group,[]);
+      peerGroups.get(entry.group).push(entry.cost.rent/other.sqft);
+    }
+    const peerCount=peerGroups.size;
+    const rate=home.sqft>0 ? cost.rent/home.sqft : null;
+    const peerMedian=peerCount>=5 ? medianPick([...peerGroups.values()].map(medianPick)) : null;
+    const saving=peerMedian && rate!==null && fresh ? (peerMedian-rate)/peerMedian : null;
+    const station=stations.map((stop)=>({...stop,distance:distanceMiles(home,stop)})).filter((stop)=>stop.distance!==null).sort((a,b)=>a.distance-b.distance)[0] ?? null;
+    const nearby=station && station.distance<=0.5 ? station : null;
+    const parking=home.parking?.status==="yes", charging=home.charging?.status==="yes";
+    const room=home.sqft>0 ? clampPick(home.sqft/(layout.bedrooms===1 ? 1000 : 1400)) : 0;
+    const signals={
+      budget:clampPick((prefs.max-cost.known)/Math.max(1,prefs.max-prefs.min)),
+      value:saving===null ? 0 : clampPick(saving/.25),
+      space:room,
+      amenities:(parking ? .4 : 0)+(charging ? .6 : 0),
+      evidence:(["source_listed","confirmed"].includes(layout.status) ? .55 : 0)+(fresh ? .25 : 0)+(.2*(4-cost.unknown.length)/4),
+      rail:nearby ? clampPick(1-nearby.distance/.75) : 0,
+    };
+    // Missing quotes reduce confidence; they never become assumed free services.
+    const penalty=cost.unknown.length*3+(!fresh ? 12 : 0)+(sourceAge>7 ? 6 : 0);
+    const score=Object.entries(weight).reduce((sum,[key,points])=>sum+signals[key]*points,0)-penalty;
+    const reasons=[];
+    if(saving!==null && saving>=.05)reasons.push(`${Math.round(saving*100)}% lower base rent per sq ft than the median of ${peerCount} nearby comparison locations`);
+    if(cost.known<prefs.max)reasons.push(`${money(prefs.max-cost.known)} below your ${money(prefs.max)} cap on the known monthly subtotal${cost.unknown.length ? "; missing costs still apply" : ""}`);
+    if(home.sqft>0)reasons.push(`${home.sqft} reported sq ft${rate!==null ? ` · ${rate.toLocaleString("en-US",{style:"currency",currency:"USD",minimumFractionDigits:2,maximumFractionDigits:2})} base rent / sq ft` : ""}`);
+    if(parking && charging)reasons.push("Both resident parking and EV charging are advertised");
+    else if(parking)reasons.push("Resident parking is advertised");
+    if(nearby)reasons.push(`${nearby.distance.toFixed(2)} mi straight-line to ${nearby.title} CTA station`);
+    if(layout.status==="confirmed")reasons.push("You checked the bedroom and bathroom layout");
+    else if(layout.status==="source_listed")reasons.push("An identified floor plan supports the bedroom count");
+    const catches=[];
+    if(home.parking?.status==="no")catches.push("The source reports no resident parking.");
+    if(home.charging?.status==="no")catches.push("The source reports no resident EV charging.");
+    if(cost.unknown.length)catches.push(`Still unquoted: ${cost.unknown.join(", ")}.`);
+    if(cost.known>prefs.max)catches.push(`The known monthly subtotal is ${money(cost.known-prefs.max)} above your search cap.`);
+    if(!["source_listed","confirmed"].includes(layout.status))catches.push("Bedroom count is unverified; check the exact plan for a studio or convertible.");
+    if(parking || charging)catches.push("Confirm an available parking space, charger compatibility and all charging fees.");
+    else catches.push("Parking and resident EV charging are not established.");
+    if(!fresh)catches.push("The rent quote is not dated within the last seven days; request a fresh quote.");
+    if(sourceAge>7)catches.push("The listing observation is older than seven days; confirm current availability.");
+    if(!home.sqft)catches.push("Square footage is unverified.");
+    return {home,cost,layout,score,reasons,catches,nearby,rate,peerCount,peerMedian,saving,fresh,quoted,quoteDate:quoted ? rec.quoteDate : home.observed_at,signals};
+  }).filter((pick)=>lens!=="ev" || pick.home.parking?.status==="yes" && pick.home.charging?.status==="yes")
+    .filter((pick)=>lens!=="rail" || pick.nearby)
+    .filter((pick)=>lens!=="space" || pick.home.sqft>0)
+    .sort((a,b)=>b.score-a.score || a.cost.known-b.cost.known || a.home.id.localeCompare(b.home.id));
+  const picks=[];
+  for(const pick of ranked){if(picks.some((selected)=>groupsById.get(selected.home.id)===groupsById.get(pick.home.id)))continue;picks.push(pick);if(picks.length===3)break;}
+  const leads=[];
+  for(const home of scoped.filter((home)=>(lens!=="ev" || home.parking?.status==="yes" && home.charging?.status==="yes") && (lens!=="space" || home.sqft>0) && (lens!=="rail" || stations.some((station)=>{const d=distanceMiles(home,station);return d!==null && d<=.5;}))).filter((home)=>costs(home,records[home.id],prefs).rent===null && amount(home.advertised_price)>0 && home.advertised_price<=prefs.max && (home.parking?.status==="yes" || home.charging?.status==="yes")).sort((a,b)=>Number(b.charging?.status==="yes")-Number(a.charging?.status==="yes") || a.id.localeCompare(b.id))){
+    if(leads.some((other)=>samePickPlace(other,home)) || picks.some((pick)=>samePickPlace(pick.home,home)))continue;leads.push(home);if(leads.length===2)break;
+  }
+  return {picks,leads,eligible:ranked.length,visible:scoped.length,excluded:homes.length-current.length,lens:pickWeights[lens] ? lens : "balanced",weights:weight,ctaAvailable:stations.length>0};
+}

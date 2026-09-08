@@ -899,3 +899,48 @@ test("detail dock jumps to notes and tour checks and saves the same notebook for
   assert.equal(saved.records[id].notes,'Saved through the quick dock');assert.equal(d.doc.querySelector('#detail-dialog').open,false);
   d.close();
 });
+
+function picksSnapshot() {
+  const now=new Date().toISOString();
+  const homes=seed.homes.map(h=>({...h,observed_at:now}));
+  return {...seed,generated_at:now,homes,city_context:{cta:{updated_at:now}},transit_stops:[{id:'cta:test',title:'Test CTA',lat:homes[0].lat,lng:homes[0].lng,routes:[]}]};
+}
+test('SpicyPicks shows priorities, exact plans, caveats and review links and follows bedroom filters', async () => {
+  const snapshot=picksSnapshot(),d=await boot({remote:snapshot,packaged:snapshot});
+  assert.equal(d.doc.querySelectorAll('#spicy-picks [data-pick-lens]').length,5);
+  assert.equal(d.doc.querySelectorAll('.pick-card').length,3);
+  const card=d.doc.querySelector('.pick-card');
+  assert(card.querySelector('.plan-label').textContent);assert.match(card.textContent,/Why this one.*The catch/s);
+  const link=[...card.querySelectorAll('a')].find(a=>/resident reviews/.test(a.textContent));
+  assert.equal(new URL(link.href).hostname,'www.google.com');assert.match(new URL(link.href).searchParams.get('query'),new RegExp(card.querySelector('h4').textContent));
+  d.doc.querySelector('[data-pick-lens="space"]').click();
+  assert.equal(d.doc.activeElement.dataset.pickLens,'space');assert.equal(d.doc.activeElement.getAttribute('aria-pressed'),'true');
+  d.doc.querySelector('[data-bed="2"]').click();
+  assert.equal(d.doc.querySelectorAll('.pick-card').length,0);
+  assert.match(d.doc.querySelector('.pick-leads').textContent,/needs a base-rent quote/);
+  assert.match(d.doc.querySelector('.pick-lead-grid').textContent,/2 bed/);
+  d.doc.querySelector('[data-bed="1"]').click();
+  assert.equal(d.doc.querySelectorAll('.pick-card').length,3);d.close();
+});
+test('SpicyPick saving preserves snapshots and comparison checkboxes stay synchronized with the full list', async () => {
+  const snapshot=picksSnapshot(),d=await boot({remote:snapshot,packaged:snapshot});
+  const id=d.doc.querySelector('.pick-card').dataset.pickHome;
+  d.doc.querySelector(`.pick-card [data-save="${id}"]`).click();
+  const saved=JSON.parse(d.w.localStorage.getItem('spicyhome.workspace.v1')).records[id];
+  assert.equal(saved.saved,true);assert.equal(saved.snapshot.id,id);assert.equal(d.doc.activeElement.dataset.save,id);
+  d.doc.querySelector(`.pick-card [data-compare="${id}"]`).click();
+  assert(d.doc.querySelector(`#results [data-compare="${id}"]`).checked);
+  assert.match(d.doc.querySelector('#compare-tray').textContent,/1 of 3/);
+  d.doc.querySelector(`#results [data-compare="${id}"]`).click();
+  assert.equal(d.doc.querySelector(`.pick-card [data-compare="${id}"]`).checked,false);
+  assert.equal(d.doc.querySelector('#compare-tray').textContent,'');d.close();
+});
+test('SpicyPicks leaves map, Focus and Atlas surfaces clear and restores on List', async () => {
+  const snapshot=picksSnapshot(),d=await boot({remote:snapshot,packaged:snapshot});
+  for(const surface of ['map','focus','atlas']) {
+    d.doc.querySelector(`button[data-surface="${surface}"]`).click();
+    assert.equal(d.doc.querySelector('#spicy-picks').hidden,true);assert.equal(d.doc.querySelectorAll('.pick-card').length,0);
+  }
+  d.doc.querySelector('button[data-surface="list"]').click();
+  assert.equal(d.doc.querySelector('#spicy-picks').hidden,false);assert.equal(d.doc.querySelectorAll('.pick-card').length,3);d.close();
+});

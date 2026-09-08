@@ -210,3 +210,32 @@ source histories, scan/request budgets and shared design assets are unchanged.
   notes and calendar reminders stay within reach; no appointment is booked.
 - **Apartment dock:** jump directly to layout, costs, tour checks, notes, history
   and sources, or save the existing notebook form from its sticky controls.
+
+## SpicyPicks — September 8, 2026
+
+Discover now recommends up to three distinct approximate building locations for
+Best fit, Budget wins, More space, EV + parking and Near CTA. Each pick identifies
+the exact plan, base rent, known monthly subtotal, three reasons to look closer,
+and the unresolved costs or evidence that could change the decision. Existing
+filters apply; save, details, comparison and a resident-review search are nearby.
+Phone layouts offer a swipeable card row with labeled priority buttons.
+
+Local price signals compare base rent per reported square foot with at least five
+other approximate locations: same city, source type, bed/bath count, within three
+straight-line miles and within 20% of size. Each location contributes its median;
+quotes must be dated within seven days. This uneven, capped sample is not a
+market valuation. The selected priority's weights are disclosed in the interface.
+
+Unknown base rents never become cheap picks. Promising advertised-only plans,
+including two-bedroom options, remain separately labeled research leads. Studios,
+layout conflicts, archived/absent listings, ruled-out homes, future observations
+and sources older than 30 days are excluded. Undated or older personal quotes
+lose freshness credit and cannot support a local price-value claim. Location
+comparisons remain independent of search filters and personal rejection status.
+
+Near CTA uses the loaded station reference within half a straight-line mile,
+only while the reference is at most 30 days old. It does not assess Metra, walking
+routes or neighborhood popularity. No review-rating feed is connected: review
+links help check recent resident experiences, while ratings do not affect ranks.
+No additional provider requests, API subscriptions or persisted notebook fields
+are needed. Existing notes, listing sources and request budgets are retained.

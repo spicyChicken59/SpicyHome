@@ -494,11 +494,11 @@ input[type="checkbox"] {
 }
 .save-button {
   border: 1px solid var(--line);
-  border-radius: 50%;
+  border-radius: 8px;
   background: none;
   color: var(--muted);
-  width: 33px;
-  height: 33px;
+  width: 44px;
+  height: 44px;
   line-height: 1;
   flex-shrink: 0;
 }
@@ -1703,3 +1703,189 @@ input, select, textarea { font-size: 1rem; }
   .next-move { grid-template-columns:36px minmax(0,1fr); padding:18px; gap:12px; }.move-number { font-size:1.9rem; }
 }
 @media print { .studio-tabs, .studio-top, .recipe-presets, .recipe-controls, .trade-controls, .area-match-controls, .pulse-controls, .next-move button { display:none; }.recipe-result-grid, .area-faceoff, .trade-grid { display:block; }.studio-home,.next-move,.area-profile,.trade-option { break-inside:avoid; margin-bottom:16px; } }
+
+/* A map-led search desk. These app tokens also scope the shared base typography. */
+:root { --sc-heading: var(--ink); }
+h1, h2, h3, h4, strong { color: inherit; }
+.brand { border-bottom: 0; }
+.icon-button, .save-button, .dialog-close {
+  appearance: none;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  min-width: 44px;
+  max-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  max-height: 44px;
+  padding: 0;
+  border-radius: 8px;
+  flex: 0 0 44px;
+  line-height: 1;
+}
+.icon-button svg, .save-button svg { display: block; width: 21px; height: 21px; }
+.save-button { color: var(--muted); background: var(--surface); }
+.save-button svg { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.save-button[aria-pressed="true"] svg { fill: currentColor; }
+.save-button:hover { color: var(--wine); border-color: var(--wine); }
+.stage-tabs button { border-radius: 8px; }
+.intro { padding: 14px 0; grid-template-columns: minmax(0,1fr) 160px; gap: 16px; }
+.intro h1 { font-size: clamp(1.65rem,2.8vw,2.2rem); }
+.intro .eyebrow, .intro-copy { display: none; }
+.criteria { margin-top: 8px; }
+.city-window { height: 76px; border-radius: 8px; }
+.city-window > div { display: none; }
+.source-status { margin: 0; padding-block: 8px; }
+.workspace-heading { margin: 12px 0; flex-direction: row; align-items: center; }
+.workspace-heading .eyebrow { display: none; }
+.workspace-heading h2 { font-size: 1.35rem; }
+.explore-deck { padding: 16px; border-radius: 10px; background: #111f31; box-shadow: none; }
+.explore-heading .eyebrow { display: none; }
+.explore-heading strong { color: #fff; font: 600 1.15rem/1.3 "DM Sans",sans-serif; }
+.explore-heading .meta { margin-top: 4px; }
+.explore-switches { margin-top: 12px; }
+.search-shelf { margin: 8px 0; padding-block: 0; border-radius: 8px; }
+.search-controls { margin: 8px 0; border-radius: 8px; }
+.search-controls > summary { padding-block: 10px; }
+.research-note { margin-block: 8px 12px; }
+.results-layout { grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 18px; }
+.map-panel { min-width: 0; border-radius: 10px; top: 16px; }
+.map-heading { padding: 10px 14px; }
+.map-heading h3 { font-size: 1rem; }
+.map-heading .text-button { font-size: .875rem; }
+.map-surface { height: clamp(440px,62svh,760px); }
+.map-directory { border-top: 1px solid var(--line); }
+.map-directory > summary { padding: 10px 14px; cursor: pointer; font-size: .875rem; }
+.map-foot { padding: 10px 14px; font-size: .75rem; }
+.map-price { border-radius: 6px; font-size: .8rem; box-shadow: 0 2px 6px #111f3126; }
+.leaflet-popup-content-wrapper, .leaflet-popup-tip { color: var(--ink); background: var(--surface); }
+.leaflet-popup-content { margin: 14px; }
+.map-options p { margin-bottom: 10px; }
+.map-plan { min-height: 44px; }
+.results-layout[data-surface="split"] .results-column { max-height: calc(62svh + 160px); min-height: 560px; overflow-y: auto; scrollbar-gutter: stable; padding: 0 8px 2px 0; }
+.results-layout[data-surface="split"] .home-grid { grid-template-columns: 1fr; }
+.home-grid { align-items: start; gap: 12px; }
+.home-card { padding: 16px; border-radius: 10px; box-shadow: none; }
+.home-card .card-top { min-height: 22px; padding-right: 48px; }
+.home-card .card-top .save-button { position: absolute; right: 12px; top: 12px; }
+.home-card .neighborhood { font-size: .75rem; line-height: 1.4; }
+.home-card h3 { font-size: 1.35rem; margin: 4px 46px 4px 0; text-wrap: auto; }
+.home-card .address { min-height: 0; font-size: .8125rem; margin-bottom: 5px; }
+.home-card .plan-label { margin: 4px 0 8px; }
+.home-card .rent { font-size: 1.55rem; letter-spacing: -.04em; }
+.home-card .price-kind { font-size: .8125rem; margin: 0 0 6px; }
+.home-card .layout-evidence { margin: 0; font-size: .8125rem; }
+.home-card .cost-line { margin: 8px 0; padding-top: 8px; border-top: 1px solid var(--line); }
+.home-card .chips { margin-bottom: 5px; }
+.home-card .chip { font-size: .75rem; padding: 3px 6px; }
+.home-card .evidence-stamp { font-size: .75rem; margin: 6px 0 8px; padding: 0; }
+.card-actions { padding-top: 8px; gap: 6px 12px; }
+.card-actions .button { padding: 8px 10px; }
+.compare-label { font-size: .875rem; min-height: 44px; }
+.scan-toolbar { margin-block: 14px 8px; }
+.results-top { align-items: start; flex-wrap: wrap; }
+.results-top select { max-width: 100%; }
+.results-top strong { font-weight: 500; }
+/* Picks stay visible beside the map; supporting evidence expands on request. */
+#spicy-picks { margin: 0 0 16px; padding: 14px; border-radius: 10px; border-top-width: 3px; }
+.picks-heading h3 { font-size: 1.6rem; margin: 0; }
+.picks-heading { gap: 10px; }
+.picks-lenses { flex-wrap: wrap; gap: 5px; margin: 12px 0 8px; }
+.picks-lenses button { padding: 7px 9px; font-size: .875rem; }
+.picks-scope { font-size: .75rem; margin-bottom: 10px; }
+.picks-grid { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 90%; gap: 10px; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 8px; align-items: start; }
+.pick-card { scroll-snap-align: start; padding: 14px; border-radius: 8px; }
+.pick-top { align-items: start; }
+.pick-badge { font-size: .75rem; }
+.pick-card h4 { font-size: 1.2rem; margin: 5px 0; }
+.pick-card p { margin: 4px 0; font-size: .8125rem; }
+.pick-card .neighborhood { font-size: .75rem; }
+.pick-price { margin-top: 8px; gap: 4px 8px; }
+.pick-price strong { font: 600 1.55rem "DM Sans",sans-serif; }
+.pick-subtotal { margin-top: 8px; padding: 8px 0; font-size: .8125rem; }
+.pick-analysis > summary { font-size: .875rem; padding: 10px 0; min-height: 44px; cursor: pointer; color: var(--wine); font-weight: 600; }
+.pick-reasons { padding-top: 6px; }
+.pick-catch { margin-top: 10px; }
+.pick-actions { margin-top: 4px; gap: 4px 12px; }
+.pick-actions .button { width: auto; flex: 1; padding: 8px 10px; }
+.pick-actions .text-button { width: 100%; font-size: .8125rem; min-height: 36px; }
+.pick-leads, .picks-method { margin-top: 8px; padding-top: 4px; }
+.pick-leads > summary, .picks-method > summary { padding: 8px 0; font-size: .8125rem; }
+.results-layout[data-surface="list"] .picks-grid { grid-auto-columns: calc((100% - 20px)/3); }
+.results-layout[data-surface="map"] .map-surface { height: clamp(440px,65svh,800px); }
+.recipe-result-grid .pick-card { background: var(--surface); }
+@media (max-width: 1100px) and (min-width: 781px) {
+  .topbar { flex-wrap: wrap; gap: 12px; }
+  .topbar nav { order: 3; margin: 0; width: 100%; }
+  .jump-trigger { margin-left: auto; }
+  .explore-heading { flex-wrap: wrap; }
+  .results-layout { grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
+}
+@media (max-width: 780px) {
+  main { padding-inline: 14px; }
+  .topbar { padding: 10px 14px; gap: 8px; }
+  .brand { font-size: 1.25rem; gap: 8px; }
+  .brand img { width: 30px; height: 34px; }
+  .brand small { display: none; }
+  .topbar .icon-button { margin-left: 0; }
+  .jump-trigger { padding: 8px; font-size: .8125rem; }
+  .intro { grid-template-columns: minmax(0,1fr) 68px; padding: 10px 0; }
+  .intro h1 { font-size: 1.6rem; }
+  .city-window { height: 50px; border-radius: 6px; }
+  .workspace-heading { gap: 8px; }
+  .workspace-heading > div:first-child { display: none; }
+  .workspace-heading .actions { margin: 0; }
+  .explore-heading { display: grid; gap: 10px; }
+  .explore-heading .actions { justify-content: space-between; align-items: center; gap: 8px; }
+  .explore-heading .text-button { max-width: none; text-align: left; }
+  .explore-heading .button { flex: none; font-size: .8125rem; padding: 8px; }
+  .explore-heading strong { font-size: 1.1rem; }
+  .explore-deck { padding: 12px; border-radius: 8px; }
+  .explore-switches { gap: 8px; margin-top: 10px; }
+  .surface-switch { grid-template-columns: 1.4fr repeat(4,minmax(0,1fr)); }
+  .surface-switch button { font-size: .8125rem; }
+  .search-controls > summary span { display: inline; margin-left: 8px; font-size: .75rem; }
+  .research-note { font-size: .75rem; }
+  .results-layout[data-surface="split"] { display: flex; flex-direction: column; gap: 16px; }
+  .results-layout[data-surface="split"] .results-column { max-height: none; min-height: 0; overflow: visible; padding: 0; }
+  .map-panel { position: static; width: 100%; }
+  .map-surface, .results-layout[data-surface="map"] .map-surface { height: clamp(340px,46svh,520px); min-height: 340px; }
+  .map-heading { padding: 8px 12px; }
+  .map-heading h3 { font-size: .9375rem; }
+  .map-directory > summary, .map-foot { padding: 8px 12px; }
+  .map-list { display: block; }
+  .home-card { padding: 14px; }
+  .home-card.scan-card { padding: 14px; }
+  #spicy-picks { padding: 12px; }
+  .picks-heading { flex-direction: row; align-items: center; }
+  .picks-heading h3 { font-size: 1.5rem; }
+  .picks-lenses { display: flex; }
+  .picks-lenses button { flex: 1 0 auto; }
+  .picks-grid, .results-layout[data-surface="list"] .picks-grid { grid-auto-columns: 92%; }
+  .topbar nav button { font-size: .75rem; }
+}
+@media print {
+  .results-layout[data-surface="split"] .results-column { max-height: none; overflow: visible; padding: 0; }
+  .picks-grid { display: block; overflow: visible; }
+  .map-directory, .pick-actions { display: none; }
+}
+/* Keep Leaflet controls inside the map's stacking context, below mobile navigation. */
+.map-panel { isolation: isolate; z-index: 0; }
+.home-map-marker { display: grid; place-items: center; background: transparent; border: 0; }
+.map-dot { display: block; width: 12px; height: 12px; border: 2px solid #fff; border-radius: 4px; background: #57091b; box-shadow: 0 1px 5px #111f3170; }
+.map-dot-group { width: 14px; height: 14px; }
+.home-map-marker:hover .map-dot, .home-map-marker:focus .map-dot { background: #165194; outline: 3px solid #16519455; }
+.map-marker-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; clip-path: inset(50%); overflow: hidden; white-space: nowrap; }
+#budget-note { margin-top: 14px; }
+.search-controls > .search-shelf { margin: 8px 14px; }
+@media (max-width: 780px) {
+  .source-status > summary { padding-block: 4px; }
+  .source-status { padding-block: 4px; }
+}
+@media (max-width: 360px) {
+  .topbar { flex-wrap: nowrap; }
+  .brand { font-size: 1.0625rem; gap: 6px; }
+  .brand img { width: 26px; height: 30px; }
+  .jump-trigger { font-size: .75rem; padding-inline: 6px; }
+  .workspace-heading .button { font-size: .75rem; padding-inline: 8px; }
+}

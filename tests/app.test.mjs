@@ -528,12 +528,13 @@ test("two-bedroom selection, layout correction and reload keep the notebook inta
 
 function mapStub(capture) {
   return () => {
-    const map={setView(){return this;},fitBounds(){return this;},remove(){},invalidateSize(){capture.invalidations=(capture.invalidations??0)+1;return this;}};
+    const map={center:[41.882,-87.632],zoom:13,setView(center,zoom){this.center=center;this.zoom=zoom;return this;},getCenter(){return this.center;},getZoom(){return this.zoom;},fitBounds(){capture.fits=(capture.fits??0)+1;return this;},remove(){capture.removals=(capture.removals??0)+1;},invalidateSize(){capture.invalidations=(capture.invalidations??0)+1;return this;}};
     const makeMarker=(coords,options) => {
       const m={coords,options,openCount:0,addTo(){return this;},bindPopup(content){this.popup=content;return this;},on(){return this;},getLatLng(){return coords;},openPopup(){this.openCount++;return this;}};
       capture.push(m);return m;
     };
-    return {map:()=>map,divIcon:(options)=>options,tileLayer:()=>({addTo(){}}),marker:makeMarker,circleMarker:()=>({addTo(){return this;},bindPopup(){return this;}})};
+    capture.map=map;
+    return {map:()=>{capture.creations=(capture.creations??0)+1;return map;},divIcon:(options)=>options,tileLayer:()=>({addTo(){}}),marker:makeMarker,circleMarker:()=>({addTo(){return this;},bindPopup(){return this;}})};
   };
 }
 
@@ -1007,4 +1008,40 @@ test('Decision Studio next moves open the right field and advance after saving a
   d.doc.querySelector('#layoutReview').value='one_bed';d.doc.querySelector('.layout-review [type="submit"]').click();
   assert.match(d.doc.querySelector('.next-move').textContent,/Get a fresh, complete quote/);
   assert.equal(JSON.parse(d.w.localStorage.getItem('spicyhome.workspace.v1')).records[h.id].notes,'Keep my note');d.close();
+});
+
+
+test("saving a duplicate pick keeps the exact heart, map camera, and results position", async () => {
+  const capture=[],snapshot=picksSnapshot();
+  const d=await boot({remote:snapshot,packaged:snapshot,leaflet:mapStub(capture)});
+  const id=d.doc.querySelector('.pick-card').dataset.pickHome;
+  const button=d.doc.querySelector(`#results [data-save="${id}"]`);
+  const scroller=d.doc.querySelector('.results-column');scroller.scrollTop=400;
+  capture.map.setView([42,-87.7],16);const creations=capture.creations;
+  button.click();
+  assert.equal(d.doc.activeElement,button);
+  assert.equal(d.doc.querySelector('.results-column'),scroller);
+  assert.equal(scroller.scrollTop,400);
+  assert.equal(capture.creations,creations);
+  assert.equal(capture.map.getZoom(),16);
+  assert([...d.doc.querySelectorAll(`[data-save="${id}"]`)].every(b=>b.getAttribute('aria-pressed')==='true'));
+  d.close();
+});
+test("sorting keeps the map camera and explicit Fit all homes still fits the results", async () => {
+  const capture=[],d=await boot({leaflet:mapStub(capture)});
+  capture.map.setView([42,-87.7],16);const fits=capture.fits;
+  const sort=d.doc.querySelector('#sort');sort.value='space';sort.dispatchEvent(new d.w.Event('change'));
+  assert.equal(capture.fits,fits);
+  assert.equal(capture.map.getZoom(),16);
+  assert.deepEqual(Array.from(capture.map.getCenter()),[42,-87.7]);
+  d.doc.querySelector('#map-fit').click();assert.equal(capture.fits,fits+1);
+  d.close();
+});
+test("saving apartment notes preserves the desktop results scroll position", async () => {
+  const d=await boot();d.doc.querySelector('.results-column').scrollTop=320;
+  d.doc.querySelector('#results [data-detail]').click();
+  d.doc.querySelector('#notes').value='Layout check';
+  d.doc.querySelector('#record-form').dispatchEvent(new d.w.Event('submit',{bubbles:true,cancelable:true}));
+  assert.equal(d.doc.querySelector('.results-column').scrollTop,320);
+  d.close();
 });

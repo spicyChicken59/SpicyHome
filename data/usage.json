@@ -17,7 +17,13 @@
       "at": "2026-09-09T13:29:39.587568Z",
       "status": "consumed",
       "city": "Oak Park"
+    },
+    {
+      "id": "34482654784-1",
+      "at": "2026-09-10T13:26:49.861865Z",
+      "status": "reserved",
+      "city": "Park Ridge"
     }
   ],
-  "next_city": "Park Ridge"
+  "next_city": "Elmhurst"
 }

@@ -29,7 +29,13 @@
       "at": "2026-09-11T13:27:53.022851Z",
       "status": "consumed",
       "city": "Elmhurst"
+    },
+    {
+      "id": "34696344373-1",
+      "at": "2026-09-12T13:24:38.874727Z",
+      "status": "reserved",
+      "city": "Downers Grove"
     }
   ],
-  "next_city": "Downers Grove"
+  "next_city": "Arlington Heights"
 }

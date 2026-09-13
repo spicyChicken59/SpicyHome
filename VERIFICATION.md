@@ -257,49 +257,99 @@ source tree. Re-run here: 123 JavaScript, 42 Python, `check_site.py` (22
 assets, 574 records unchanged) and `npm run browser-check` 86/86. Upstream CI
 is green on `d292a00`. Still no merge, tag, release or deployment.
 
-### NEXT BUILDER PROMPT — integration and handoff only
+### Repair, 13 September 2026 — every mark was in the wrong place
 
-Finish the rollout of one design-system change that is already implemented,
-reviewed by its own gates and open as a pull request. **Implement no new
-feature and choose no new finding.**
+**What prompted it.** `main` moved after the merge: `track.yml` ran its daily
+scan and committed `f74f76e`, thirty more apartments than the 573 this milestone
+measured. Those commits are never checked — the workflow pushes with
+`GITHUB_TOKEN`, and a push by that token starts no workflow, so `checks.yml` has
+run on no data commit in this repository's history. Re-running the committed
+gates against the record now on `main` turned one red: `1280px no mark hides
+another mark's centre — 2 overlapping`.
+
+**The defect, reproduced before it was touched.** In Chromium over that record,
+two cluster anchors 40.5px apart in layer space rendered 14.6px apart on screen.
+`dist/style.css` carried `.home-map-marker { position: relative; }`, added by
+this milestone so the count badge on a grouped mark could be positioned against
+it. Leaflet places every marker with `.leaflet-marker-icon { position: absolute }`
+— the same specificity, and `style.css` loads after `leaflet.css`, so the app's
+rule won and returned every marker to normal flow. Each mark's transform stayed
+correct while its flow position marched down the DOM order: `offsetTop` 0, 14,
+28 … 252. Every mark was off its own coordinates, by up to 112px at 390px and
+266px at 1280px — and on a map whose tiles the check blanks, marks that are all
+wrong still look evenly spread, which is how 86/86 was green over it. An
+absolutely positioned element is already a containing block for its absolutely
+positioned children, so the badge needed nothing: the line is deleted, not
+replaced. After: one pane origin for all 20 marks, and no pair overlapping.
+
+**The gate that missed it.** The checks read separation and resolution; none read
+position. `every mark sits where its coordinates put it` subtracts each marker's
+own transform and requires what is left — the pane origin — to be one point for
+every mark, within half a pixel, at both widths. Proved both ways: restoring the
+one line reddens it at 112px and 266px, and a mutant that crowds the marks
+instead (`MAP_CLUSTER_RADIUS` 30 → 2) leaves it green at 0.0px while the
+separation checks go red, so it fails for its own rule and for nothing else.
+
+**Swept for the same class.** No other rule in `style.css` sets `position` on a
+Leaflet or design-system class. One shared-class layout override remains,
+`#map > .sc-pick { z-index: 900 }`, deliberate and winning on specificity rather
+than on order. A second miss from the same pass is fixed here too: the milestone
+changed `dist/style.css` but left `index.html` asking for
+`style.css?v=20260909-layout4`, against this repo's convention of bumping that
+token whenever the sheet changes — a returning reader could have been served the
+pre-milestone stylesheet against the new script, or the reverse. Both tokens move
+together here, as every release before this one moved them: `?v=20260913-mapfix`.
+
+**Checks on this tree.** 123 JavaScript and 42 Python checks pass;
+`check_site.py` verifies 22 immutable assets and 603 records; `npm run
+browser-check` is **88/88** — the milestone's 86 scenarios plus the new one at
+each width. **Not claimed:** no merge, no deployment, no Pages build, no physical
+phone, and no live tiles — the check serves a blank pixel, which is exactly what
+hid this defect from the screenshots.
+
+### NEXT BUILDER PROMPT — finish the family rollout
+
+One design-system release is published and one consumer has not taken it.
+**Implement no new feature and choose no new finding.**
 
 Starting points, all verified on 13 Sep 2026:
 
-- `spicyChicken59/design-system` PR **#23**, branch
-  `claude/spicyhome-discovery-list-map-x8vuyf`, head **`d292a00`**. Carries
-  BOTH upstream contributions: `.sc-pick` (band 4f) and, merged in from
-  `design/car-decision-polish`, `.sc-estimate` / `.sc-unreported` /
-  `.sc-signal-matrix--fit` (band 4g, last by cascade requirement). Gates:
-  `build/pick-check.mjs` and `build/parse-check.mjs`, both run by
-  `visual-check --browser`. CI green on both jobs. **v2.12.0 is now one number
-  for one release** — the two-branch collision is resolved, not deferred.
-- `spicyChicken59/design-system` PR **#24** is absorbed; a comment on it says
-  so. It can be closed rather than merged.
-- `spicyChicken59/SpicyHome` PR **#14** consumes it:
-  `dist/design-system/provenance.json` pins `d292a00`, version 2.12.0, 22
-  hashes verified against the source tree.
-- **SpicyCar has NOT re-vendored.** Its snapshot still points at the old
-  design-system commit; it needs refreshing from whatever lands on `main`.
+- `spicyChicken59/design-system` `main` is **`600283f`**, tagged and released as
+  **v2.12.0**. It carries both upstream contributions as one release: `.sc-pick`
+  (band 4f) and `.sc-estimate` / `.sc-unreported` / `.sc-signal-matrix--fit`
+  (band 4g, last by cascade requirement), gated by `build/pick-check.mjs` and
+  `build/parse-check.mjs`, both run by `node build/visual-check.mjs --browser`.
+- `spicyChicken59/SpicyHome` `main` is at the repair above;
+  `dist/design-system/provenance.json` pins `d292a00`, which is reachable on the
+  design system's `main` through its merge commit, version 2.12.0, 22 hashes
+  verified.
+- **`spicyChicken59/SpicyCar` has NOT re-vendored.** Its snapshot still points at
+  a pre-v2.12.0 design-system commit. This is the one thing outstanding.
 
 Do, in this order:
 
-1. **The version is settled.** Both branches are one release at v2.12.0 on
-   `d292a00`; nothing further to reconcile upstream. No tag is cut from a
-   sandbox (the agent proxy refuses `refs/tags/*` with a 403).
-2. **Review and merge design-system #23**, then close #24 as absorbed.
-   `node build/check.mjs` must be all good and
-   `node build/visual-check.mjs --browser` must pass the pick AND parse gates;
-   the "origin has no vX.Y.Z tag" line is the expected branch-level reminder.
-3. **Then refresh each consumer from the agreed combined source.** From a clean,
-   committed upstream checkout run
-   `node build/vendor.mjs <consumer>/dist/design-system`, and verify
-   `provenance.commit` and all 22 hashes against both the vendored files and
-   `git show <commit>:<path>`. In SpicyHome rerun `npm test` (123),
-   `npm run check` (42 Python), `python tools/check_site.py` (22 assets, 574
-   records) and `npm run browser-check` (86 Chromium scenarios; needs Playwright
-   and Chromium — it reports SKIP and exits 1 without them). Look at the shots.
-4. **Only then may the family rollout be called complete.** Until both consumers
-   have refreshed from one agreed source and rerun their own checks, say so.
+1. **Re-vendor SpicyCar from `600283f`.** From a clean, committed design-system
+   checkout at that commit run `node build/vendor.mjs <SpicyCar>/dist/design-system`
+   (or Car's own snapshot path), then verify `provenance.commit` and all 22
+   hashes against both the vendored files and `git show 600283f:<path>`. Do not
+   hand-edit a vendored file.
+2. **Rerun Car's own gates** and look at its shots before saying it is done.
+3. **Then the family rollout is complete** — and not before. Say which consumer
+   was still behind if you stop early.
+
+Standing hazards worth knowing before you touch SpicyHome:
+
+- A stylesheet rule that names a Leaflet or design-system class at equal
+  specificity wins by load order and can silently undo the library's own
+  layout. `npm run browser-check` now catches the map case; nothing catches the
+  general one.
+- `track.yml` commits a new scan daily and those commits run no workflow, so
+  `main` can go red between merges without anyone being told. Re-run `npm test`,
+  `npm run check`, `python tools/check_site.py` and `npm run browser-check`
+  (88 Chromium scenarios; needs Playwright and Chromium, and reports SKIP and
+  exits 1 without them) against the record actually on `main` before trusting a
+  green recorded earlier. Whether to give that workflow a checking run of its own
+  is the owner's call, not a builder's.
 
 Preserve without exception: base rent versus advertised total versus known
 subtotal, zero versus unknown, exact layout evidence, source dates, capped
@@ -308,7 +358,3 @@ evidence ledgers, the notebook schema, local corrections, saved snapshots,
 cross-tab conflicts and transactional import/export recovery. Invent no
 availability, amenity or travel claim. Make no RentCast, leasing or tour call,
 no merge to `main` without approval, no force-push, and no deployment.
-
-If Car's contribution or the approval is not available, **stop with an explicit
-dependency handoff** naming exactly what is blocked and on whom. Do not wait or
-poll.

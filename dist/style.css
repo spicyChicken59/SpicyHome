@@ -1911,6 +1911,5 @@ h1, h2, h3, h4, strong { color: inherit; }
 .map-dot-count { position: absolute; top: -3px; right: -5px; min-width: 17px; padding: 0 3px; border-radius: 9px;
   background: #165194; color: #fff; font: 700 10px/17px "IBM Plex Mono", monospace; text-align: center;
   box-shadow: 0 1px 4px #111f3166; }
-.home-map-marker { position: relative; }
 /* A surface brought to the top of the screen keeps a little air above it. */
 .map-panel, .results-column, #focus-surface, #atlas-surface { scroll-margin-top: 12px; }

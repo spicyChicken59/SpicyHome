@@ -1543,9 +1543,19 @@ input, select, textarea { font-size: 1rem; }
   .tour-agenda summary > span { display: block; margin: 4px 0 0; }
   .agenda-row { grid-template-columns: 1fr; gap: 8px; }
   .agenda-row time { display: flex; gap: 12px; flex-wrap: wrap; }
-  .detail-dock { flex-wrap: wrap; gap: 6px; }
-  .detail-dock > div { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); width: 100%; }
-  .detail-dock > .button { width: 100%; }
+  /* Six jumps over three columns wrapped to two rows and pushed Save on to a
+     third, all of it above the first fact about the home. One four-column
+     grid holds the same seven controls in two rows. */
+  .detail-dock { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px; padding: 6px 0; margin: 8px 0; }
+  .detail-dock > div { display: contents; }
+  .detail-dock > div button { padding: 8px 2px; font-size: .8125rem; }
+  .detail-dock > .button { grid-column: span 2; width: 100%; }
+  /* Four links to other websites took four rows above the first fact about
+     this home. They are the same four links, packed as links. */
+  .detail-links { gap: 6px 18px; margin-top: 10px; }
+  .detail-links a.button { min-height: 44px; display: inline-flex; align-items: center; padding: 0;
+    border: 0; background: none; color: var(--blue); font-size: .875rem; text-decoration: underline;
+    text-underline-offset: 3px; }
   #detail-content section, #detail-content input, #detail-content select, #detail-content textarea, #tour-draft-count { scroll-margin-top: 190px; }
   .jump-homes button { grid-template-columns: 1fr; gap: 8px; }
 }
@@ -1889,3 +1899,18 @@ h1, h2, h3, h4, strong { color: inherit; }
   .jump-trigger { font-size: .75rem; padding-inline: 6px; }
   .workspace-heading .button { font-size: .75rem; padding-inline: 8px; }
 }
+
+/* The upstream .sc-pick, hosted by the Leaflet surface: above every Leaflet
+   pane and control, inside the map's own stacking context so it still sits
+   under the phone's bottom navigation. */
+#map > .sc-pick { z-index: 900; }
+.map-pick .sc-pick__head h4 { margin: 0; font-size: .9375rem; color: var(--ink); }
+.map-pick .sc-pick__item { font-family: inherit; }
+.map-pick .sc-pick__item .sc-figure { font-weight: 700; white-space: nowrap; }
+/* A mark that stands for several places says how many, in the mark itself. */
+.map-dot-count { position: absolute; top: -3px; right: -5px; min-width: 17px; padding: 0 3px; border-radius: 9px;
+  background: #165194; color: #fff; font: 700 10px/17px "IBM Plex Mono", monospace; text-align: center;
+  box-shadow: 0 1px 4px #111f3166; }
+.home-map-marker { position: relative; }
+/* A surface brought to the top of the screen keeps a little air above it. */
+.map-panel, .results-column, #focus-surface, #atlas-surface { scroll-margin-top: 12px; }

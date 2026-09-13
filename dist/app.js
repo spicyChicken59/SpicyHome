@@ -55,6 +55,14 @@ let state = emptyWorkspace(),
   mapResizeObserver = null,
   mapCamera = null,
   mapContentKey = null,
+  mapGroups = [],
+  mapPick = null,
+  mapPickOpener = null,
+  mapPickShown = 0,
+  mapPickCrowd = [],
+  mapSelection = null,
+  mapReveal = null,
+  mapAmbiguousPress = false,
   refreshing = false,
   toastTimer,
   searchTimer,
@@ -240,9 +248,180 @@ function removeMap() {
   if (map?.getCenter && map?.getZoom) mapCamera = { center: map.getCenter(), zoom: map.getZoom() };
   mapResizeObserver?.disconnect();
   mapResizeObserver = null;
+  closeMapPick(false);
+  mapPick?.remove();
+  mapPick = null;
+  mapGroups = [];
   map?.remove();
   map = null;
   markers.clear();
+}
+// Half of the 44px box a browser hit-tests under a finger, so "within reach"
+// means the same thing to this code as it does to the finger.
+const MAP_TAP_RADIUS = 22, MAP_PICK_SHOWN = 3;
+// Marks closer together than this at the current zoom cannot be told apart or
+// aimed at, so they are drawn as one mark that says how many it stands for.
+const MAP_CLUSTER_RADIUS = 30;
+// Past this many, naming them one by one is not an answer: the panel offers the
+// zoom that separates them instead. The popup, which the list route opens, is
+// bounded the same way.
+const MAP_PICK_LIST_MAX = 12, MAP_POPUP_MAX = 12;
+// Places whose recorded coordinates land within a mark's width of each other at
+// the current zoom. Every cluster is anchored on a real recorded coordinate --
+// its first member's -- so no mark is drawn anywhere the feed does not place a
+// home. Without a projection (the test double has none) this is exactly the
+// coordinate-identical grouping the map has always drawn.
+function mapClusters(placed) {
+  if (typeof map?.latLngToLayerPoint !== "function") {
+    const exact = new Map();
+    for (const h of placed) {
+      const key = `${h.lat},${h.lng}`;
+      if (!exact.has(key)) exact.set(key, []);
+      exact.get(key).push(h);
+    }
+    return [...exact.values()];
+  }
+  const clusters = [];
+  for (const h of placed) {
+    const point = map.latLngToLayerPoint([h.lat, h.lng]);
+    let nearest = null, best = Infinity;
+    for (const cluster of clusters) {
+      const away = Math.hypot(cluster.point.x - point.x, cluster.point.y - point.y);
+      if (away <= MAP_CLUSTER_RADIUS && away < best) { nearest = cluster; best = away; }
+    }
+    if (nearest) nearest.homes.push(h);
+    else clusters.push({ point, homes: [h] });
+  }
+  return clusters.map((cluster) => cluster.homes);
+}
+// Which recorded places are within reach of a press, nearest first. Distance
+// from the press decides, never which marker the browser hit-tested: 573 homes
+// sit on 365 recorded coordinates, so at the fitted zoom a press at a marker's
+// own centre lands on a neighbour almost every time.
+function mapPressCandidates(x, y) {
+  const found = [];
+  for (const group of mapGroups) {
+    const element = group.marker.getElement?.();
+    const box = element?.getBoundingClientRect?.();
+    if (!box?.width) continue;
+    const distance = Math.hypot(box.left + box.width / 2 - x, box.top + box.height / 2 - y);
+    if (distance <= MAP_TAP_RADIUS)
+      for (const home of group.homes) found.push({ distance, home, marker: group.marker });
+  }
+  return found.sort((a, b) => a.distance - b.distance);
+}
+function closeMapPick(refocus) {
+  if (!mapPick || mapPick.hidden) return;
+  mapPick.hidden = true;
+  mapPick.innerHTML = "";
+  mapPickCrowd = [];
+  // The dismissing press runs its own default action after this handler, so the
+  // focus has to be placed deliberately or it lands on the document body.
+  const back = mapPickOpener;
+  mapPickOpener = null;
+  if (refocus) (back?.isConnected && !back.hidden ? back : $("#map-fit"))?.focus();
+}
+function fillMapPick() {
+  const list = mapPick.querySelector(".sc-pick__list"),
+    more = mapPick.querySelector(".sc-pick__more");
+  list.innerHTML = mapPickCrowd
+    .slice(0, mapPickShown)
+    .map(({ home }) => {
+      const evidence = layoutEvidence(home, record(home.id));
+      return `<button type="button" class="sc-pick__item" data-map-pick="${esc(home.id)}" aria-pressed="${home.id === mapSelection}"><span class="sc-pick__name">${esc(home.title)}</span><span class="sc-pick__meta">${esc(planLabel(home))} · ${esc(evidence.label)}</span><span class="sc-figure">${esc(money(displayPrice(home)))}</span></button>`;
+    })
+    .join("");
+  const crowded = mapPickCrowd.length > MAP_PICK_LIST_MAX;
+  more.hidden = mapPickCrowd.length <= mapPickShown;
+  // Naming 141 places one at a time is not an answer to "which one did you
+  // mean?". The zoom that separates them is.
+  more.textContent = crowded
+    ? `Zoom in to separate the other ${mapPickCrowd.length - mapPickShown}`
+    : `Show the other ${mapPickCrowd.length - mapPickShown}`;
+  more.dataset.mapPickZoom = crowded ? "yes" : "no";
+  list.querySelectorAll("[data-map-pick]").forEach((button) => {
+    button.onclick = () => {
+      const id = button.dataset.mapPick;
+      closeMapPick(false);
+      mapSelection = id;
+      // A stable list control survives a feed rerender, as the popup path does.
+      focusHomeControl(id, "map-home");
+      showDetail(id);
+    };
+  });
+  more.onclick = () => {
+    if (more.dataset.mapPickZoom === "yes") {
+      const crowd = mapPickCrowd.map(({ home }) => [home.lat, home.lng]);
+      closeMapPick(true);
+      map?.fitBounds(crowd, {
+        padding: [40, 40],
+        maxZoom: 17,
+        animate: !matchMedia("(prefers-reduced-motion: reduce)").matches,
+      });
+      toast("Zoomed to separate the places that shared that spot.");
+      return;
+    }
+    mapPickShown = mapPickCrowd.length;
+    fillMapPick();
+    mapPick.querySelector(".sc-pick__item")?.focus();
+  };
+}
+function openMapPick(found, x, y, opener) {
+  const surface = $("#map");
+  if (!surface || !mapPick) return;
+  mapPickCrowd = found;
+  mapPickShown = MAP_PICK_SHOWN;
+  mapPickOpener = opener;
+  mapPick.innerHTML =
+    `<div class="sc-pick__head"><h4 id="map-pick-title">${found.length} places within a finger of this press</h4><button type="button" class="button small secondary" data-map-pick-close>Close</button></div><p class="sc-pick__hint">Nearest first · Esc closes · approximate locations</p><div class="sc-pick__list" role="group" aria-label="Places within a finger of the press, nearest first"></div><button type="button" class="button small secondary sc-pick__more" hidden></button>`;
+  mapPick.hidden = false;
+  fillMapPick();
+  mapPick.querySelector("[data-map-pick-close]").onclick = () => closeMapPick(true);
+  const box = surface.getBoundingClientRect();
+  mapPick.style.left = `${Math.max(6, Math.min(box.width - mapPick.offsetWidth - 6, x - box.left + 14))}px`;
+  mapPick.style.top = `${Math.max(6, Math.min(box.height - mapPick.offsetHeight - 6, y - box.top + 14))}px`;
+  mapPick.querySelector(".sc-pick__item")?.focus();
+}
+function bindMapPick(surface) {
+  mapPick = document.createElement("div");
+  mapPick.className = "sc-pick map-pick";
+  mapPick.id = "map-pick";
+  mapPick.hidden = true;
+  mapPick.setAttribute("role", "dialog");
+  mapPick.setAttribute("aria-labelledby", "map-pick-title");
+  surface.appendChild(mapPick);
+  mapPick.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") { event.preventDefault(); closeMapPick(true); }
+  });
+  // A popover, not a modal: hundreds of markers stay tabbable behind it, so Tab
+  // may leave and leaving is what closes it.
+  mapPick.addEventListener("focusout", (event) => {
+    if (event.relatedTarget && !mapPick.contains(event.relatedTarget)) closeMapPick(false);
+  });
+  // renderMap() runs again on every filter change over the same #map element,
+  // so the surface listeners are bound once and read the current panel through
+  // mapPick; the panel itself is rebuilt with the map and torn down with it.
+  if (surface.dataset.pickBound === "yes") return;
+  surface.dataset.pickBound = "yes";
+  surface.addEventListener("pointerdown", (event) => {
+    if (event.target.closest(".sc-pick") || event.target.closest(".leaflet-control")) return;
+    const found = mapPressCandidates(event.clientX, event.clientY);
+    mapAmbiguousPress = found.length > 1;
+    if (!found.length) { closeMapPick(false); return; }
+    if (found.length === 1) { closeMapPick(false); mapSelection = found[0].home.id; return; }
+    // Leaflet would open the hit-tested marker's popup on the click that
+    // follows, which is the answer this panel exists to refuse.
+    event.preventDefault();
+    event.stopPropagation();
+    openMapPick(found, event.clientX, event.clientY, null);
+  }, true);
+  surface.addEventListener("click", (event) => {
+    if (event.target.closest(".sc-pick")) return;
+    if (!mapAmbiguousPress) return;
+    mapAmbiguousPress = false;
+    event.preventDefault();
+    event.stopPropagation();
+  }, true);
 }
 function renderCard(h) {
   const r = record(h.id),
@@ -301,7 +480,7 @@ function renderDiscover() {
     ...new Set(allHomes().map((h) => h.neighborhood)),
   ].sort();
   $("#view-content").innerHTML =
-    `${exploreToolbar()}<details id="search-controls" class="search-controls" ${filtersOpen ? "open" : ""}><summary>Fine-tune filters <span id="filter-caption"></span></summary><section class="area-controls" aria-label="Search area"><div class="area-selects"><div class="field"><label for="search-bedrooms">Bedrooms</label><select id="search-bedrooms"><option value="all" ${prefs.bedrooms === "all" ? "selected" : ""}>1 &amp; 2 bedrooms</option><option value="1" ${prefs.bedrooms === "1" ? "selected" : ""}>1 bedroom</option><option value="2" ${prefs.bedrooms === "2" ? "selected" : ""}>2 bedrooms</option></select></div><div class="field"><label for="search-region">Where to look</label><select id="search-region"><option value="all" ${prefs.region === "all" ? "selected" : ""}>Chicago + selected suburbs</option><option value="chicago" ${prefs.region === "chicago" ? "selected" : ""}>Chicago only</option><option value="suburbs" ${prefs.region === "suburbs" ? "selected" : ""}>Suburbs only</option></select></div><div class="field"><label for="search-radius">Distance from central Chicago</label><select id="search-radius"><option value="0" ${prefs.radiusMiles === 0 ? "selected" : ""}>Full search · 35-mile coverage</option>${[10,20,35].map((m) => `<option value="${m}" ${prefs.radiusMiles === m ? "selected" : ""}>Within ${m} miles · located places only</option>`).join("")}</select></div></div><p class="meta">Distances are straight-line, not driving or commute times. The full search includes entries with unverified coordinates.</p><details class="area-guide"><summary>Areas &amp; last listing checks</summary><p class="meta">${esc(feed.search_area?.scan_note ?? "One city per scheduled scan. Each area keeps its own last observations.")}</p><div class="area-grid">${(feed.search_area?.areas ?? []).map((area) => {const scan = feed.provider?.area_scans?.[area.city]; const count = allHomes().filter((h) => homeCity(h) === area.city && !h.notebook_only); return `<article><h3>${esc(area.city)}</h3><p>${esc(area.note)}</p><p class="meta">${count.filter((h) => h.kind === "building").length} sourced plans · ${count.filter((h) => h.kind === "listing").length} retained listing snapshots</p><p class="meta">${scan ? `Last listing scan: ${esc(dateLabel(scan.last_success))}${scan.truncated || scan.total == null && scan.returned === 500 ? " · capped coverage" : ""}` : "Awaiting first listing scan"}</p><p class="meta">${esc(scanBedroomScope(feed.provider, area.city))}</p>${link(area.source_url,"Area & transport details ↗")}</article>`;}).join("")}</div></details></section><div class="layout-controls"><label for="layout-scope">Layout evidence</label><select id="layout-scope"><option value="all" ${prefs.layoutScope === "all" ? "selected" : ""}>All potential matches</option><option value="source" ${prefs.layoutScope === "source" ? "selected" : ""}>Source-listed plans + my checked layouts</option><option value="confirmed" ${prefs.layoutScope === "confirmed" ? "selected" : ""}>Only layouts I have checked</option></select><p id="layout-summary" class="meta" role="status"></p></div><form class="filters" id="filters"><div class="field"><label for="search">Building, plan or area</label><input type="search" id="search" name="search" maxlength="500" placeholder="Try Evanston, Oak Park or a plan name" value="${esc(prefs.search)}"></div><div class="field"><label for="min">Minimum / month</label><input type="number" id="min" name="min" min="0" max="20000" step="50" value="${prefs.min}"></div><div class="field"><label for="max">Maximum / month</label><input type="number" id="max" name="max" min="0" max="20000" step="50" value="${prefs.max}"></div><div class="field"><label for="basis">Compare budget against</label><select id="basis" name="basis"><option value="rent" ${prefs.basis === "rent" ? "selected" : ""}>Base rent</option><option value="total" ${prefs.basis === "total" ? "selected" : ""}>Known monthly subtotal</option></select></div><div class="field"><label for="neighborhood">Neighborhood / suburb</label><select id="neighborhood" name="neighborhood"><option value="all">All neighborhoods & suburbs</option>${neighborhoods.map((n) => `<option ${prefs.neighborhood === n ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></div></form><div class="filter-options"><label><input type="checkbox" id="filter-parking" ${prefs.parking ? "checked" : ""}>Advertised parking only</label><label><input type="checkbox" id="filter-charging" ${prefs.charging ? "checked" : ""}>Advertised EV charging only</label><label><input type="checkbox" id="filter-unknown" ${prefs.unknown ? "checked" : ""}>Include unquoted base rent</label><button class="text-button" id="reset-filters">Reset</button><span class="meta">Target: 1–2 separate bedrooms · 1–2 bathrooms</span></div>${searchShelf()}</details><div class="filter-summary" id="filter-summary" role="status" aria-live="polite" hidden></div><section id="focus-surface" aria-label="Focus review" hidden></section><section id="atlas-surface" aria-label="Rent and space atlas" hidden></section><div class="results-layout" id="explore-results"><aside class="map-panel" aria-label="Chicago and suburbs apartment map"><div class="map-heading"><h3>Explore the area</h3><button class="text-button" id="map-fit">Fit all homes</button></div><div class="map-surface" id="map" role="region" aria-label="Apartment locations"></div><details class="map-directory"><summary>Places on this map</summary><ul class="map-list" id="map-list"></ul></details><div class="map-foot">Approximate locations · tap a dot for prices &amp; plans. Public chargers are separate from resident amenities.</div></aside><div class="results-column"><section id="spicy-picks" aria-labelledby="picks-title"></section><div class="scan-toolbar"><span>List style</span><div class="segmented" aria-label="List density"><button data-density="cards" aria-pressed="${prefs.density === "cards"}">Cards</button><button data-density="scan" aria-pressed="${prefs.density === "scan"}">Quick scan</button></div></div><div class="results-top"><strong id="result-count"></strong><label class="meta">Sort <select id="sort" aria-label="Sort apartments"><option value="rent" ${prefs.sort === "rent" ? "selected" : ""}>${prefs.basis === "rent" ? "Base rent" : "Known subtotal"}: low to high</option><option value="space" ${prefs.sort === "space" ? "selected" : ""}>More room</option><option value="recent" ${prefs.sort === "recent" ? "selected" : ""}>Recently observed</option></select></label></div><div class="home-grid" id="results"></div></div></div><p class="research-note" id="budget-note">${feed.mode === "research" ? "Start with sourced building prospects. These are research leads, not confirmed available apartments." : "Listing snapshots and sourced building prospects are shown together, each labeled by its source."} Budget is ${prefs.basis === "rent" ? "base rent; parking, utilities and other fees can take your monthly cost above it." : "a known subtotal; missing fees are never treated as free."}</p><details class="excluded-layouts" id="excluded-layouts"><summary id="excluded-summary"></summary><p class="meta">These places are outside your 1–2 bedroom search. Open a record to review the source or correct your layout choice. Removing a heart does not erase a layout correction.</p><div class="home-grid" id="excluded-results"></div></details><div id="compare-tray"></div>`;
+    `${exploreToolbar()}<details id="search-controls" class="search-controls" ${filtersOpen ? "open" : ""}><summary>Fine-tune filters <span id="filter-caption"></span></summary><section class="area-controls" aria-label="Search area"><div class="area-selects"><div class="field"><label for="search-bedrooms">Bedrooms</label><select id="search-bedrooms"><option value="all" ${prefs.bedrooms === "all" ? "selected" : ""}>1 &amp; 2 bedrooms</option><option value="1" ${prefs.bedrooms === "1" ? "selected" : ""}>1 bedroom</option><option value="2" ${prefs.bedrooms === "2" ? "selected" : ""}>2 bedrooms</option></select></div><div class="field"><label for="search-region">Where to look</label><select id="search-region"><option value="all" ${prefs.region === "all" ? "selected" : ""}>Chicago + selected suburbs</option><option value="chicago" ${prefs.region === "chicago" ? "selected" : ""}>Chicago only</option><option value="suburbs" ${prefs.region === "suburbs" ? "selected" : ""}>Suburbs only</option></select></div><div class="field"><label for="search-radius">Distance from central Chicago</label><select id="search-radius"><option value="0" ${prefs.radiusMiles === 0 ? "selected" : ""}>Full search · 35-mile coverage</option>${[10,20,35].map((m) => `<option value="${m}" ${prefs.radiusMiles === m ? "selected" : ""}>Within ${m} miles · located places only</option>`).join("")}</select></div></div><p class="meta">Distances are straight-line, not driving or commute times. The full search includes entries with unverified coordinates.</p><details class="area-guide"><summary>Areas &amp; last listing checks</summary><p class="meta">${esc(feed.search_area?.scan_note ?? "One city per scheduled scan. Each area keeps its own last observations.")}</p><div class="area-grid">${(feed.search_area?.areas ?? []).map((area) => {const scan = feed.provider?.area_scans?.[area.city]; const count = allHomes().filter((h) => homeCity(h) === area.city && !h.notebook_only); return `<article><h3>${esc(area.city)}</h3><p>${esc(area.note)}</p><p class="meta">${count.filter((h) => h.kind === "building").length} sourced plans · ${count.filter((h) => h.kind === "listing").length} retained listing snapshots</p><p class="meta">${scan ? `Last listing scan: ${esc(dateLabel(scan.last_success))}${scan.truncated || scan.total == null && scan.returned === 500 ? " · capped coverage" : ""}` : "Awaiting first listing scan"}</p><p class="meta">${esc(scanBedroomScope(feed.provider, area.city))}</p>${link(area.source_url,"Area & transport details ↗")}</article>`;}).join("")}</div></details></section><div class="layout-controls"><label for="layout-scope">Layout evidence</label><select id="layout-scope"><option value="all" ${prefs.layoutScope === "all" ? "selected" : ""}>All potential matches</option><option value="source" ${prefs.layoutScope === "source" ? "selected" : ""}>Source-listed plans + my checked layouts</option><option value="confirmed" ${prefs.layoutScope === "confirmed" ? "selected" : ""}>Only layouts I have checked</option></select><p id="layout-summary" class="meta" role="status"></p></div><form class="filters" id="filters"><div class="field"><label for="search">Building, plan or area</label><input type="search" id="search" name="search" maxlength="500" placeholder="Try Evanston, Oak Park or a plan name" value="${esc(prefs.search)}"></div><div class="field"><label for="min">Minimum / month</label><input type="number" id="min" name="min" min="0" max="20000" step="50" value="${prefs.min}"></div><div class="field"><label for="max">Maximum / month</label><input type="number" id="max" name="max" min="0" max="20000" step="50" value="${prefs.max}"></div><div class="field"><label for="basis">Compare budget against</label><select id="basis" name="basis"><option value="rent" ${prefs.basis === "rent" ? "selected" : ""}>Base rent</option><option value="total" ${prefs.basis === "total" ? "selected" : ""}>Known monthly subtotal</option></select></div><div class="field"><label for="neighborhood">Neighborhood / suburb</label><select id="neighborhood" name="neighborhood"><option value="all">All neighborhoods & suburbs</option>${neighborhoods.map((n) => `<option ${prefs.neighborhood === n ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></div></form><div class="filter-options"><label><input type="checkbox" id="filter-parking" ${prefs.parking ? "checked" : ""}>Advertised parking only</label><label><input type="checkbox" id="filter-charging" ${prefs.charging ? "checked" : ""}>Advertised EV charging only</label><label><input type="checkbox" id="filter-unknown" ${prefs.unknown ? "checked" : ""}>Include unquoted base rent</label><button class="text-button" id="reset-filters">Reset</button><span class="meta">Target: 1–2 separate bedrooms · 1–2 bathrooms</span></div>${searchShelf()}</details><div class="filter-summary" id="filter-summary" role="status" aria-live="polite" hidden></div><section id="focus-surface" aria-label="Focus review" hidden></section><section id="atlas-surface" aria-label="Rent and space atlas" hidden></section><div class="results-layout" id="explore-results"><aside class="map-panel" aria-label="Chicago and suburbs apartment map"><div class="map-heading"><h3>Explore the area</h3><button class="text-button" id="map-fit">Fit all homes</button></div><div class="map-surface" id="map" role="region" aria-label="Apartment locations"></div><details class="map-directory"><summary>Places on this map <span id="map-directory-count" class="meta"></span></summary><ul class="map-list" id="map-list"></ul></details><div class="map-foot">Approximate locations &middot; tap a dot for prices &amp; plans. Where several places share a spot, a tap asks which one you meant; the list below reaches any of them by name. Public chargers are separate from resident amenities.</div></aside><div class="results-column"><section id="spicy-picks" aria-labelledby="picks-title"></section><div class="scan-toolbar"><span>List style</span><div class="segmented" aria-label="List density"><button data-density="cards" aria-pressed="${prefs.density === "cards"}">Cards</button><button data-density="scan" aria-pressed="${prefs.density === "scan"}">Quick scan</button></div></div><div class="results-top"><strong id="result-count"></strong><label class="meta">Sort <select id="sort" aria-label="Sort apartments"><option value="rent" ${prefs.sort === "rent" ? "selected" : ""}>${prefs.basis === "rent" ? "Base rent" : "Known subtotal"}: low to high</option><option value="space" ${prefs.sort === "space" ? "selected" : ""}>More room</option><option value="recent" ${prefs.sort === "recent" ? "selected" : ""}>Recently observed</option></select></label></div><div class="home-grid" id="results"></div></div></div><p class="research-note" id="budget-note">${feed.mode === "research" ? "Start with sourced building prospects. These are research leads, not confirmed available apartments." : "Listing snapshots and sourced building prospects are shown together, each labeled by its source."} Budget is ${prefs.basis === "rent" ? "base rent; parking, utilities and other fees can take your monthly cost above it." : "a known subtotal; missing fees are never treated as free."}</p><details class="excluded-layouts" id="excluded-layouts"><summary id="excluded-summary"></summary><p class="meta">These places are outside your 1–2 bedroom search. Open a record to review the source or correct your layout choice. Removing a heart does not erase a layout correction.</p><div class="home-grid" id="excluded-results"></div></details><div id="compare-tray"></div>`;
   renderResults();
   $("#search-controls").ontoggle = (event) => { if (event.currentTarget?.isConnected) filtersOpen = event.currentTarget.open; };
   bindExploreToolbar();
@@ -430,6 +609,12 @@ function renderResults() {
         `<li><button data-map-home="${esc(h.id)}"><span class="map-index">${i + 1}</span><span class="map-place"><strong>${esc(h.title)}</strong><span>${esc(planLabel(h))}</span><span>${esc(layoutEvidence(h, record(h.id)).label)}</span></span></button></li>`,
     )
     .join("");
+  const located = homes.filter((h) => Number.isFinite(h.lat) && Number.isFinite(h.lng)).length;
+  const directoryCount = $("#map-directory-count");
+  if (directoryCount)
+    directoryCount.textContent = located === homes.length
+      ? `(${homes.length})`
+      : `(${located} of ${homes.length} · ${homes.length - located} without a recorded location)`;
   updateExploreSurface(homes);
   renderSpicyPicks();
   renderTray();
@@ -448,6 +633,7 @@ function renderMap(homes) {
     return;
   }
   const L = window.L;
+  mapGroups = [];
   map = L.map("map", { scrollWheelZoom: false, zoomControl: true }).setView(
     [41.882, -87.632],
     13,
@@ -460,39 +646,45 @@ function renderMap(homes) {
   const placed = homes.filter(
     (h) => Number.isFinite(h.lat) && Number.isFinite(h.lng),
   );
-  const locations = new Map();
-  for (const h of placed) {
-    const key = `${h.lat},${h.lng}`;
-    if (!locations.has(key)) locations.set(key, []);
-    locations.get(key).push(h);
-  }
-  for (const group of locations.values()) {
-    const h = group[0];
-    const marker = L.marker([h.lat, h.lng], {
-      icon: L.divIcon({
-        className: "home-map-marker",
-        html: `<span class="map-dot ${group.length > 1 ? "map-dot-group" : ""}" aria-hidden="true"></span><span class="map-marker-label">${group.length > 1 ? `${group.length} options` : esc(money(displayPrice(h)))}</span>`,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
-      }),
-      title: group.length > 1 ? `${group.length} apartment options at this location` : `${h.title} · ${planLabel(h)}`,
-      keyboard: true,
-    }).addTo(map);
-    const popup = document.createElement("div");
-    popup.className = "map-options";
-    popup.innerHTML = `<p>${group.length > 1 ? `${group.length} options at this approximate location` : "Apartment details"}</p>` + group.map((home) => `<button type="button" class="map-plan" data-map-plan="${esc(home.id)}"><strong>${esc(home.title)} · ${esc(planLabel(home))}</strong><span>${esc(home.address)}</span><span>${esc(layoutEvidence(home, record(home.id)).label)}</span><span>${esc(priceKind(home))}: ${esc(money(displayPrice(home)))}</span><span class="map-open">Open details &amp; notes →</span></button>`).join("");
-    popup.querySelectorAll("[data-map-plan]").forEach((button) => {
-      button.onclick = () => {
-        const id = button.dataset.mapPlan;
-        // Use a stable list control for focus restoration after a feed rerender.
-        focusHomeControl(id, "map-home");
-        showDetail(id);
-      };
-    });
-    marker.bindPopup(popup, { maxWidth: 340, maxHeight: 300 });
+  const drawMarkers = () => {
+    for (const group of mapGroups) group.marker.remove();
+    markers.clear();
+    mapGroups = [];
+    for (const group of mapClusters(placed)) {
+      const h = group[0];
+      const marker = L.marker([h.lat, h.lng], {
+        icon: L.divIcon({
+          className: "home-map-marker",
+          html: `<span class="map-dot ${group.length > 1 ? "map-dot-group" : ""}" aria-hidden="true"></span>${group.length > 1 ? `<span class="map-dot-count" aria-hidden="true">${group.length}</span>` : ""}<span class="map-marker-label">${group.length > 1 ? `${group.length} options` : esc(money(displayPrice(h)))}</span>`,
+          iconSize: [28, 28],
+          iconAnchor: [14, 14],
+        }),
+        title: group.length > 1 ? `${group.length} apartment options at this location` : `${h.title} · ${planLabel(h)}`,
+        keyboard: true,
+      }).addTo(map);
+      const popup = document.createElement("div");
+      popup.className = "map-options";
+      popup.innerHTML = `<p>${group.length > 1 ? `${group.length} options at this approximate location` : "Apartment details"}</p>` + group.slice(0, MAP_POPUP_MAX).map((home) => `<button type="button" class="map-plan" data-map-plan="${esc(home.id)}"><strong>${esc(home.title)} · ${esc(planLabel(home))}</strong><span>${esc(home.address)}</span><span>${esc(layoutEvidence(home, record(home.id)).label)}</span><span>${esc(priceKind(home))}: ${esc(money(displayPrice(home)))}</span><span class="map-open">Open details &amp; notes →</span></button>`).join("") + (group.length > MAP_POPUP_MAX ? `<p class="meta">${group.length - MAP_POPUP_MAX} more share this spot at this zoom. Zoom in to separate them, or find one by name under “Places on this map”.</p>` : "");
+      popup.querySelectorAll("[data-map-plan]").forEach((button) => {
+        button.onclick = () => {
+          const id = button.dataset.mapPlan;
+          // Use a stable list control for focus restoration after a feed rerender.
+          mapSelection = id;
+          focusHomeControl(id, "map-home");
+          showDetail(id);
+        };
+      });
+      marker.bindPopup(popup, { maxWidth: 340, maxHeight: 300 });
 
-    for (const home of group) markers.set(home.id, marker);
-  }
+      for (const home of group) markers.set(home.id, marker);
+      mapGroups.push({ marker, homes: group });
+    }
+    bindMapDirectory();
+  };
+  drawMarkers();
+  bindMapPick($("#map"));
+  // The clusters are a function of the zoom, so they are rebuilt when it changes.
+  if (typeof map.on === "function") map.on("zoomend", () => { closeMapPick(false); drawMarkers(); });
   const fitHomes = () => {
     if (placed.length) map.fitBounds(placed.map(h => [h.lat, h.lng]), { padding: [45, 35], maxZoom: 14 });
     else map.setView([41.882, -87.632], 11);
@@ -521,20 +713,42 @@ function renderMap(homes) {
           `${esc(s.title)}<br>Public charging · not a building amenity<br>Observed ${esc(dateLabel(feed.city_context?.afdc?.updated_at))}`,
         );
   }
+  bindMapDirectory();
+}
+// The list is the precise path to a named place: it never needs aiming, and it
+// reaches every home the map draws, including one inside a cluster.
+function bindMapDirectory() {
   $("#map-list")
-    .querySelectorAll("[data-map-home]")
-    .forEach(
-      (b) =>
-        (b.onclick = () => {
-          const marker = markers.get(b.dataset.mapHome);
-          if (marker) {
-            map.setView(marker.getLatLng(), 15, {
-              animate: !matchMedia("(prefers-reduced-motion: reduce)").matches,
-            });
-            marker.openPopup();
-          } else showDetail(b.dataset.mapHome);
-        }),
-    );
+    ?.querySelectorAll("[data-map-home]")
+    .forEach((b) => (b.onclick = () => revealOnMap(b.dataset.mapHome)));
+}
+// Changing the zoom regroups the marks, which replaces the very marker the
+// reader asked for, so the popup is opened once the map has settled -- on the
+// mark that exists then.
+function openRevealed() {
+  const id = mapReveal;
+  mapReveal = null;
+  if (id) markers.get(id)?.openPopup();
+}
+function revealOnMap(id) {
+  const marker = markers.get(id);
+  if (!marker || !map) { showDetail(id); return; }
+  mapSelection = id;
+  mapReveal = id;
+  const target = marker.getLatLng();
+  const view = { animate: !matchMedia("(prefers-reduced-motion: reduce)").matches };
+  // A view that is already there sends no event, so it is opened outright.
+  // Otherwise the listener goes on BEFORE the move: a zoom far enough to skip
+  // the animation raises both events inside setView, and a listener added after
+  // it would never hear them.
+  const settled = map.getZoom?.() === 15 && map.getCenter?.().equals?.(target);
+  if (settled || typeof map.once !== "function") {
+    map.setView(target, 15, view);
+    openRevealed();
+    return;
+  }
+  map.once("moveend", openRevealed);
+  map.setView(target, 15, view);
 }
 function renderShortlist() {
   const saved = allHomes().filter((h) => record(h.id).saved);
@@ -669,7 +883,7 @@ function showDetail(id) {
     .sort((a, b) => a.distance - b.distance)
     .slice(0, 2);
   $("#detail-content").innerHTML =
-    `<div class="dialog-body"><div class="dialog-header"><div><p class="eyebrow">${esc(h.neighborhood)} / ${evidence(h)}</p><h2 id="detail-title">${esc(h.title)}</h2></div><button class="dialog-close" data-close aria-label="Close apartment details">×</button></div><p class="detail-sub">${esc(h.address)} · ${esc(layoutEvidence(h, r).label)} · ${esc(planLabel(h))}${h.sqft ? " · " + esc(h.sqft) + " sq ft" : ""}</p>${detailDock()}<div class="detail-links">${link("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(h.title+" "+h.address),"Check resident reviews ↗","button secondary")}${link(h.source_url, h.kind === "manual" ? "Your source ↗" : "Official source ↗", "button secondary")}${link("https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(h.address), "Map & directions ↗", "button secondary")}${h.kind === "listing" ? link("https://www.google.com/search?q=" + encodeURIComponent(h.address + " apartment for rent"), "Find the listing ↗", "button secondary") : ""}</div><div class="callout">${h.kind === "building" ? "This is a researched building prospect, not a guaranteed available unit. " : ""}${h.seen_in_latest === false ? "Not in this area’s latest capped snapshot; current availability is unverified. " : ""}${esc(h.availability_note ?? "Confirm the current unit and move-in date with the listing source.")} Observed ${esc(dateLabel(h.observed_at))}${ageDays(h.observed_at) > 7 ? " — this quote needs refreshing." : "."}</div><section class="layout-review"><h3>Check the layout</h3><p class="meta">${esc(h.layout_note ?? "The source has not supplied a floor plan confirming a separate bedroom.")}</p><div class="field full"><label for="layoutReview">What did you find when checking the floor plan?</label><select id="layoutReview" name="layoutReview" form="record-form" aria-describedby="layout-help"><option value="unverified" ${!r.layoutReview || r.layoutReview === "unverified" ? "selected" : ""}>Not checked yet</option>${Object.entries(checkedLayouts).map(([value, [beds, baths]]) => `<option value="${value}" ${r.layoutReview === value ? "selected" : ""}>I checked: ${beds} separate bedroom${beds === 1 ? "" : "s"} · ${baths} bathroom${baths === 1 ? "" : "s"}</option>`).join("")}<option value="studio" ${r.layoutReview === "studio" ? "selected" : ""}>Studio / convertible — hide from search</option><option value="other" ${r.layoutReview === "other" ? "selected" : ""}>Different layout — hide from search</option></select><p class="meta" id="layout-help">Compare the exact unit or named plan with the source. Your correction stays in this browser and survives feed refreshes; saved notes remain in your shortlist.</p></div><button class="button small" type="submit" form="record-form">Save changes</button></section>${questionBrief(h, r)}${tourCompanion(h, r)}<div class="detail-grid"><section class="detail-section" id="detail-costs" tabindex="-1"><h3>The monthly picture</h3><table class="cost-table"><tr><td>Base rent</td><td>${money(c.rent)}</td></tr><tr><td>Parking</td><td>${money(c.parking)}</td></tr><tr><td>Recurring fees</td><td>${money(c.fees)}</td></tr><tr><td>Your utility estimate</td><td>${c.utilities !== null ? money(c.utilities) : "Not entered"}</td></tr><tr><td>Known subtotal</td><td>${c.rent === null ? "Incomplete" : money(c.known)}</td></tr></table><p class="range-note">${c.unknown.length ? "Still unquoted: " + esc(c.unknown.join(", ")) + ". This is not an all-in total." : "All entered monthly items included. Confirm the quote’s completeness with leasing."}</p><p class="meta">One-time nonrefundable fees: ${money(c.upfront)}. Refundable deposits are separate; record them in your notes.</p></section><section class="detail-section"><h3>Parking, charging & access</h3><ul class="fact-list"><li>${esc(h.parking?.note ?? "Parking terms unverified.")}</li><li>${esc(h.charging?.note ?? "EV charging unverified.")}</li><li>${esc(h.access?.note ?? "Step-free access unverified.")}</li><li>Confirm space availability, charger compatibility and fees for your lease.</li><li>Distances below cover the loaded CTA station reference only. See the area guide for suburban Metra options; station proximity is not a commute estimate.</li>${stations.map((s) => `<li>${esc(s.title)}: ${s.distance.toFixed(2)} mi straight-line. This is not a walking route or accessibility rating.</li>`).join("")}</ul></section></div><section class="detail-section"><h3>The feel of the place</h3><p class="detail-sub">${esc(h.atmosphere ?? "Add your own impression after a visit.")}</p><div class="chips">${(h.amenities ?? []).map((a) => `<span class="chip">${esc(a)}</span>`).join("")}</div></section><section class="detail-section" id="detail-history" tabindex="-1"><h3>Observed base rent</h3>${priceChart(h)}${r.quote_history?.length ? "<h3>Your recorded quotes</h3>" + priceChart({ history: r.quote_history }) : ""}</section><section class="detail-section"><h3>Your quotes & tour notebook</h3><form id="record-form" data-id="${esc(id)}"><div class="form-grid"><div class="field"><label for="status">Where you are</label><select id="status" name="status">${statuses.map((s) => `<option ${r.status === s ? "selected" : ""}>${s}</option>`).join("")}</select></div><div class="field"><label for="tourDate">Tour date & Chicago time</label><input id="tourDate" name="tourDate" type="datetime-local" value="${esc(r.tourDate ? chicagoTime(r.tourDate) ?? "" : "")}"></div>${[
+    `<div class="dialog-body"><div class="dialog-header"><div><p class="eyebrow">${esc(h.neighborhood)} / ${evidence(h)}</p><h2 id="detail-title">${esc(h.title)}</h2></div><button class="dialog-close" data-close aria-label="Close apartment details">×</button></div><p class="detail-sub">${esc(h.address)} · ${esc(layoutEvidence(h, r).label)} · ${esc(planLabel(h))}${h.sqft ? " · " + esc(h.sqft) + " sq ft" : ""}</p>${detailDock()}<div class="callout">${h.kind === "building" ? "This is a researched building prospect, not a guaranteed available unit. " : ""}${h.seen_in_latest === false ? "Not in this area’s latest capped snapshot; current availability is unverified. " : ""}${esc(h.availability_note ?? "Confirm the current unit and move-in date with the listing source.")} Observed ${esc(dateLabel(h.observed_at))}${ageDays(h.observed_at) > 7 ? " — this quote needs refreshing." : "."}</div><div class="detail-links">${link("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(h.title+" "+h.address),"Check resident reviews ↗","button secondary")}${link(h.source_url, h.kind === "manual" ? "Your source ↗" : "Official source ↗", "button secondary")}${link("https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(h.address), "Map & directions ↗", "button secondary")}${h.kind === "listing" ? link("https://www.google.com/search?q=" + encodeURIComponent(h.address + " apartment for rent"), "Find the listing ↗", "button secondary") : ""}</div><section class="layout-review"><h3>Check the layout</h3><p class="meta">${esc(h.layout_note ?? "The source has not supplied a floor plan confirming a separate bedroom.")}</p><div class="field full"><label for="layoutReview">What did you find when checking the floor plan?</label><select id="layoutReview" name="layoutReview" form="record-form" aria-describedby="layout-help"><option value="unverified" ${!r.layoutReview || r.layoutReview === "unverified" ? "selected" : ""}>Not checked yet</option>${Object.entries(checkedLayouts).map(([value, [beds, baths]]) => `<option value="${value}" ${r.layoutReview === value ? "selected" : ""}>I checked: ${beds} separate bedroom${beds === 1 ? "" : "s"} · ${baths} bathroom${baths === 1 ? "" : "s"}</option>`).join("")}<option value="studio" ${r.layoutReview === "studio" ? "selected" : ""}>Studio / convertible — hide from search</option><option value="other" ${r.layoutReview === "other" ? "selected" : ""}>Different layout — hide from search</option></select><p class="meta" id="layout-help">Compare the exact unit or named plan with the source. Your correction stays in this browser and survives feed refreshes; saved notes remain in your shortlist.</p></div><button class="button small" type="submit" form="record-form">Save changes</button></section>${questionBrief(h, r)}${tourCompanion(h, r)}<div class="detail-grid"><section class="detail-section" id="detail-costs" tabindex="-1"><h3>The monthly picture</h3><table class="cost-table"><tr><td>Base rent</td><td>${money(c.rent)}</td></tr><tr><td>Parking</td><td>${money(c.parking)}</td></tr><tr><td>Recurring fees</td><td>${money(c.fees)}</td></tr><tr><td>Your utility estimate</td><td>${c.utilities !== null ? money(c.utilities) : "Not entered"}</td></tr><tr><td>Known subtotal</td><td>${c.rent === null ? "Incomplete" : money(c.known)}</td></tr></table><p class="range-note">${c.unknown.length ? "Still unquoted: " + esc(c.unknown.join(", ")) + ". This is not an all-in total." : "All entered monthly items included. Confirm the quote’s completeness with leasing."}</p><p class="meta">One-time nonrefundable fees: ${money(c.upfront)}. Refundable deposits are separate; record them in your notes.</p></section><section class="detail-section"><h3>Parking, charging & access</h3><ul class="fact-list"><li>${esc(h.parking?.note ?? "Parking terms unverified.")}</li><li>${esc(h.charging?.note ?? "EV charging unverified.")}</li><li>${esc(h.access?.note ?? "Step-free access unverified.")}</li><li>Confirm space availability, charger compatibility and fees for your lease.</li><li>Distances below cover the loaded CTA station reference only. See the area guide for suburban Metra options; station proximity is not a commute estimate.</li>${stations.map((s) => `<li>${esc(s.title)}: ${s.distance.toFixed(2)} mi straight-line. This is not a walking route or accessibility rating.</li>`).join("")}</ul></section></div><section class="detail-section"><h3>The feel of the place</h3><p class="detail-sub">${esc(h.atmosphere ?? "Add your own impression after a visit.")}</p><div class="chips">${(h.amenities ?? []).map((a) => `<span class="chip">${esc(a)}</span>`).join("")}</div></section><section class="detail-section" id="detail-history" tabindex="-1"><h3>Observed base rent</h3>${priceChart(h)}${r.quote_history?.length ? "<h3>Your recorded quotes</h3>" + priceChart({ history: r.quote_history }) : ""}</section><section class="detail-section"><h3>Your quotes & tour notebook</h3><form id="record-form" data-id="${esc(id)}"><div class="form-grid"><div class="field"><label for="status">Where you are</label><select id="status" name="status">${statuses.map((s) => `<option ${r.status === s ? "selected" : ""}>${s}</option>`).join("")}</select></div><div class="field"><label for="tourDate">Tour date & Chicago time</label><input id="tourDate" name="tourDate" type="datetime-local" value="${esc(r.tourDate ? chicagoTime(r.tourDate) ?? "" : "")}"></div>${[
       ["rentOverride", "Quoted base rent"],
       ["parkingCost", "Parking / month"],
       ["monthlyFees", "Other recurring fees / month"],
@@ -1140,7 +1354,28 @@ function exploreToolbar() {
 function bindExploreToolbar() {
   $("#open-search-controls").onclick = () => { filtersOpen = true; $("#search-controls").open = true; $("#min").focus(); };
   document.querySelectorAll("[data-bed]").forEach((button) => { button.onclick = () => { prefs.bedrooms = button.dataset.bed; $("#search-bedrooms").value = prefs.bedrooms; persist(); renderResults(); bindCards(); }; });
-  document.querySelectorAll("button[data-surface]").forEach((button) => { button.onclick = () => { prefs.surface = button.dataset.surface; persist(); renderResults(); bindCards(); }; });
+  document.querySelectorAll("button[data-surface]").forEach((button) => { button.onclick = () => { prefs.surface = button.dataset.surface; persist(); renderResults(); bindCards(); revealSurface(); }; });
+}
+// Choosing a surface used to leave it where it was: on a phone "Map" left 203
+// of the map's 388px below the fold and "List" left the first apartment 1,549px
+// down. The control stays put; what it switched comes to the top of the screen.
+function revealSurface() {
+  const target = {
+    map: ".map-panel",
+    split: ".map-panel",
+    list: ".results-column",
+    focus: "#focus-surface",
+    atlas: "#atlas-surface",
+  }[prefs.surface];
+  const surface = target && $(target);
+  if (!surface || surface.hidden) return;
+  const box = surface.getBoundingClientRect();
+  // Already near the top of the screen: leave the page where the reader put it.
+  if (box.top >= 0 && box.top <= innerHeight * 0.25) return;
+  surface.scrollIntoView({
+    block: "start",
+    behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+  });
 }
 function updateExploreSurface(homes) {
   $("#search-pulse").textContent = `${homes.length} places to explore`;

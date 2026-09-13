@@ -765,7 +765,9 @@ test("atlas selects overlapping exact plans, excludes unknown numbers, and keeps
   d.doc.querySelector('[data-surface="atlas"]').click();
   assert.equal(d.doc.querySelector('#atlas-home').options.length,2);
   assert.equal(d.doc.querySelector('#explore-results').hidden,true);
-  assert.match(d.doc.querySelector('#atlas-surface').textContent,/1 need base rent or size/);
+  assert.match(d.doc.querySelector('#atlas-surface').textContent,/2 of 3 matches plotted · 1 without both figures/);
+  assert.match(d.doc.querySelector('#atlas-surface').textContent,/1 has no base rent on record and 0 have a base rent but no reported size/);
+  assert.doesNotMatch(d.doc.querySelector('#atlas-surface').textContent,/2,200/);
   const picker=d.doc.querySelector('#atlas-home');picker.value='atlas-b';picker.dispatchEvent(new d.w.Event('change'));
   assert.match(d.doc.querySelector('.atlas-selection').textContent,/Your base-rent quote: Sep 8, 2026/);
   assert.match(d.doc.querySelector('.atlas-selection').textContent,/Source observed:/);
@@ -1043,5 +1045,212 @@ test("saving apartment notes preserves the desktop results scroll position", asy
   d.doc.querySelector('#notes').value='Layout check';
   d.doc.querySelector('#record-form').dispatchEvent(new d.w.Event('submit',{bubbles:true,cancelable:true}));
   assert.equal(d.doc.querySelector('.results-column').scrollTop,320);
+  d.close();
+});
+
+// --- Find → Compare → Decide ------------------------------------------------
+// Reproduced before these were written: the comparison tray printed "2 of 3
+// places selected" with no identity, no way to remove one, and the same
+// sentence after a filter change had hidden both selections from every surface
+// on the page; comparison could not be started from the apartment record or
+// from the map's own list; and a saved home's board card said nothing about
+// what was unresolved or what to do next.
+test("the comparison tray names what it holds, removes one at a time, and marks a selection the filters hide", async () => {
+  const d = await boot();
+  const boxes = [...d.doc.querySelectorAll('#results [data-compare]')].slice(0, 2);
+  const [first, second] = boxes.map((box) => box.dataset.compare);
+  for (const box of boxes) box.click();
+  const tray = () => d.doc.querySelector('#compare-tray');
+  assert.match(tray().textContent, /2 of 3 selected/);
+  const titles = [...tray().querySelectorAll('.tray-name strong')].map((el) => el.textContent);
+  assert.equal(titles.length, 2);
+  assert.deepEqual(titles, [first, second].map((id) => d.doc.querySelector(`#results [data-home="${id}"] h3`).textContent));
+  assert.equal(tray().querySelectorAll('.tray-name small').length, 2);
+  // A filter change hides both from every surface. Neither is dropped, both are
+  // named and marked, each is reachable, and the saved preferences are unchanged.
+  const sort = d.doc.querySelector('#sort');
+  sort.value = 'space';
+  sort.dispatchEvent(new d.w.Event('change'));
+  const preferences = JSON.parse(d.w.localStorage.getItem('spicyhome.workspace.v1')).preferences;
+  const search = d.doc.querySelector('#search');
+  search.value = 'zzzz no such building';
+  search.dispatchEvent(new d.w.Event('input'));
+  await new Promise((resolve) => setTimeout(resolve, 260));
+  assert.equal(d.doc.querySelectorAll('#results [data-home]').length, 0);
+  assert.match(tray().textContent, /2 are outside your current filters/);
+  assert.equal(tray().querySelectorAll('li.is-outside').length, 2);
+  assert.equal(tray().querySelectorAll('li.is-outside [data-detail]').length, 2);
+  const after = JSON.parse(d.w.localStorage.getItem('spicyhome.workspace.v1')).preferences;
+  assert.deepEqual({ ...after, search: preferences.search }, preferences);
+  tray().querySelector(`[data-compare-remove="${first}"]`).click();
+  assert.match(tray().textContent, /1 of 3 selected/);
+  assert.equal(tray().querySelectorAll('.tray-name strong').length, 1);
+  assert.equal(tray().querySelector(`[data-compare-remove="${second}"]`).dataset.compareRemove, second);
+  assert.equal(tray().querySelector(`[data-compare-remove="${first}"]`), null);
+  d.close();
+});
+test("the apartment record and the map list start a comparison in the same selection", async () => {
+  const d = await boot();
+  const id = d.doc.querySelector('#results [data-home]').dataset.home;
+  d.doc.querySelector(`#results [data-detail="${id}"]`).click();
+  const inRecord = d.doc.querySelector(`#detail-content [data-compare="${id}"]`);
+  assert(inRecord, 'the record carries the comparison control');
+  assert(d.doc.querySelector(`#detail-content [data-save="${id}"]`), 'the record carries the save control');
+  inRecord.click();
+  assert.match(d.doc.querySelector('#detail-compare-status').textContent, /1 of 3 selected, including this place/);
+  assert.match(d.doc.querySelector('#compare-tray').textContent, /1 of 3 selected/);
+  d.doc.querySelector('#detail-content [data-close]').click();
+  assert.equal(d.doc.querySelector(`#results [data-compare="${id}"]`).checked, true);
+  // The map's own list is a way to a place, so it carries the same control.
+  const fromMap = [...d.doc.querySelectorAll('#map-list [data-compare]')].find((box) => box.dataset.compare !== id);
+  assert(fromMap, 'the map list carries the comparison control');
+  fromMap.click();
+  assert.match(d.doc.querySelector('#compare-tray').textContent, /2 of 3 selected/);
+  assert.equal(d.doc.querySelector(`#results [data-compare="${fromMap.dataset.compare}"]`).checked, true);
+  d.close();
+});
+test("a fourth selection names the three it would replace and replaces none of them", async () => {
+  const d = await boot();
+  const boxes = [...d.doc.querySelectorAll('#results [data-compare]')].slice(0, 4);
+  for (const box of boxes.slice(0, 3)) box.click();
+  const held = boxes.slice(0, 3).map((box) => d.doc.querySelector(`#results [data-home="${box.dataset.compare}"] h3`).textContent);
+  boxes[3].click();
+  assert.equal(boxes[3].checked, false);
+  for (const title of held) assert.match(d.doc.querySelector('#toast').textContent, new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.match(d.doc.querySelector('#compare-tray').textContent, /3 of 3 selected/);
+  assert.equal(d.doc.querySelectorAll('#compare-tray .tray-name strong').length, 3);
+  d.close();
+});
+test("a card names the costs that are unquoted and opens the exact field for that apartment", async () => {
+  const home = { ...seed.homes[0], id: 'gap-a', rent: 1900, parking: { status: 'unknown', monthly: null }, fees: { monthly: null } };
+  const snapshot = { ...seed, homes: [home] };
+  const d = await boot({ remote: snapshot, packaged: snapshot });
+  const card = d.doc.querySelector('#results [data-home="gap-a"]');
+  assert.match(card.querySelector('.cost-gap').textContent, /Unquoted: *parking/);
+  assert.match(card.querySelector('.cost-gap .sc-unreported').textContent, /monthly fees/);
+  const gap = card.querySelector('.cost-gap [data-studio-task]');
+  assert.equal(gap.dataset.taskTarget, 'parkingCost');
+  gap.click();
+  assert.equal(d.doc.querySelector('#detail-dialog').open, true);
+  assert.equal(d.doc.activeElement.id, 'parkingCost');
+  // The record says how each figure was arrived at, and an absence is not a number.
+  assert.match(d.doc.querySelector('#detail-costs').textContent, /Utilities/);
+  assert.equal(d.doc.querySelectorAll('#detail-costs .sc-unreported').length >= 2, true);
+  d.close();
+});
+test("a saved home carries its stage, its open question and one action that opens the exact field", async () => {
+  const home = { ...seed.homes[0], id: 'board-a' };
+  const snapshot = { ...seed, homes: [home] };
+  const d = await boot({ remote: snapshot, packaged: snapshot,
+    notebook: { version: 1, manual: [], events: [], preferences: {}, records: { 'board-a': { saved: true, status: 'contacted', snapshot: home } } } });
+  d.doc.querySelector('[data-view="shortlist"]').click();
+  const next = d.doc.querySelector('.board-home .board-next');
+  assert(next, 'a saved home carries its next step');
+  assert.match(next.querySelector('.stage-chip').textContent, /contacted/);
+  assert.match(next.textContent, /Check the exact layout/);
+  const action = next.querySelector('.button');
+  assert.equal(action.dataset.taskTarget, 'layoutReview');
+  action.click();
+  assert.equal(d.doc.querySelector('#detail-dialog').open, true);
+  assert.equal(d.doc.activeElement.id, 'layoutReview');
+  // Opening the field is not answering it: the step only changes once an answer
+  // is saved, and then it is the next real gap, not the same sentence again.
+  d.doc.querySelector('#layoutReview').value = 'one_bed';
+  d.doc.querySelector('#record-form').dispatchEvent(new d.w.Event('submit', { bubbles: true, cancelable: true }));
+  const moved = d.doc.querySelector('.board-home .board-next');
+  assert.doesNotMatch(moved.textContent, /Check the exact layout/);
+  assert.match(moved.textContent, /quote/i);
+  d.close();
+});
+test("the comparison shows a spread only where every place has the figure on the same basis", async () => {
+  const base = { ...seed.homes[0], rent: 2000, sqft: 800 };
+  const homes = [
+    { ...base, id: 'spread-a', floor_plan: 'A' },
+    { ...base, id: 'spread-b', floor_plan: 'B', rent: 2150, sqft: null },
+  ];
+  const snapshot = { ...seed, homes };
+  const d = await boot({ remote: snapshot, packaged: snapshot });
+  for (const box of d.doc.querySelectorAll('#results [data-compare]')) box.click();
+  d.doc.querySelector('#open-compare').click();
+  const spread = d.doc.querySelector('.compare-spread');
+  assert.match(spread.textContent, /Base rent:.*\$150 between the lowest and the highest/);
+  assert.match(spread.textContent, /Reported space:.*not comparable/);
+  assert.match(spread.textContent, /no recorded figure/);
+  assert.doesNotMatch(spread.textContent, /winner|best|wins/i);
+  // Each column reaches its own costs, and the record replaces the sheet
+  // rather than opening a second dialog over it.
+  const breakdown = d.doc.querySelector(`.compare-identities [data-studio-task="spread-a"][data-task-target="detail-costs"]`);
+  assert(breakdown, 'each compared place reaches its own cost breakdown');
+  breakdown.click();
+  assert.equal(d.doc.querySelector('#compare-dialog').open, false);
+  assert.equal(d.doc.querySelector('#detail-dialog').open, true);
+  d.close();
+});
+test("the explore deck captions its filter and its presentation modes and keeps both modes together", async () => {
+  const d = await boot();
+  const captions = [...d.doc.querySelectorAll('.explore-deck .sc-field--group')].map((group) => ({
+    caption: group.querySelector('.sc-field__label').textContent,
+    labelled: group.querySelector('[role="group"]').getAttribute('aria-labelledby'),
+    id: group.querySelector('.sc-field__label').id,
+  }));
+  assert.deepEqual(captions.map((c) => c.caption), ['beds', 'view', 'rows']);
+  for (const caption of captions) assert.equal(caption.labelled, caption.id);
+  // A hard filter and a presentation mode are different kinds of control and do
+  // not share a band; both presentation modes do share one.
+  const band = (selector) => d.doc.querySelector(selector).closest('.explore-band');
+  assert.notEqual(band('#bed-switch'), band('#surface-switch'));
+  assert.equal(band('#surface-switch'), band('#density-switch'));
+  assert.match(band('#bed-switch').querySelector('.band-label').textContent, /What you’re looking for/);
+  assert.match(band('#surface-switch').querySelector('.band-label').textContent, /How you’re looking at them/);
+  // The row control has nothing to act on where no list is drawn, and says so
+  // by leaving rather than sitting there inert.
+  assert.equal(d.doc.querySelector('#density-switch').closest('.explore-group').hidden, false);
+  d.doc.querySelector('[data-surface="map"]').click();
+  assert.equal(d.doc.querySelector('#density-switch').closest('.explore-group').hidden, true);
+  assert.match(d.doc.querySelector('#surface-note').textContent, /recorded coordinates/);
+  d.doc.querySelector('[data-surface="list"]').click();
+  assert.equal(d.doc.querySelector('#density-switch').closest('.explore-group').hidden, false);
+  d.close();
+});
+test("saving from inside an open record keeps the record open and the focus inside it", async () => {
+  const d = await boot();
+  d.doc.querySelector('[data-view="shortlist"]').click();
+  d.doc.querySelector('[data-view="discover"]').click();
+  const id = d.doc.querySelector('#results [data-home]').dataset.home;
+  d.doc.querySelector('[data-surface="focus"]').click();
+  d.doc.querySelector('#focus-surface [data-detail]').click();
+  const inRecord = d.doc.querySelector('#detail-content [data-save]');
+  inRecord.click();
+  assert.equal(d.doc.querySelector('#detail-dialog').open, true, 'the record stays open');
+  assert.equal(d.doc.activeElement, inRecord, 'the focus stays on the control that was pressed');
+  assert.equal(inRecord.getAttribute('aria-pressed'), 'true');
+  assert.match(d.doc.querySelector('[data-save-text]').textContent, /Saved to your shortlist/);
+  assert.equal(JSON.parse(d.w.localStorage.getItem('spicyhome.workspace.v1')).records[inRecord.dataset.save].saved, true);
+  assert(id);
+  d.close();
+});
+test("the atlas names the plans that share a dot and reaches each of them", async () => {
+  const base = { ...seed.homes[0], rent: 2000, sqft: 800 };
+  const homes = [
+    { ...base, id: 'dot-a', floor_plan: 'A' },
+    { ...base, id: 'dot-b', floor_plan: 'B' },
+    { ...base, id: 'dot-far', floor_plan: 'C', rent: 2900, sqft: 1400 },
+  ];
+  const snapshot = { ...seed, homes };
+  const d = await boot({ remote: snapshot, packaged: snapshot });
+  d.doc.querySelector('[data-surface="atlas"]').click();
+  const nearby = d.doc.querySelector('.atlas-nearby');
+  assert(nearby, 'a shared dot says so');
+  assert.match(nearby.textContent, /One other plan sits on this dot/);
+  const link = nearby.querySelector('[data-atlas-point]');
+  assert.equal(link.dataset.atlasPoint, 'dot-b');
+  link.click();
+  assert.equal(d.doc.querySelector('#atlas-home').value, 'dot-b');
+  assert.match(d.doc.querySelector('.atlas-selection').textContent, /Plan B/);
+  // The far point shares nothing, so nothing is claimed.
+  const picker = d.doc.querySelector('#atlas-home');
+  picker.value = 'dot-far';
+  picker.dispatchEvent(new d.w.Event('change'));
+  assert.equal(d.doc.querySelector('.atlas-nearby'), null);
   d.close();
 });

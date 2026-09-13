@@ -307,49 +307,214 @@ each width. **Not claimed:** no merge, no deployment, no Pages build, no physica
 phone, and no live tiles — the check serves a blank pixel, which is exactly what
 hid this defect from the screenshots.
 
-### NEXT BUILDER PROMPT — finish the family rollout
+### Milestone, 13 September 2026 — Find → Compare → Decide
 
-One design-system release is published and one consumer has not taken it.
-**Implement no new feature and choose no new finding.**
+**Revision.** Branch `claude/spicyhome-find-compare-decide-sijq32`, cut from
+`main` at `abc9264` (the merge of #15). `dist/data.json`, `dist/status.json`,
+`data/` and `dist/design-system/` are `origin/main`'s to the byte: no record,
+no snapshot and no vendored asset was touched. Nothing was merged, deployed or
+dispatched, and no provider request was made.
 
-Starting points, all verified on 13 Sep 2026:
+**Rendered before it was edited**, in Chromium over the committed 603-record
+feed at 1280×900 and 390×844, both themes, through `tools/browser_check.mjs`'s
+own server and feed doubles. Three weaknesses, each measured rather than argued:
 
-- `spicyChicken59/design-system` `main` is **`600283f`**, tagged and released as
-  **v2.12.0**. It carries both upstream contributions as one release: `.sc-pick`
-  (band 4f) and `.sc-estimate` / `.sc-unreported` / `.sc-signal-matrix--fit`
-  (band 4g, last by cascade requirement), gated by `build/pick-check.mjs` and
-  `build/parse-check.mjs`, both run by `node build/visual-check.mjs --browser`.
-- `spicyChicken59/SpicyHome` `main` is at the repair above;
-  `dist/design-system/provenance.json` pins `d292a00`, which is reachable on the
-  design system's `main` through its merge commit, version 2.12.0, 22 hashes
-  verified.
-- **`spicyChicken59/SpicyCar` has NOT re-vendored.** Its snapshot still points at
-  a pre-v2.12.0 design-system commit. This is the one thing outstanding.
+1. **Three kinds of control, one visual language, and the two that belong
+   together held apart.** The bedroom filter (which decides *which homes exist*)
+   and the surface switch (which decides *how the same homes are drawn*) sat on
+   one row at the same y in identical unlabelled pills; the second presentation
+   control, list style, sat **869 px lower at 1280 and 1,561 px lower at 390**,
+   inside the results column. SpicyPicks' ranking row was a third look-alike
+   directly beneath. `aria-label` on a plain `div` named none of them to a
+   screen reader either.
+2. **Comparison could not be started from two of the five surfaces.** Measured
+   over the committed record: 602 compare controls on cards, 3 on picks, 1 on
+   the Atlas selection — and **0 of 602 map-directory rows and 0 in the
+   apartment record**. A map press opens the record, so the map had no route
+   into a comparison at all. The tray then printed `2 of 3 places selected` with
+   no identity, no per-item removal, and one destructive `×`; narrowing the
+   search to zero matches left that sentence **unchanged** while both
+   selections were invisible on every surface of the page.
+3. **A saved home said nothing about what was unresolved.** The board repeated
+   the full discovery card plus a stage select and a Cost Lab button;
+   `hasNextMove` was false. `nextMoves()` already computed the answer and only
+   Decision Studio printed it. An empty Final Three cost a 151 px panel to say
+   "pin up to three", and a card said "Some costs remain unquoted" while
+   `costs().unknown` held the names and threw them away.
 
-Do, in this order:
+**Changed.** The deck reads in one order — what you are looking for, then how
+you are looking at it — with each group captioned by the design system's
+released `.sc-field--group` / `.sc-field__label`, the pattern written for
+exactly this ("two unlabelled segmented rows side by side are unreadable as
+soon as their words overlap"). `visibleHomes()` stays the one population and
+each band says what its own kind of control does, so a count that differs
+between List, Map, Atlas and Focus is explained instead of forced to match.
+The record and the map's list now write the same `[data-compare]` into the same
+`comparison` set through the same handler. `renderTray()` names each selection
+by building and exact plan, removes one without disturbing the others, marks a
+selection the current filters hide — kept, named, reachable in one press, with
+the stored preferences untouched — and a fourth press names the three it would
+have replaced and replaces none. The comparison states a rent or space
+difference only where every column has that figure on the same basis, names
+what is missing otherwise, declares no winner and invents no score.
+`nextMove()` is one home's step and `nextMoves()` is that function ranked, so
+the board and the studio cannot disagree; `field` names the exact notebook
+input for a cost gap while `target` stays the step itself. `.sc-unreported` and
+`.sc-estimate` (v2.12.0's figure-basis band) carry the word beside the mark for
+an absent figure and the reader's own estimate.
 
-1. **Re-vendor SpicyCar from `600283f`.** From a clean, committed design-system
-   checkout at that commit run `node build/vendor.mjs <SpicyCar>/dist/design-system`
-   (or Car's own snapshot path), then verify `provenance.commit` and all 22
-   hashes against both the vendored files and `git show 600283f:<path>`. Do not
-   hand-edit a vendored file.
-2. **Rerun Car's own gates** and look at its shots before saying it is done.
-3. **Then the family rollout is complete** — and not before. Say which consumer
-   was still behind if you stop early.
+**After** (same record, same browser): presentation controls **0 px apart at
+1280 and 60 px at 390**, each captioned; compare controls 602/602 on the map
+list and present in the record; the tray names three, removes one at a time,
+and marks what a filter hides; the Atlas plots 425 of 602 with the 177 it
+cannot place split by reason (15 with no base rent, 162 with a base rent and no
+reported size); the empty Final Three is 49 px instead of 151, and the first
+saved home starts at 657 px instead of 759.
 
-Standing hazards worth knowing before you touch SpicyHome:
+**The connected journey, in a real browser** (`scratchpad/repro/journey.mjs`,
+**39/39** at 1280 dark, 390 phone and 1280 light): filter → List/Map/Atlas/split
+→ compare from the Atlas selection → add the second from the map's own list →
+two exact plans in the comparison with a $100 base-rent spread and *not
+comparable* for a missing size → a cost action opens that apartment's record →
+record parking and save → back with the search, the surface and the selection
+intact → pin a finalist → its next action opens `layoutReview`. No page error
+at any width or theme.
 
-- A stylesheet rule that names a Leaflet or design-system class at equal
+**Checks run here** (offline, over the committed record and the committed
+fixtures): `npm test` **133** (123 before, 10 added); `npm run check` 42 Python
+checks; `python tools/check_site.py` 22 immutable assets and 603 records;
+`npm run browser-check` **122/122** (88 before, 34 added across a deck/tray
+section at 1280, 390 and 320 px and an Atlas axis section). Screenshots at
+1280×900, 390×844 and 320×640 in both themes were looked at, not only counted.
+
+**The mutants.** Seventeen over the rules this milestone adds — the hidden
+selection, the tray's identities, the record's and the map list's compare
+controls, the fourth-selection refusal, the named cost gap, the exact cost
+field, the board's next step, the spread's comparability rule, the row
+control's scope, the group captions, saving from inside the record, the shared
+dot, `nextMoves` as ranked `nextMove`, the axis ladder, the two presentation
+controls, and the follow-on row's width — **all seventeen died on the first
+pass, each in the check that names its rule.** Three more were run over the
+tray's size promises after those checks were rewritten; two died and one
+survived — restoring `display` to a folded identity list changed no height,
+because the boxes overflow the summary rather than growing it. That was a hole
+in the check, not an equivalent mutant: folded has to mean *gone from the
+layout*, and `a folded tray draws no box for what it is hiding` now says so and
+kills it at all three widths.
+
+**Two defects found by the new checks and fixed, each reproduced first.**
+Rewriting the save handler to keep an open record open read `aria-label` off a
+control that has none — the record's button says what it does in words — and
+`null.replace` took the rest of that sweep down with it, so the button's text
+never changed. And at 390 px a full tray widened the page to 541 px under a
+390 px viewport: `.sc-actionbar__more` is `flex: 1 1 100%` with the default
+`min-width: auto`, so its min-content width held the page open and the fixed
+navigation bar stretched with it. The row is told it may shrink
+(`min-width: 0; max-width: 100%`). A third, in Chromium 141: a closed
+`<details>` still lays its content out, so the folded identity list added 38 px
+to the bar until the closed state was stated (`display: none`).
+
+**Shared design system: nothing changed, and that is deliberate.** The
+vendored snapshot stays `d292a00` / v2.12.0 — verified here, 22 of 22 hashes
+equal across `provenance.json`, the design system's own tree at that commit and
+the files on disk, and that commit is reachable on the design system's `main`
+through `600283f`. Everything this milestone needed already existed and was
+**composed**: `.sc-field--group` + `.sc-field__label` for the captioned control
+groups, `.sc-actionbar` + `.sc-actionbar__more` for the selection tray and the
+board's next-step row (taking the notebook's palette through the component's
+own token channel, never by overriding its rules), `.sc-unreported` and
+`.sc-estimate` for the figure basis, `.sc-chip`, `.sc-sr-only`, and the
+already-consumed `.sc-pick` / `.sc-figure`. `README.md`'s design-provenance
+line claimed commit `08cd626f`, which `provenance.json` has not pinned for two
+releases; it names `d292a00` now.
+
+**Adoption other consumers would need — recorded, not done.** SpicyCar has an
+open design-system branch `claude/spicycar-discover-compare-decide-h4hxfp`
+proposing **v2.13.0**: `.sc-compare-pair` (a record comparison turned on its
+side for a screen too narrow for two columns) and `[data-differs="true"]` (a
+row marked as differing, never as a winner). SpicyHome is the concrete second
+consumer that contribution names: its `.compare-mobile` stack and its
+"Differences only" toggle are the same two problems, solved locally. Taking
+them is a follow-up **after** that release is on the design system's `main` and
+tagged — adopting from an unmerged branch would point this repository's
+provenance at a commit `main` does not carry. Nothing in this milestone
+duplicates either primitive: `.compare-spread` states a numeric spread between
+comparable figures, which is neither a row mark nor a layout. Also unchanged:
+`SpicyCar` has still not re-vendored v2.12.0 (the previous handoff's one
+outstanding item), and this run did not touch it.
+
+**Blockers: none offline. Not claimed:** no merge, no deployment, no Pages
+build, no provider request, no physical phone, and no live map tiles — the
+browser check serves a blank pixel, which is exactly what hid the marker defect
+from the screenshots in the previous milestone. **A merge to `main` would publish, if Pages is
+enabled.** `publish.yml` fires on a push to `main` touching `dist/**` — which
+every file this milestone changes is — and deploys to GitHub Pages, but its job
+is gated on the repository variable `SPICYHOME_PAGES_ENABLED == 'true'`, whose
+value this sandbox cannot read. Treat a merge as a publish unless that variable
+is known to be unset. `checks.yml` runs `npm test`, `npm run check` and
+`python tools/check_site.py` on every push and pull request, so this branch and
+its pull request are covered; it does not run `npm run browser-check`, which was
+run here instead.
+
+### NEXT BUILDER PROMPT — the shared comparison, then the family rollout
+
+Verify the tips first; these were true on 13 Sep 2026.
+
+- **SpicyHome** `main` is `abc9264` (the merge of #15). This milestone is
+  `claude/spicyhome-find-compare-decide-sijq32`, open as a pull request, with
+  `dist/data.json`, `dist/status.json`, `data/` and `dist/design-system/`
+  byte-identical to `main`.
+- **design-system** `main` is `600283f` / v2.12.0, tagged. SpicyHome's snapshot
+  pins `d292a00`, the same tree, all 22 hashes verified.
+- **An unmerged design-system branch proposes v2.13.0**
+  (`claude/spicycar-discover-compare-decide-h4hxfp`, `ad5aa0f`): `.sc-compare-pair`
+  and `[data-differs="true"]`, driven by SpicyCar PR #78.
+
+Do these in order, and do **not** redo the discovery hierarchy, the comparison
+tray, the cost-basis marks, the shortlist's next step or the Atlas pass.
+
+1. **Adopt v2.13.0's record comparison here — once it is on the design system's
+   `main` and tagged, not before.** SpicyHome's `.compare-mobile` stack is
+   `.sc-compare-pair`'s case, and `compareDifferences` is `[data-differs]`'s:
+   marking the rows that differ is better than hiding the rest, and this app
+   already has the toggle. Re-vendor with `node build/vendor.mjs
+   <SpicyHome>/dist/design-system` from a clean design-system checkout, verify
+   `provenance.commit` and all 22 hashes against `git show <commit>:<path>` and
+   the files on disk, then replace the local stack. Never hand-edit a vendored
+   file and never vendor from an unmerged branch.
+2. **SpicyCar has still not re-vendored v2.12.0.** That was the previous
+   handoff's one outstanding item and it is still outstanding; this run did not
+   touch SpicyCar. Doing it after (1) lands means one re-vendor, not two.
+3. **The Atlas is a scatter of 425 points in one pane.** Overlapping plans are
+   named where they coincide (within 7 px of the selected point) and the picker
+   reaches every one, but a crowded region still cannot be aimed at. SpicyStock
+   solved the same shape with a compressed axis and a nearby-chooser; whether
+   this map-sized problem is worth that here is a product call, not a builder's.
+
+Offline gates, all of which must pass before a pull request: `npm ci
+--ignore-scripts`, `npm test` (133), `npm run check` (42 Python), `python
+tools/check_site.py` (22 assets, 603 records), `npm run browser-check`
+(**122** Chromium scenarios; it needs Playwright whose bundled Chromium
+revision matches the one installed — 1194 here, which is playwright 1.56.x —
+and reports SKIP and exits 1 without it). CI runs the first three on every push
+and pull request; it does **not** run the browser check, so run it yourself.
+
+Standing hazards, still true:
+
+- A stylesheet rule naming a Leaflet or design-system class at equal
   specificity wins by load order and can silently undo the library's own
-  layout. `npm run browser-check` now catches the map case; nothing catches the
-  general one.
+  layout. The map case is covered; the general one is not.
+- A shared component's flex row is `min-width: auto` by default. Wide content
+  inside one holds the whole page open and a fixed navigation bar stretches
+  with it — measured at 390 px here. Give a consumer's instance `min-width: 0`
+  rather than editing the component.
+- Chromium 141 still lays out a closed `<details>`'s content. If the closed
+  state must take no space, say `display: none` — do not assume it.
 - `track.yml` commits a new scan daily and those commits run no workflow, so
-  `main` can go red between merges without anyone being told. Re-run `npm test`,
-  `npm run check`, `python tools/check_site.py` and `npm run browser-check`
-  (88 Chromium scenarios; needs Playwright and Chromium, and reports SKIP and
-  exits 1 without them) against the record actually on `main` before trusting a
-  green recorded earlier. Whether to give that workflow a checking run of its own
-  is the owner's call, not a builder's.
+  `main` can go red between merges without anyone being told. Re-run every gate
+  against the record actually on `main` before trusting an earlier green.
+- `publish.yml` deploys Pages on a push to `main` touching `dist/**`, gated on
+  `SPICYHOME_PAGES_ENABLED`. Treat a merge as a publication.
 
 Preserve without exception: base rent versus advertised total versus known
 subtotal, zero versus unknown, exact layout evidence, source dates, capped

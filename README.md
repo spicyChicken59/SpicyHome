@@ -7,7 +7,7 @@ Start with real, sourced building prospects; compare the known monthly cost; sav
 ## What is built
 
 - Twenty-two official-source apartment plans at 18 buildings, researched September 7–8, 2026. Starting prices and advertised monthly totals retain their original meaning. These are **not guaranteed available units**.
-- Interactive OpenStreetMap/Leaflet map with sourced approximate building coordinates; co-located plans share a selectable marker. Unlocated plans remain in the list. Includes 37 CTA station references for nearby transit context.
+- Interactive OpenStreetMap/Leaflet map with sourced approximate building coordinates. Places whose recorded coordinates fall within a mark's width of each other at the current zoom share one mark, anchored on a real recorded coordinate and carrying the number it stands for; a press is resolved by distance from the press, and when several places are within a finger it asks which one you meant rather than choosing silently. A crowd too large to name one by one offers the zoom that separates it. Unlocated plans remain in the list, which is counted and stays the precise path to a named place. Includes 37 CTA station references for nearby transit context.
 - Rent and neighborhood filters, optional advertised parking/EV filters, and explicit inclusion of unquoted base rents.
 - Three-home comparison matrix, real observed price history, saved-home snapshots, shortlist statuses, quote calculator, tour notes and personal calendar downloads.
 - Manual apartment entries and JSON notebook export/import. Personal notes stay in the browser; the source feed does not receive them.
@@ -25,8 +25,14 @@ npm ci --ignore-scripts
 npm test
 npm run check
 python tools/check_site.py
+npm run browser-check     # needs Playwright + Chromium; SKIPs and exits 1 without them
 npm run dev
 ```
+
+`npm run browser-check` serves the committed `dist/` and answers the remote feed
+with the committed records, then judges what jsdom cannot: where things land on a
+screen, and which place a press on the map actually selects. Pass
+`--shots <directory>` to save what it saw.
 
 Open the local URL printed by Vite. The app reads the committed public feed, with
 a second GitHub read endpoint if the raw-content host fails. Update checks bypass
@@ -133,6 +139,9 @@ permitted scheduled scan. No provider request was made to test this change.
 Map pins group plans at the same exact coordinates, with separately labeled plan,
 unit, layout evidence and price basis. Each option opens its own notebook record.
 Map-list entries also identify plans, and unlocated entries still open details.
+(Since the discovery pass below, marks also group by rendered proximity at the
+current zoom; the exact-coordinate grouping remains the behaviour wherever the
+map cannot project, and every option still opens its own record.)
 
 “Reset other filters” keeps the selected bedroom size and evidence scope; widening
 to both bedroom sizes is a separately labeled action. The area guide distinguishes

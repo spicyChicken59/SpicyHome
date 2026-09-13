@@ -162,3 +162,153 @@
 - UI verification uses DOM emulation. Responsive rules cover wrapping, narrow
   layouts, internal tool navigation and 44px controls. No browser or physical-phone
   visual QA is claimed. No paid requests were made for development or validation.
+
+## Discovery, list and map — September 13, 2026
+
+**Revision.** SpicyHome `claude/spicyhome-discovery-list-map-x8vuyf` from `main`
+at `cdbdafa`; design-system, same branch name, from `1ffd905` (v2.11.0) with one
+commit `a2f8aa5` proposing v2.12.0. Every record, ledger and workflow is
+byte-for-byte unchanged. Branch implementation only: nothing merged, tagged,
+deployed or published; no RentCast, leasing or tour call.
+
+**Rendered before it was edited,** over the committed feed in Chromium at
+1280×900 and 390×844, both themes. Three weaknesses, measured:
+
+1. **A tap on the map could not select a home.** 573 places sit on 365 recorded
+   coordinates and only coordinate-identical ones were grouped, so 364 marks fell
+   into 95 distinct 4px cells on a 360×388 pane, 362 with another mark's centre
+   within 22px. A press at a mark's own centre selected a *different* mark 363
+   times out of 364 on a phone, 357 of 364 at 1280.
+2. **The plan and its cost evidence began below the phone's first dialog
+   screen:** 589 of its first 760px were chrome — a two-row dock, a full-width
+   *Save changes* before anything had changed, three short links one per row.
+3. **Choosing a surface left it where it was:** *Map* left 203 of the map's
+   388px on screen; *List* left the first apartment 1,549px down.
+
+**Built upstream, then consumed it.** The answer is a design-system composition,
+not app CSS: **`.sc-pick`**, the panel a plotted surface opens when a press
+cannot name one mark — resolve by distance, ask nearest first when distance
+cannot settle it, stay a popover rather than a modal. SpicyStock had improvised
+it and Home needed it, this repository's bar for promotion. Home's half:
+marks group by rendered proximity at the current zoom (`mapClusters()`), each on
+a real recorded coordinate and carrying the number it stands for — without a
+projection it is the coordinate-identical grouping the map always drew, so every
+existing map contract holds. A press resolves by distance
+(`mapPressCandidates()`); a crowd too large to name offers the zoom that
+separates it. Leaflet, the coordinates, the costs and the notebook stay in Home.
+
+**After,** same feed: 8 separable marks at 390px and 16 at 1280px for the same
+573 places, **none** hiding another's centre, every press at a mark's own centre
+naming that mark's place first. The largest crowd offers *Zoom in to separate the
+other 198*, turning 8 marks into 63 and that crowd from 201 into 54. The dialog's
+layout evidence starts at 479px of a 760px phone dialog (was 589), and every
+surface reaches the top of the screen at both widths and under reduced motion,
+keeping focus on the pressed control.
+
+**Checks.** 123 JavaScript and 42 Python checks pass; `check_site.py` confirms 22
+immutable assets and 574 unchanged records. The committed
+`npm run browser-check` adds 86 Chromium scenarios: press resolution, the
+popover, the surface reveal, the dialog head, missing tiles, stale/failed/empty
+feeds, 320px, 200% zoom (a 640px CSS viewport), keyboard reach, a reloaded
+shortlist, a damaged notebook. **It found a defect this milestone
+introduced:** regrouping on a zoom replaced the very marker the directory had
+just asked for, so its popup opened on a dead object — and a zoom far enough to
+skip the animation raises both Leaflet events inside `setView`, so the first fix
+listened too late. The reveal now listens before the move and opens on the mark
+that exists after it; the surface listeners bind once per `#map` element. All 86
+pass now. Upstream `check.mjs` is all good, `visual-check --browser` passes its
+four pick scenarios, four mutants over the rule each turn it red, PR #23 is
+green.
+
+**Not claimed.** No merge, tag, release, deployment or Pages build; no physical
+phone; no listing-accuracy or live-tile judgement. `.sc-actionbar` and
+`.sc-field--group` shipped in v2.11.0 and are not this contribution, and Home's
+refresh from the agreed combined source is owed once both upstream contributions
+land: the family rollout is not complete.
+
+**Reconciled, 13 September 2026.** SpicyCar's upstream branch
+(`design/car-decision-polish`, PR #24) turned out to propose the *same*
+v2.12.0 from the *same* base `1ffd905`, overlapping on all 33 files it
+touches — every one of them a file this contribution also changes. Neither
+could merge after the other without its generated output being rebuilt, so
+the two were reconciled onto one branch at `d292a00`: the pick, the figure
+basis and the transposed comparison as one release, every generated file
+built once from the combined source. `.sc-pick` took band `4f`; Car's
+figure-basis band stays **last** as `4g`, because a value slot sets its own
+colour at one class of specificity and the basis has to follow it to win.
+
+**That merge broke Car's contribution, and the fix is in.** Resolving the
+`sc.css` conflict dropped the opening `/*` of Car's band comment, leaving a
+stray `*/`. Braces stayed balanced, the source still read correctly, and
+`build/check.mjs` reported *all good* — but the browser swallowed the whole
+`.sc-estimate` rule as parser error recovery, so a derived figure rendered in
+the heading ink, the exact thing that band exists to prevent. Found by
+rendering Car's branch beside the merge: `rgb(47,55,65)` there against
+`rgb(24,46,75)` here, with the rule absent from the CSSOM. `build/parse-check.mjs`
+now gates the class — every class `sc.css` defines must survive into the
+*parsed* sheet, since the existing rules only ever read the source text. Its
+first version could not fail (a regex comment-stripper re-pairs around a stray
+`*/`, so both sides of the comparison lost the same class); it scans now and
+names the line.
+
+Home was re-vendored from `d292a00`: `provenance.json` pins that commit,
+version 2.12.0, all 22 hashes verified against both the vendored files and the
+source tree. Re-run here: 123 JavaScript, 42 Python, `check_site.py` (22
+assets, 574 records unchanged) and `npm run browser-check` 86/86. Upstream CI
+is green on `d292a00`. Still no merge, tag, release or deployment.
+
+### NEXT BUILDER PROMPT — integration and handoff only
+
+Finish the rollout of one design-system change that is already implemented,
+reviewed by its own gates and open as a pull request. **Implement no new
+feature and choose no new finding.**
+
+Starting points, all verified on 13 Sep 2026:
+
+- `spicyChicken59/design-system` PR **#23**, branch
+  `claude/spicyhome-discovery-list-map-x8vuyf`, head **`d292a00`**. Carries
+  BOTH upstream contributions: `.sc-pick` (band 4f) and, merged in from
+  `design/car-decision-polish`, `.sc-estimate` / `.sc-unreported` /
+  `.sc-signal-matrix--fit` (band 4g, last by cascade requirement). Gates:
+  `build/pick-check.mjs` and `build/parse-check.mjs`, both run by
+  `visual-check --browser`. CI green on both jobs. **v2.12.0 is now one number
+  for one release** — the two-branch collision is resolved, not deferred.
+- `spicyChicken59/design-system` PR **#24** is absorbed; a comment on it says
+  so. It can be closed rather than merged.
+- `spicyChicken59/SpicyHome` PR **#14** consumes it:
+  `dist/design-system/provenance.json` pins `d292a00`, version 2.12.0, 22
+  hashes verified against the source tree.
+- **SpicyCar has NOT re-vendored.** Its snapshot still points at the old
+  design-system commit; it needs refreshing from whatever lands on `main`.
+
+Do, in this order:
+
+1. **The version is settled.** Both branches are one release at v2.12.0 on
+   `d292a00`; nothing further to reconcile upstream. No tag is cut from a
+   sandbox (the agent proxy refuses `refs/tags/*` with a 403).
+2. **Review and merge design-system #23**, then close #24 as absorbed.
+   `node build/check.mjs` must be all good and
+   `node build/visual-check.mjs --browser` must pass the pick AND parse gates;
+   the "origin has no vX.Y.Z tag" line is the expected branch-level reminder.
+3. **Then refresh each consumer from the agreed combined source.** From a clean,
+   committed upstream checkout run
+   `node build/vendor.mjs <consumer>/dist/design-system`, and verify
+   `provenance.commit` and all 22 hashes against both the vendored files and
+   `git show <commit>:<path>`. In SpicyHome rerun `npm test` (123),
+   `npm run check` (42 Python), `python tools/check_site.py` (22 assets, 574
+   records) and `npm run browser-check` (86 Chromium scenarios; needs Playwright
+   and Chromium — it reports SKIP and exits 1 without them). Look at the shots.
+4. **Only then may the family rollout be called complete.** Until both consumers
+   have refreshed from one agreed source and rerun their own checks, say so.
+
+Preserve without exception: base rent versus advertised total versus known
+subtotal, zero versus unknown, exact layout evidence, source dates, capped
+coverage, resident versus public charging, provider records, request and
+evidence ledgers, the notebook schema, local corrections, saved snapshots,
+cross-tab conflicts and transactional import/export recovery. Invent no
+availability, amenity or travel claim. Make no RentCast, leasing or tour call,
+no merge to `main` without approval, no force-push, and no deployment.
+
+If Car's contribution or the approval is not available, **stop with an explicit
+dependency handoff** naming exactly what is blocked and on whom. Do not wait or
+poll.

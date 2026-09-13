@@ -92,6 +92,25 @@ try {
     const listed = await page.evaluate(() => document.querySelectorAll('#map-list [data-map-home]').length);
     check(`${label} the map draws separable marks for ${listed} places`, marks > 0 && marks < listed / 4,
       `${marks} marks for ${listed} places`);
+    // A mark is only honest if it sits where its coordinates put it. Leaflet
+    // places every marker by a transform off one pane origin, so what is left of
+    // a mark's position once its own transform is subtracted must be the same
+    // point for all of them. A stylesheet that takes a marker out of
+    // `position: absolute` returns it to normal flow, and each mark then slides
+    // down the pane by its own place in the DOM -- every mark over the wrong
+    // building, while the marks still look evenly spread.
+    const drift = await page.evaluate(() => {
+      const origins = [...document.querySelectorAll('.home-map-marker')].map((m) => {
+        const r = m.getBoundingClientRect();
+        const t = /translate3d\((-?[\d.]+)px,\s*(-?[\d.]+)px/.exec(m.style.transform);
+        return t ? { x: r.left + r.width / 2 - Number(t[1]), y: r.top + r.height / 2 - Number(t[2]) } : null;
+      });
+      if (!origins.length || origins.some((o) => o === null)) return { read: false, worst: Infinity };
+      const first = origins[0];
+      return { read: true, worst: Math.max(...origins.map((o) => Math.hypot(o.x - first.x, o.y - first.y))) };
+    });
+    check(`${label} every mark sits where its coordinates put it`, drift.read && drift.worst < 0.5,
+      drift.read ? `worst ${drift.worst.toFixed(1)}px off the pane origin` : 'no mark reported a position');
     const crowding = await page.evaluate(() => {
       const pts = [...document.querySelectorAll('.home-map-marker')].map((m) => {
         const r = m.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 };

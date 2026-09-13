@@ -305,8 +305,11 @@ function mapPressCandidates(x, y) {
     const box = element?.getBoundingClientRect?.();
     if (!box?.width) continue;
     const distance = Math.hypot(box.left + box.width / 2 - x, box.top + box.height / 2 - y);
+    // Only the home travels: the marker is rebuilt whenever the zoom regroups,
+    // so a reference to it here would be the same stale-object trap the
+    // directory route already paid for once.
     if (distance <= MAP_TAP_RADIUS)
-      for (const home of group.homes) found.push({ distance, home, marker: group.marker });
+      for (const home of group.homes) found.push({ distance, home });
   }
   return found.sort((a, b) => a.distance - b.distance);
 }

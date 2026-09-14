@@ -567,16 +567,63 @@ for the links and the photograph attribution.
 deployment. Publication remains the owner's: the repository variable is the one
 thing between this commit and a live page, and this sandbox cannot set it.
 
-### NEXT BUILDER PROMPT — the family is level except SpicyStock
+### Milestone, 14 September 2026 — the site is served
 
-Verify the tips; these were true on 14 Sep 2026.
+**Revision.** No code, no data, no vendored asset. `main` is `b2a5a93` (the
+merge of #18) and the tree served is that commit's `dist/`, byte for byte the
+one the previous entry's sweep read.
+
+**Published, on the owner's word and by their hand for the part only they
+could do.** The gate was never a defect: `publish.yml`'s `if:` reads
+`vars.SPICYHOME_PAGES_ENABLED == 'true'`, so the job declined on all five
+merges before this and reported `skipped`, not failed. The owner set Pages'
+source to **GitHub Actions** and the repository variable to `true`; the
+workflow was then dispatched on `main`.
+
+**What the run did**, read off its log rather than assumed — two dispatches
+landed three seconds apart (runs 29 and 30, `34841231758` and `34841235330`),
+both green, both deploying the same commit, so the second was a no-op repeat
+of the first:
+
+| | |
+|---|---|
+| validated before upload | `python tools/check_site.py`, its own step, passed |
+| uploaded | `github-pages.zip`, 522,141 bytes, SHA-256 `369c5509…` |
+| deployment | `Created deployment for b2a5a936…` → `Reported success!` |
+| url | `https://spicychicken59.github.io/SpicyHome/` |
+
+**It republishes itself now.** Any push to `main` touching `dist/**`, and the
+`workflow_run` completion of *Track apartments* or *Update city context* — so
+the daily scan's commit, which triggers no other workflow, does reach the
+public site. That cuts both ways: **`main` is now a publication**, and the
+standing hazard about scan commits going unchecked is now a hazard about
+unchecked bytes being served. `check_site.py` runs first and fails the job
+before an upload, which is the only thing standing between a bad scan and the
+reader.
+
+**Not claimed, and this is the honest edge of it:** the served page has not
+been read back. This sandbox's proxy refuses `spicychicken59.github.io` with
+403 CONNECT, so the evidence stops at GitHub's own `Reported success!` and the
+deployment URL it evaluated. First paint, the OpenStreetMap tiles, the feed
+fetch and its mirror fallback are unobserved on the public origin — they are
+covered offline by `browser-check`, which serves a blank pixel for tiles. Also
+unclaimed, unchanged: no physical phone, no provider request, no leasing
+message.
+
+### NEXT BUILDER PROMPT — live, and level except SpicyStock
+
+Verify the tips before trusting any of them; these were read on 14 Sep 2026,
+and two of these repositories commit to `main` on a schedule.
 
 - **design-system** `main` is `14a752d`, **v2.13.0, tagged**, and `check` is
   green on `main` (run 89, dispatched after the tag was cut).
-- **SpicyCar** `main` is `6fe36e4` (#78) and vendors **v2.13.0**.
-- **SpicyHome** `main` is `8614118` (#17, merged), vendoring **v2.13.0**;
-  `Checks` is green on it.
-- **SpicyStock** `main` is `97609cb` and still vendors **v2.11.0** (`6f10309`).
+- **SpicyCar** `main` is `62db117`, a `snapshot 2026-09-14` tracker commit over
+  `aea4fa3` (#79, which took its own `main` back to green). It vendors
+  **v2.13.0**.
+- **SpicyHome** `main` is `b2a5a93` (#18), vendoring **v2.13.0**, `Checks`
+  green on it, **and served** at https://spicychicken59.github.io/SpicyHome/.
+- **SpicyStock** `main` is `ce2c6c1` (#61, the session-aware desk) and still
+  vendors **v2.11.0** (`6f10309`).
 
 Do these; do not redo the discovery hierarchy, the comparison tray, the
 cost-basis marks, the shortlist's next step, the Atlas, or this adoption.
@@ -596,15 +643,23 @@ cost-basis marks, the shortlist's next step, the Atlas, or this adoption.
    which holds a page open when its content is wider than the bar (measured at
    390 px here, fixed in the consumer). Both are notes for whoever opens the
    next design-system release, not defects to route around.
-3. **Publication is a decision, not an oversight.** `SPICYHOME_PAGES_ENABLED`
-   has never been `true`, so all five merges so far have skipped *Publish
-   website* — the job's own `if:` declines, which is why the run shows as
-   `skipped` and not as a failure. The owner wants it live. What that takes,
-   in order: **Settings → Pages** with **GitHub Actions** as the source, then
-   the repository **variable** `SPICYHOME_PAGES_ENABLED` set to `true`, then
-   either a dispatch of *Publish website* on `main` or the next push touching
-   `dist/**`. The job runs `check_site.py` before it uploads, so a bad tree
-   fails before anything is served.
+3. **Publication is done, so `main` is now a publication.** The variable is
+   set and the site is live; the entry above records the run. Two consequences
+   for anyone working here, neither of which existed on 13 Sep:
+   - A merge to `main` touching `dist/**` **serves the bytes**, and so does the
+     daily scan — `publish.yml` also fires on the `workflow_run` completion of
+     *Track apartments* and *Update city context*. The scan's own commit still
+     triggers no test workflow, so the tree that reaches the reader can be one
+     no gate has read except `check_site.py`, which the publish job runs before
+     it uploads. That check is now load-bearing in a way it was not: widen it
+     rather than route around it if a scan ever serves something wrong.
+   - **Nobody has read the served page back.** This sandbox cannot: the proxy
+     refuses `spicychicken59.github.io` with 403 CONNECT. A builder with a
+     browser outside it should walk the connected journey once on the public
+     origin — first paint, the OpenStreetMap tiles, the feed and its
+     `api.github.com` mirror fallback, a deep link, and the phone width — and
+     record what it found here. `browser-check` covers all of it offline
+     against a blank tile, which is precisely the gap.
 
 Offline gates, all of which must pass before a pull request: `npm ci
 --ignore-scripts`, `npm test` (137), `npm run check` (42 Python), `python
@@ -626,9 +681,12 @@ Standing hazards, still true:
 - `.sc-eyebrow` lowercases. A proper noun inside one needs `.sc-case`.
 - Never vendor from an unmerged branch: pin a commit that is on the design
   system's `main`, and prefer the one its release tag points at.
-- `track.yml` commits a new scan daily and those commits run no workflow, so
-  `main` can go red between merges without anyone being told. Re-run every gate
-  against the record actually on `main` before trusting an earlier green.
+- `track.yml` commits a new scan daily and those commits run no *test*
+  workflow, so `main` can go red between merges without anyone being told.
+  Re-run every gate against the record actually on `main` before trusting an
+  earlier green. Since publication they do reach the public site, through
+  `publish.yml`'s `workflow_run` trigger — an unchecked record is now a served
+  record, held back only by `check_site.py`.
 
 Preserve without exception: base rent versus advertised total versus known
 subtotal, zero versus unknown, exact layout evidence, source dates, capped

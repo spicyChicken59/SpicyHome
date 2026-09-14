@@ -511,6 +511,65 @@ try {
     await context.close();
   }
 
+
+  // --- 10. the shared record comparison, where two columns are not enough ----
+  //         The design system's .sc-compare-pair (v2.13.0) makes claims only a
+  //         browser can judge, and it has to keep making them inside this app's
+  //         own scrolling dialog: both identities on screen while the measures
+  //         scroll past, equal room for both values, and no sideways scroll.
+  for (const [label, opts] of [['390px', { width: 390, height: 844, mobile: true }],
+                               ['320px', { width: 320, height: 640, mobile: true }]]) {
+    const { context, page, errors } = await open(browser, { ...opts, theme: 'dark' });
+    const pair = await page.evaluate(async () => {
+      for (const box of [...document.querySelectorAll('#results [data-compare]')].slice(0, 3)) box.click();
+      await new Promise((r) => setTimeout(r, 250));
+      document.querySelector('#open-compare').click();
+      await new Promise((r) => setTimeout(r, 450));
+      const view = document.querySelector('.compare-pair');
+      const shown = (el) => !!el && getComputedStyle(el).display !== 'none';
+      const values = [...view.querySelectorAll('.sc-compare-pair__values')];
+      const columns = values.map((row) => [...row.children].map((v) => Math.round(v.getBoundingClientRect().width)));
+      return {
+        pair: shown(view), matrix: shown(document.querySelector('.matrix-desktop')),
+        sticky: getComputedStyle(view.querySelector('.sc-compare-pair__heads')).position,
+        measures: view.querySelectorAll('.sc-compare-pair__measure').length,
+        markedLabels: view.querySelectorAll('.sc-compare-pair__measure[data-differs="true"]').length,
+        markedValues: view.querySelectorAll('.sc-compare-pair__value[data-differs], .sc-compare-pair__value.is-best').length,
+        choosers: view.querySelectorAll('[data-pair-side]').length,
+        even: columns.every((row) => row.length === 2 && Math.abs(row[0] - row[1]) <= 1),
+        sideways: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      };
+    });
+    check(`${label} the phone gets the pair view and not the matrix`, pair.pair && !pair.matrix);
+    check(`${label} both values get equal room`, pair.even && pair.measures > 0, `${pair.measures} measures`);
+    check(`${label} the difference is marked on labels only, and nothing is called best`,
+      pair.markedLabels > 0 && pair.markedValues === 0, `${pair.markedLabels} labels, ${pair.markedValues} values`);
+    check(`${label} a third selected place is a choice, not a truncation`, pair.choosers === 2, `${pair.choosers} choosers`);
+    check(`${label} the comparison does not scroll sideways`, !pair.sideways);
+    // Scroll to the last measure: a value read against the wrong place is worse
+    // than a value not read at all, so the identities have to still be there.
+    const held = await page.evaluate(async () => {
+      [...document.querySelectorAll('.sc-compare-pair__measure')].pop().scrollIntoView({ block: 'end' });
+      await new Promise((r) => setTimeout(r, 300));
+      const heads = document.querySelector('.sc-compare-pair__heads').getBoundingClientRect();
+      const box = document.querySelector('#compare-dialog').getBoundingClientRect();
+      return { on: heads.bottom > box.top && heads.top < box.bottom && heads.height > 0,
+        names: [...document.querySelectorAll('.sc-compare-pair__head .sc-eyebrow')].map((e) => e.textContent.trim()) };
+    });
+    check(`${label} both identities stay on screen at the last measure`, held.on && held.names.length === 2,
+      held.names.join(' | '));
+    // .sc-eyebrow lowercases; a building name is a proper noun. textContent
+    // returns the source text and cannot see a CSS text-transform, so this
+    // reads what the element is actually rendered with.
+    const casing = await page.evaluate(() => [...document.querySelectorAll('.sc-compare-pair__head .sc-eyebrow')]
+      .map((el) => getComputedStyle(el).textTransform));
+    check(`${label} the identities keep their own casing`,
+      casing.length === 2 && casing.every((t) => t === 'none'), casing.join(', '));
+    check(`${label} the comparison raises no page error`, errors.length === 0, errors.slice(0, 2).join(' '));
+    await shot(page, `pair-${label}`);
+    await context.close();
+  }
+
 } finally {
   await browser.close();
   server.close();

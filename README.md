@@ -114,7 +114,7 @@ The GitHub feed must be public for the static private Sites app to fetch it with
 
 ## Design provenance
 
-`dist/design-system/provenance.json` pins 22 unchanged assets from `spicyChicken59/design-system` commit `d292a00b5ed4b653c007d6a7c69412e738a40d0c` (v2.12.0), which is reachable on that repository's `main` through the merge `600283f`. The photograph is an attributed Chicago skyline, not a photograph of a listed apartment. Leaflet 1.9.4 is vendored with its license. No release tag is required.
+`dist/design-system/provenance.json` pins 22 unchanged assets from `spicyChicken59/design-system` commit `14a752dd0269bd6ebbb7080eb0d9e1922cd1ef2c`, which is the released **v2.13.0** tag and that repository's `main`. The photograph is an attributed Chicago skyline, not a photograph of a listed apartment. Leaflet 1.9.4 is vendored with its license.
 
 ## Deliberate limits
 
@@ -346,3 +346,29 @@ between surfaces, and what a number says about itself.
 No new dashboard, tab, ranking system or tracker. No provider request, schema
 change, dependency or framework migration. Saved searches, notebook records,
 snapshots, stages, quotes, tour notes and recovery paths are unchanged.
+
+## The shared record comparison — September 14, 2026
+
+The apartment face-off now uses the design system's own comparison (v2.13.0)
+instead of a local copy of it. Nothing new is compared, ranked or stored.
+
+- **The phone comparison is `.sc-compare-pair`.** SpicyHome's own stacked layout
+  is gone. Both places are named in a head that stays on screen while the
+  measures scroll past, so a value is never read against the wrong apartment,
+  and the two values sit in equal columns under each measure.
+- **A third selected place is a choice, not a truncation.** The pair shows two;
+  where three are selected, the heads carry the control that picks which two.
+  The third stays in the comparison, and choosing a place the other side already
+  holds swaps the two rather than showing one apartment against itself.
+- **Rows the places disagree on are marked (`data-differs="true"`), not hidden.**
+  The mark is on the row's own label, never on a value: a difference is not a
+  winner, and no apartment is called best. The pair marks what the two in front
+  of you differ on; the desktop matrix marks what all the selected places differ
+  on — each answers the question its own view is asking.
+- **"Differences only" still folds the matching facts, and now says what it
+  folded.** It names them and counts them, and the plan and unit, the layout
+  evidence, the base rent, the known monthly subtotal and the source date are
+  never folded — identity, price basis and the age of the evidence stay readable
+  whatever else is put away.
+
+Print is unchanged: it uses the full matrix, every row, as before.

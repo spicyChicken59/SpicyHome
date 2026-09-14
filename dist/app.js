@@ -1059,16 +1059,53 @@ function showDetail(id) {
   if ($("#download-tour"))
     $("#download-tour").onclick = () => downloadTour(h, r);
 }
+// Which two of the compared places the phone view shows, as indices into the
+// current selection. Below the width two columns need, the matrix turns on its
+// side and the design system's .sc-compare-pair carries it: both identities in
+// a sticky head so a value is never read against the wrong place, one measure
+// per row with its two values under it. A third selected place is a choice the
+// reader makes in those heads -- never a silent truncation.
+let pairSides = [0, 1];
+function pairChoice(hs) {
+  const clamp = (index, fallback) => (Number.isInteger(index) && index >= 0 && index < hs.length ? index : fallback);
+  let [a, b] = [clamp(pairSides[0], 0), clamp(pairSides[1], hs.length > 1 ? 1 : 0)];
+  if (a === b) b = hs.findIndex((home, index) => index !== a);
+  return [a, b < 0 ? a : b];
+}
+function comparePair(hs, visibleRows) {
+  const [a, b] = pairChoice(hs);
+  const sides = hs.length > 1 ? [a, b] : [a];
+  // The mark belongs to the records the view actually shows. Over three homes
+  // the matrix asks "do all three agree?", but the pair shows two, and marking
+  // a row as differing above two identical values is a mark the reader cannot
+  // read. This asks the pair's own question.
+  const pairDiffers = ([, fn]) => sides.length > 1 && new Set(sides.map((index) => String(fn(hs[index])))).size > 1;
+  const head = (index, side) => {
+    const home = hs[index];
+    const chooser = hs.length > 2
+      ? `<select data-pair-side="${side}" aria-label="Which place to show on ${side === 0 ? "the left" : "the right"}">${hs.map((option, i) => `<option value="${i}" ${i === index ? "selected" : ""}>${String.fromCharCode(65 + i)} · ${esc(option.title)}</option>`).join("")}</select>`
+      : "";
+    return `<div class="sc-compare-pair__head"><span class="sc-eyebrow sc-case">${String.fromCharCode(65 + index)} · ${esc(home.title)}</span><p class="sc-note">${esc(planLabel(home))}</p>${chooser}</div>`;
+  };
+  return `<div class="sc-compare-pair compare-pair">${hs.length > 2 ? '<p class="meta">Two at a time on this screen. Choose which two; the third stays selected.</p>' : ""}<div class="sc-compare-pair__heads">${sides.map((index, side) => head(index, side)).join("")}</div><dl class="sc-compare-pair__rows">${visibleRows
+    .map((row) => `<dt class="sc-compare-pair__measure"${pairDiffers(row) ? ' data-differs="true"' : ""}>${row[0]}${pairDiffers(row) || sides.length < 2 ? "" : '<span class="sc-note">same for both</span>'}</dt><dd class="sc-compare-pair__values">${sides
+      .map((index) => `<div class="sc-compare-pair__value"><span class="sc-figure">${esc(row[1](hs[index]))}</span></div>`)
+      .join("")}</dd>`)
+    .join("")}</dl></div>`;
+}
 function showCompare() {
   const hs = [...comparison].map(getHome).filter(Boolean);
   if (!hs.length) return;
   const rows = [
-    ["Layout evidence", (h) => layoutEvidence(h, record(h.id)).label],
-    ["Plan / unit", planLabel],
+    // `always` is the design system's own rule for a folded comparison: the
+    // identity, the cost basis and any statement of uncertainty stay readable
+    // whatever the reader folds away.
+    ["Layout evidence", (h) => layoutEvidence(h, record(h.id)).label, true],
+    ["Plan / unit", planLabel, true],
     ["City / suburb", (h) => homeCity(h) || "Unverified"],
     ["Neighborhood", (h) => h.neighborhood],
     ["Distance from central Chicago", (h) => {const d=distanceMiles(h,searchCenter);return d === null ? "Unverified" : `${d.toFixed(1)} mi straight-line`; }],
-    ["Base rent", (h) => money(costs(h, record(h.id), prefs).rent)],
+    ["Base rent", (h) => money(costs(h, record(h.id), prefs).rent), true],
     [
       "Known monthly subtotal",
       (h) => {
@@ -1077,6 +1114,7 @@ function showCompare() {
           ? "Incomplete"
           : money(c.known) + (c.unknown.length ? " + unquoted items" : "");
       },
+      true,
     ],
     ["Parking / month", (h) => money(costs(h, record(h.id), prefs).parking)],
     [
@@ -1098,11 +1136,17 @@ function showCompare() {
             ? "Not offered"
             : "Unverified",
     ],
-    ["Observed", (h) => dateLabel(h.observed_at)],
+    ["Observed", (h) => dateLabel(h.observed_at), true],
     ["Your status", (h) => record(h.id).status ?? "Researching"],
     ["Your notes", (h) => record(h.id).notes || "No notes yet"],
   ];
-  const visibleRows = rows.filter(([, fn]) => !compareDifferences || hs.length < 2 || new Set(hs.map((h) => String(fn(h)))).size > 1);
+  // A row the records do not agree on, read once and used three ways: the
+  // mark the design system draws on a row's own label (never on a cell -- a
+  // difference is not a winner), the fold, and the count that says what folding
+  // took away.
+  const differs = ([, fn]) => hs.length > 1 && new Set(hs.map((h) => String(fn(h)))).size > 1;
+  const folded = rows.filter((row) => !differs(row) && !row[2]);
+  const visibleRows = rows.filter((row) => !compareDifferences || differs(row) || row[2]);
   // A spread is only a fact when every column holds the same kind of number.
   // One missing base rent or one unreported size makes the comparison a
   // guess, so it is named as not comparable instead of being computed anyway.
@@ -1123,12 +1167,25 @@ function showCompare() {
     spread("Reported space", (h) => (Number.isFinite(h.sqft) && h.sqft > 0 ? h.sqft : null), (v) => `${Math.round(v)} sq ft`, "Reported by the source for the named plan; the exact unit still needs confirming.")
   }</ul><p class="meta">No place is ranked here and no score is calculated. A difference is shown only where every selected place has that figure on the same basis.</p></section>`;
   $("#compare-content").innerHTML =
-    `<div class="dialog-body"><div class="dialog-header"><div><p class="eyebrow">THE APARTMENT FACE-OFF</p><h2 id="compare-title">Picture your everyday.</h2></div><button class="dialog-close" data-close aria-label="Close comparison">×</button></div><p class="detail-sub">The same facts for every place. Differences only hides matching facts, including shared unknowns. Rent, square footage and amenity claims need confirmation for the exact unit.</p><div class="compare-controls"><label><input id="compare-differences" type="checkbox" ${compareDifferences ? "checked" : ""} ${hs.length < 2 ? "disabled" : ""}>Differences only</label><span role="status">${visibleRows.length} of ${rows.length} facts shown</span></div><div class="compare-identities">${hs.map((h,i) => { const c = costs(h, record(h.id), prefs); return `<article><span class="compare-letter">${String.fromCharCode(65+i)}</span><div><h3>${esc(h.title)}</h3><p>${esc(planLabel(h))}</p><p class="meta">${esc(h.address)}</p><div class="compare-actions"><button class="text-button" data-studio-task="${esc(h.id)}" data-task-target="detail-costs">See cost breakdown ↗</button>${c.unknown.length ? `<button class="text-button" data-studio-task="${esc(h.id)}" data-task-target="${esc(costField(c.unknown[0]))}">Complete missing costs ↗</button>` : ""}</div></div></article>`; }).join("")}</div>${differences}${visibleRows.length ? `<div class="matrix-wrap matrix-desktop"><table class="matrix"><thead><tr><th scope="col">Your priorities</th>${hs.map((h,i) => `<th scope="col">${String.fromCharCode(65+i)} · ${esc(h.title)}<small>${esc(planLabel(h))}</small></th>`).join("")}</tr></thead><tbody>${visibleRows.map(([label, fn]) => `<tr><th scope="row">${label}</th>${hs.map((h) => `<td>${esc(fn(h))}</td>`).join("")}</tr>`).join("")}</tbody></table></div><div class="compare-mobile">${visibleRows.map(([label,fn]) => `<section class="compare-metric"><h3>${esc(label)}</h3><dl>${hs.map((h,i) => `<div><dt><span class="compare-letter">${String.fromCharCode(65+i)}</span><span>${esc(h.title)}<small>${esc(planLabel(h))}</small></span></dt><dd>${esc(fn(h))}</dd></div>`).join("")}</dl></section>`).join("")}</div>` : empty("These recorded facts match.","Turn off Differences only to review every fact, including shared unknowns.")}<div class="form-actions"><button class="button secondary" id="print-comparison">Print comparison</button></div></div>`;
+    `<div class="dialog-body"><div class="dialog-header"><div><p class="eyebrow">THE APARTMENT FACE-OFF</p><h2 id="compare-title">Picture your everyday.</h2></div><button class="dialog-close" data-close aria-label="Close comparison">×</button></div><p class="detail-sub">The same facts for every place. Differences only hides matching facts, including shared unknowns. Rent, square footage and amenity claims need confirmation for the exact unit.</p><div class="compare-controls"><label><input id="compare-differences" type="checkbox" ${compareDifferences ? "checked" : ""} ${hs.length < 2 ? "disabled" : ""}>Differences only</label><span role="status">${visibleRows.length} of ${rows.length} facts shown${compareDifferences && folded.length ? ` · ${folded.length} matching fact${folded.length === 1 ? "" : "s"} folded away` : ""}</span></div>${compareDifferences && folded.length ? `<p class="meta compare-folded">Folded because every place records the same answer: ${esc(folded.map(([label]) => label).join(", "))}. The plan, the layout evidence, the price basis and the source date are never folded. Turn the toggle off to read them all.</p>` : ""}<div class="compare-identities">${hs.map((h,i) => { const c = costs(h, record(h.id), prefs); return `<article><span class="compare-letter">${String.fromCharCode(65+i)}</span><div><h3>${esc(h.title)}</h3><p>${esc(planLabel(h))}</p><p class="meta">${esc(h.address)}</p><div class="compare-actions"><button class="text-button" data-studio-task="${esc(h.id)}" data-task-target="detail-costs">See cost breakdown ↗</button>${c.unknown.length ? `<button class="text-button" data-studio-task="${esc(h.id)}" data-task-target="${esc(costField(c.unknown[0]))}">Complete missing costs ↗</button>` : ""}</div></div></article>`; }).join("")}</div>${differences}${visibleRows.length ? `<div class="matrix-wrap matrix-desktop"><table class="matrix"><thead><tr><th scope="col">Your priorities</th>${hs.map((h,i) => `<th scope="col">${String.fromCharCode(65+i)} · ${esc(h.title)}<small>${esc(planLabel(h))}</small></th>`).join("")}</tr></thead><tbody>${visibleRows.map((row) => `<tr${differs(row) ? ' data-differs="true"' : ""}><th scope="row">${row[0]}</th>${hs.map((h) => `<td>${esc(row[1](h))}</td>`).join("")}</tr>`).join("")}</tbody></table></div>${comparePair(hs, visibleRows)}` : empty("These recorded facts match.","Turn off Differences only to review every fact, including shared unknowns.")}<div class="form-actions"><button class="button secondary" id="print-comparison">Print comparison</button></div></div>`;
   $("#compare-dialog").showModal();
   bindStudioTasks();
   $("#compare-content [data-close]").onclick = () =>
     $("#compare-dialog").close();
   $("#compare-differences").onchange = (event) => { compareDifferences = event.target.checked; showCompare(); $("#compare-differences").focus(); };
+  // Choosing a side never drops the place on the other one: the two sides swap
+  // rather than collide, and the third stays in the comparison either way.
+  document.querySelectorAll("[data-pair-side]").forEach((select) => {
+    select.onchange = () => {
+      const side = Number(select.dataset.pairSide), picked = Number(select.value);
+      const next = pairChoice(hs);
+      if (next[1 - side] === picked) next[1 - side] = next[side];
+      next[side] = picked;
+      pairSides = next;
+      showCompare();
+      $(`[data-pair-side="${side}"]`)?.focus();
+    };
+  });
   $("#print-comparison").onclick = () => window.print();
 }
 function addHome() {

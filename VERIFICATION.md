@@ -456,65 +456,156 @@ is known to be unset. `checks.yml` runs `npm test`, `npm run check` and
 its pull request are covered; it does not run `npm run browser-check`, which was
 run here instead.
 
-### NEXT BUILDER PROMPT — the shared comparison, then the family rollout
+### Milestone, 14 September 2026 — the shared record comparison
 
-Verify the tips first; these were true on 13 Sep 2026.
+**Revision.** Branch `claude/spicyhome-find-compare-decide-sijq32`, restarted
+from `main` at `7c522d0` (the merge of #16, whose own pull request was already
+merged — a merged pull request cannot track new work). `dist/data.json`,
+`dist/status.json` and `data/` are `origin/main`'s to the byte; the only files
+under `dist/design-system/` that change are the 22 the vendor wrote.
 
-- **SpicyHome** `main` is `abc9264` (the merge of #15). This milestone is
-  `claude/spicyhome-find-compare-decide-sijq32`, open as a pull request, with
-  `dist/data.json`, `dist/status.json`, `data/` and `dist/design-system/`
-  byte-identical to `main`.
-- **design-system** `main` is `600283f` / v2.12.0, tagged. SpicyHome's snapshot
-  pins `d292a00`, the same tree, all 22 hashes verified.
-- **An unmerged design-system branch proposes v2.13.0**
-  (`claude/spicycar-discover-compare-decide-h4hxfp`, `ad5aa0f`): `.sc-compare-pair`
-  and `[data-differs="true"]`, driven by SpicyCar PR #78.
+**The upstream release this takes.** design-system `main` moved to `14a752d`
+(v2.13.0, PR #25) and the tag was published, after which `check` on `main` was
+dispatched and is green (run 89) — the red on run 87 was the tag lookup alone,
+and rule 1 re-reads `origin` at run time. v2.13.0 promotes two patterns two
+consumers had each improvised: `[data-differs="true"]`, a row the records do not
+agree on, and `.sc-compare-pair`, the matrix turned on its side below the width
+two columns need. SpicyHome is the second consumer that contribution names.
 
-Do these in order, and do **not** redo the discovery hierarchy, the comparison
-tray, the cost-basis marks, the shortlist's next step or the Atlas pass.
+**Re-vendored, not hand-edited.** `node build/vendor.mjs
+<SpicyHome>/dist/design-system` from a clean design-system checkout at
+`14a752d`, with no dirty file in that tree. Verified afterwards: `provenance.commit`
+is `14a752d`, `provenance.version` is 2.13.0, it is the commit `refs/tags/v2.13.0`
+points at, it is on that repository's `main`, and all **22 of 22** hashes are
+equal across `provenance.json`, `git show 14a752d:<path>` and the files on disk.
+A test holds the version, the commit, the count, every hash, and the six class
+names the page composes — a snapshot rolled back below 2.13 would take the
+styling with it and this says so.
 
-1. **Adopt v2.13.0's record comparison here — once it is on the design system's
-   `main` and tagged, not before.** SpicyHome's `.compare-mobile` stack is
-   `.sc-compare-pair`'s case, and `compareDifferences` is `[data-differs]`'s:
-   marking the rows that differ is better than hiding the rest, and this app
-   already has the toggle. Re-vendor with `node build/vendor.mjs
-   <SpicyHome>/dist/design-system` from a clean design-system checkout, verify
-   `provenance.commit` and all 22 hashes against `git show <commit>:<path>` and
-   the files on disk, then replace the local stack. Never hand-edit a vendored
-   file and never vendor from an unmerged branch.
-2. **SpicyCar has still not re-vendored v2.12.0.** That was the previous
-   handoff's one outstanding item and it is still outstanding; this run did not
-   touch SpicyCar. Doing it after (1) lands means one re-vendor, not two.
-3. **The Atlas is a scatter of 425 points in one pane.** Overlapping plans are
-   named where they coincide (within 7 px of the selected point) and the picker
-   reaches every one, but a crowded region still cannot be aimed at. SpicyStock
-   solved the same shape with a compressed axis and a nearby-chooser; whether
-   this map-sized problem is worth that here is a product call, not a builder's.
+**What the page gave up.** `.compare-mobile` / `.compare-metric` — SpicyHome's
+own stacked phone comparison, about forty lines of markup and CSS — is deleted,
+replaced by `.sc-compare-pair` with the notebook's palette handed to it through
+the component's token channel. The desktop table is deliberately **not**
+adopted as `.sc-signal-matrix`: that component brings a 680 px minimum width,
+`border-spacing`, sticky columns and its own borders to a table that has none of
+them, and the ask was the comparison pattern, not the table. Its differing rows
+carry the shared attribute and one local declaration draws the mark, which is
+recorded below as an upstream question rather than as a preference.
+
+**Two behaviours the contract required, and one the render demanded.** Three
+places can be selected and the pair shows two, so the heads carry the control
+that chooses which two — a selection, never a silent truncation — and choosing
+a place the other side already holds swaps them rather than comparing one
+apartment with itself. Folding is allowed "only if the page says it did and
+keeps them readable": the fold now names and counts what it put away, and the
+plan and unit, the layout evidence, the base rent, the known monthly subtotal
+and the source date are never folded. Then the render showed what the contract
+did not: over three places the pair was marking rows by whether all THREE
+agreed, so *Observed* was marked as differing above two identical dates. The
+pair asks its own question now — the two in front of the reader — while the
+matrix keeps asking about all of them.
+
+**Measured in Chromium, inside this app's own scrolling dialog** (the claims are
+the component's, but they have to survive `#compare-dialog`, which scrolls at
+`max-height: 90vh`): at 390 px and 320 px the phone gets the pair and not the
+matrix; the heads are `position: sticky` and, scrolled to the last of 14
+measures, sit at 43 px against a dialog top of 42 with both names still read
+("A · 721-27 Austin St", "B · 2030 Greenwood St"); the two value columns are
+equal to the pixel (147/147 at 390, 112/112 at 320); the mark appears on labels
+only, never on a value, and nothing is `.is-best`; no sideways scroll; no page
+error. `.sc-eyebrow` lowercases by design, which turned a building into
+"721-27 austin st" — `.sc-case` is what the sheet provides for a proper noun,
+and a check reads the casing back.
+
+**Checks run here.** `npm test` **137** (133 before, 4 added); `npm run check`
+42 Python; `python tools/check_site.py` 22 immutable assets and 603 records;
+`npm run browser-check` **138/138** (122 before, 16 added across a pair-view
+section at 390 and 320 px). Screenshots at 390 and 320 px in both themes were
+looked at — the second defect above came from looking, not from a count.
+
+**The mutants.** Ten over the rules this adoption adds — the mark moved onto
+the values, the matrix no longer marking, the fold taking the price basis with
+it, the fold going silent, a third place truncated rather than chosen, a side
+choice dropping the other place, the pair marking by the matrix's question, the
+identities scrolling away, the matrix drawn on a phone, and a building name
+lowercased. **Seven died on the first pass and three survived, every one of them
+a hole in a check rather than an equivalent mutant**, and each is closed with
+the check it showed was missing.
+
+The side-choice mutant survived because `pairChoice()` de-duplicates on the next
+render, so the wrong answer was rescued into a right-looking one — but only when
+the displaced place happened to be the first: the check now swaps from a state
+where neither side is the first place, where the mutant loses the displaced
+place and shows another. The pair-scoping mutant survived because the fixture
+had no row two of the three agreed on, which is the ONLY case that tells a
+pair-scoped mark from a comparison-scoped one; the third place has its own
+neighborhood now, and the matrix marks that row while the pair does not. And the
+casing check could not have failed as written — `textContent` returns the source
+text and cannot see a CSS `text-transform` at all, the second shape this file
+names — so it reads the computed casing off the rendering instead. All ten die.
+
+**Not claimed:** no live map tiles, no physical phone, no provider request, no
+deployment. Publication is the owner's: `SPICYHOME_PAGES_ENABLED` was not
+`true` when #16 merged, so *Publish website* skipped; enabling it makes the next
+push to `main` touching `dist/**` a real publication.
+
+### NEXT BUILDER PROMPT — the family is level except SpicyStock
+
+Verify the tips; these were true on 14 Sep 2026.
+
+- **design-system** `main` is `14a752d`, **v2.13.0, tagged**, and `check` is
+  green on `main` (run 89, dispatched after the tag was cut).
+- **SpicyCar** `main` is `6fe36e4` (#78) and vendors **v2.13.0**.
+- **SpicyHome** `main` is `7c522d0` (#16); this milestone takes it to v2.13.0
+  and is open as a pull request.
+- **SpicyStock** `main` is `97609cb` and still vendors **v2.11.0** (`6f10309`).
+
+Do these; do not redo the discovery hierarchy, the comparison tray, the
+cost-basis marks, the shortlist's next step, the Atlas, or this adoption.
+
+1. **SpicyStock is the last consumer behind, by two minors.** It is also the
+   other consumer v2.13.0 names: the upstream commit cites its marking of the
+   rows two pinned records differ on. Re-vendor it from `14a752d` and replace
+   that local marking with `[data-differs="true"]`, which styles the row's own
+   label and never a cell. It has its own open method work (a dry run on a green
+   or yellow session); this is a separate milestone from that, not a tail on it.
+2. **Two questions this adoption raises upstream, neither urgent.**
+   `tr[data-differs="true"]` is styled only inside `.sc-signal-matrix`, so a
+   consumer whose comparison table is its own — SpicyHome's is — must declare
+   the mark locally or swallow a component it does not want. The mark reads as a
+   property of the row, not of the matrix that happens to hold it. And
+   `.sc-actionbar__more` is `flex: 1 1 100%` with the default `min-width: auto`,
+   which holds a page open when its content is wider than the bar (measured at
+   390 px here, fixed in the consumer). Both are notes for whoever opens the
+   next design-system release, not defects to route around.
+3. **Publication is a decision, not an oversight.** `SPICYHOME_PAGES_ENABLED`
+   has never been `true`, so every merge so far has skipped *Publish website*.
+   The owner wants it live: once that variable is set, the next push to `main`
+   touching `dist/**` deploys for real, and `check_site.py` gates it.
 
 Offline gates, all of which must pass before a pull request: `npm ci
---ignore-scripts`, `npm test` (133), `npm run check` (42 Python), `python
-tools/check_site.py` (22 assets, 603 records), `npm run browser-check`
-(**122** Chromium scenarios; it needs Playwright whose bundled Chromium
-revision matches the one installed — 1194 here, which is playwright 1.56.x —
-and reports SKIP and exits 1 without it). CI runs the first three on every push
-and pull request; it does **not** run the browser check, so run it yourself.
+--ignore-scripts`, `npm test` (137), `npm run check` (42 Python), `python
+tools/check_site.py` (22 assets, 603 records), `npm run browser-check` (**138**
+Chromium scenarios; it needs a Playwright whose bundled Chromium revision
+matches the one installed — 1194 here, which is playwright 1.56.x — and reports
+SKIP and exits 1 without it). CI runs the first three on every push and pull
+request; it does **not** run the browser check, so run it yourself.
 
 Standing hazards, still true:
 
-- A stylesheet rule naming a Leaflet or design-system class at equal
-  specificity wins by load order and can silently undo the library's own
-  layout. The map case is covered; the general one is not.
-- A shared component's flex row is `min-width: auto` by default. Wide content
-  inside one holds the whole page open and a fixed navigation bar stretches
-  with it — measured at 390 px here. Give a consumer's instance `min-width: 0`
-  rather than editing the component.
+- A stylesheet rule naming a Leaflet or design-system class at equal specificity
+  wins by load order and can silently undo the library's own layout. The map
+  case is covered; the general one is not.
+- A shared component's flex row is `min-width: auto` by default. Give a
+  consumer's instance `min-width: 0` rather than editing the component.
 - Chromium 141 still lays out a closed `<details>`'s content. If the closed
-  state must take no space, say `display: none` — do not assume it.
+  state must take no space, say `display: none`.
+- `.sc-eyebrow` lowercases. A proper noun inside one needs `.sc-case`.
+- Never vendor from an unmerged branch: pin a commit that is on the design
+  system's `main`, and prefer the one its release tag points at.
 - `track.yml` commits a new scan daily and those commits run no workflow, so
   `main` can go red between merges without anyone being told. Re-run every gate
   against the record actually on `main` before trusting an earlier green.
-- `publish.yml` deploys Pages on a push to `main` touching `dist/**`, gated on
-  `SPICYHOME_PAGES_ENABLED`. Treat a merge as a publication.
 
 Preserve without exception: base rent versus advertised total versus known
 subtotal, zero versus unknown, exact layout evidence, source dates, capped
@@ -522,4 +613,5 @@ coverage, resident versus public charging, provider records, request and
 evidence ledgers, the notebook schema, local corrections, saved snapshots,
 cross-tab conflicts and transactional import/export recovery. Invent no
 availability, amenity or travel claim. Make no RentCast, leasing or tour call,
-no merge to `main` without approval, no force-push, and no deployment.
+no merge to `main` without approval, no force-push to a branch someone else
+holds, and no deployment.

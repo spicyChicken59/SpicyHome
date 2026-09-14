@@ -790,12 +790,13 @@ test("comparison keeps exact plan identity and differences toggle works for phon
   for (const checkbox of d.doc.querySelectorAll('#results [data-compare]')) {checkbox.checked=true;checkbox.dispatchEvent(new d.w.Event('change'));}
   d.doc.querySelector('#open-compare').click();
   assert.match(d.doc.querySelector('.compare-identities').textContent,/Plan A/);assert.match(d.doc.querySelector('.compare-identities').textContent,/Plan B/);
-  const before=d.doc.querySelectorAll('.compare-metric').length;
+  const measures=() => d.doc.querySelectorAll('.sc-compare-pair__measure');
+  const before=measures().length;
   const toggle=d.doc.querySelector('#compare-differences');toggle.checked=true;toggle.dispatchEvent(new d.w.Event('change'));
-  assert(d.doc.querySelectorAll('.compare-metric').length<before);
-  assert.match(d.doc.querySelector('.compare-mobile').textContent,/Base rent/);
-  assert.doesNotMatch(d.doc.querySelector('.compare-mobile').textContent,/EV charging/);
-  assert.equal(d.doc.querySelectorAll('.matrix tbody tr').length,d.doc.querySelectorAll('.compare-metric').length);
+  assert(measures().length<before);
+  assert.match(d.doc.querySelector('.compare-pair').textContent,/Base rent/);
+  assert.doesNotMatch(d.doc.querySelector('.compare-pair').textContent,/EV charging/);
+  assert.equal(d.doc.querySelectorAll('.matrix tbody tr').length,measures().length);
   assert.equal(d.doc.activeElement.id,'compare-differences');
   d.close();
 });
@@ -1253,4 +1254,146 @@ test("the atlas names the plans that share a dot and reaches each of them", asyn
   picker.dispatchEvent(new d.w.Event('change'));
   assert.equal(d.doc.querySelector('.atlas-nearby'), null);
   d.close();
+});
+
+// --- the shared record comparison (design system v2.13.0) -------------------
+test("a differing row is marked on its own label in both the matrix and the pair, and never on a value", async () => {
+  const base = { ...seed.homes[0], rent: 2000, sqft: 800 };
+  const homes = [
+    { ...base, id: 'differs-a', floor_plan: 'A' },
+    { ...base, id: 'differs-b', floor_plan: 'B', rent: 2200 },
+  ];
+  const snapshot = { ...seed, homes };
+  const d = await boot({ remote: snapshot, packaged: snapshot });
+  for (const box of d.doc.querySelectorAll('#results [data-compare]')) box.click();
+  d.doc.querySelector('#open-compare').click();
+  const marked = (selector) => [...d.doc.querySelectorAll(selector)].map((el) => el.textContent.replace(/same for both/, '').trim());
+  const rowsMarked = marked('.matrix tbody tr[data-differs="true"] th[scope="row"]');
+  const pairMarked = marked('.sc-compare-pair__measure[data-differs="true"]');
+  assert(rowsMarked.includes('Base rent'), 'the rent the two do not share is marked');
+  assert(!rowsMarked.includes('EV charging'), 'a fact they share is not marked');
+  assert.deepEqual(pairMarked, rowsMarked, 'the pair marks exactly what the matrix marks');
+  // A difference is never a winner: the attribute is on the row and the measure,
+  // never on a cell or a value, and nothing claims "best".
+  assert.equal(d.doc.querySelectorAll('.matrix td[data-differs]').length, 0);
+  assert.equal(d.doc.querySelectorAll('.sc-compare-pair__value[data-differs]').length, 0);
+  assert.equal(d.doc.querySelectorAll('.sc-compare-pair__value.is-best').length, 0);
+  d.close();
+});
+test("folding the matching facts says how many went and never folds identity, price basis or evidence", async () => {
+  const base = { ...seed.homes[0], rent: 2000, sqft: 800 };
+  const homes = [
+    { ...base, id: 'fold-a', floor_plan: 'A' },
+    { ...base, id: 'fold-b', floor_plan: 'B', rent: 2200 },
+  ];
+  const snapshot = { ...seed, homes };
+  const d = await boot({ remote: snapshot, packaged: snapshot });
+  for (const box of d.doc.querySelectorAll('#results [data-compare]')) box.click();
+  d.doc.querySelector('#open-compare').click();
+  const toggle = d.doc.querySelector('#compare-differences');
+  toggle.checked = true;
+  toggle.dispatchEvent(new d.w.Event('change'));
+  const labels = () => [...d.doc.querySelectorAll('.matrix tbody th[scope="row"]')].map((el) => el.textContent);
+  // The design system's rule for a folded comparison, kept here.
+  for (const kept of ['Plan / unit', 'Layout evidence', 'Base rent', 'Known monthly subtotal', 'Observed'])
+    assert(labels().includes(kept), `${kept} is never folded`);
+  assert(!labels().includes('EV charging'), 'a matching fact is folded');
+  const said = d.doc.querySelector('.compare-folded').textContent;
+  assert.match(said, /Folded because every place records the same answer/);
+  assert.match(said, /EV charging/, 'the folded facts are named, not merely counted');
+  assert.match(d.doc.querySelector('.compare-controls [role="status"]').textContent, /matching facts folded away/);
+  d.close();
+});
+test("a third compared place is a choice in the pair's heads, not a truncation", async () => {
+  const base = { ...seed.homes[0], rent: 2000, sqft: 800 };
+  // C differs from A and B on its neighborhood, so a row the SHOWN two agree on
+  // is a row the whole comparison does not: the one case that tells a
+  // pair-scoped mark from a comparison-scoped one.
+  const homes = ['a', 'b', 'c'].map((id, i) => ({ ...base, id: 'trio-' + id, floor_plan: id.toUpperCase(),
+    rent: 2000 + i * 100, neighborhood: id === 'c' ? 'Trio Far Side' : 'Trio Shared Side' }));
+  const snapshot = { ...seed, homes };
+  const d = await boot({ remote: snapshot, packaged: snapshot });
+  for (const box of d.doc.querySelectorAll('#results [data-compare]')) box.click();
+  d.doc.querySelector('#open-compare').click();
+  assert.equal(d.doc.querySelectorAll('.compare-identities article').length, 3, 'all three stay in the comparison');
+  const heads = () => [...d.doc.querySelectorAll('.sc-compare-pair__head .sc-eyebrow')].map((el) => el.textContent);
+  assert.equal(heads().length, 2, 'the pair shows two at a time');
+  assert.match(heads()[0], /^A · /);
+  assert.match(heads()[1], /^B · /);
+  assert.match(d.doc.querySelector('.compare-pair .meta').textContent, /the third stays selected/);
+  // Choosing C on the right leaves A on the left and keeps every value beside
+  // the identity it belongs to.
+  const right = d.doc.querySelector('[data-pair-side="1"]');
+  right.value = '2';
+  right.dispatchEvent(new d.w.Event('change'));
+  assert.match(heads()[0], /^A · /);
+  assert.match(heads()[1], /^C · /);
+  assert.equal(d.doc.querySelectorAll('.compare-identities article').length, 3, 'choosing a side drops nobody');
+  // Choosing the side the other one already holds swaps them rather than
+  // showing one place against itself.
+  const left = d.doc.querySelector('[data-pair-side="0"]');
+  left.value = '2';
+  left.dispatchEvent(new d.w.Event('change'));
+  assert.match(heads()[0], /^C · /);
+  assert.match(heads()[1], /^A · /);
+  const rows = d.doc.querySelectorAll('.sc-compare-pair__values');
+  assert(rows.length > 0);
+  for (const row of rows) assert.equal(row.querySelectorAll('.sc-compare-pair__value').length, 2);
+  // The mark answers the question the view in front of the reader is asking.
+  // All three differ on base rent, so the matrix marks it; C and A differ too,
+  // so the pair marks it. Neighborhood is the same for all three, so neither
+  // marks it — and a row two of the three share is marked in the matrix, which
+  // compares three, and not in the pair, which is comparing those two.
+  const pairLabel = (label) => [...d.doc.querySelectorAll('.sc-compare-pair__measure')]
+    .find((el) => el.textContent.startsWith(label));
+  const rowLabel = (label) => [...d.doc.querySelectorAll('.matrix tbody th[scope="row"]')]
+    .find((el) => el.textContent === label);
+  assert.equal(rowLabel('Base rent').parentElement.dataset.differs, 'true');
+  assert.equal(pairLabel('Base rent').dataset.differs, 'true');
+  // Back to A and B, which share a neighborhood that C does not: the matrix
+  // (comparing all three) marks that row and the pair (comparing those two)
+  // does not.
+  right.value = '1';
+  right.dispatchEvent(new d.w.Event('change'));
+  left.value = '0';
+  left.dispatchEvent(new d.w.Event('change'));
+  assert.match(heads()[0], /^A · /);
+  assert.match(heads()[1], /^B · /);
+  assert.equal(rowLabel('Neighborhood').parentElement.dataset.differs, 'true',
+    'all three do not agree on the neighborhood');
+  assert.equal(pairLabel('Neighborhood').dataset.differs, undefined,
+    'the two in front of the reader do agree on it');
+  assert.match(pairLabel('Neighborhood').textContent, /same for both/);
+  assert.equal(pairLabel('Plan / unit').dataset.differs, 'true');
+  // Swapping from a state where NEITHER side is the first place must keep the
+  // place that was displaced, not fall back to whatever sorts first.
+  left.value = '1';
+  left.dispatchEvent(new d.w.Event('change'));
+  assert.match(heads()[0], /^B · /);
+  right.value = '2';
+  right.dispatchEvent(new d.w.Event('change'));
+  assert.match(heads()[0], /^B · /, 'the left keeps B');
+  assert.match(heads()[1], /^C · /);
+  left.value = '2';
+  left.dispatchEvent(new d.w.Event('change'));
+  assert.match(heads()[0], /^C · /);
+  assert.match(heads()[1], /^B · /, 'the displaced place moves across, it is not replaced by another');
+  d.close();
+});
+test("the vendored design snapshot is the released v2.13.0 and every hash matches the files on disk", async () => {
+  const manifest = JSON.parse(fs.readFileSync(new URL("../dist/design-system/provenance.json", import.meta.url), "utf8"));
+  assert.equal(manifest.version, "2.13.0");
+  assert.equal(manifest.commit, "14a752dd0269bd6ebbb7080eb0d9e1922cd1ef2c");
+  assert.equal(Object.keys(manifest.files).length, 22);
+  const { createHash } = await import("node:crypto");
+  for (const [name, expected] of Object.entries(manifest.files)) {
+    const bytes = fs.readFileSync(new URL("../dist/design-system/" + name, import.meta.url));
+    assert.equal(createHash("sha256").update(bytes).digest("hex"), expected, name);
+  }
+  // The page composes the shared comparison, so the sheet it vendors has to
+  // define it: a snapshot rolled back below 2.13 would take the styling with it.
+  const sheet = fs.readFileSync(new URL("../dist/design-system/sc.css", import.meta.url), "utf8");
+  for (const needed of ['.sc-compare-pair', '.sc-compare-pair__heads', '.sc-compare-pair__measure',
+                        '.sc-compare-pair__values', '.sc-compare-pair__value', 'tr[data-differs="true"]'])
+    assert(sheet.includes(needed), `${needed} is defined by the vendored sheet`);
 });

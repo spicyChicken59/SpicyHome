@@ -1555,15 +1555,25 @@ input, select, textarea { font-size: 1rem; }
 .compare-identities h3 { margin: 0; font-size: 1.125rem; }
 .compare-identities p { margin: 6px 0; font-size: .875rem; }
 .compare-letter { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; background: #165194; color: #fff; flex-shrink: 0; font: 700 .875rem "IBM Plex Mono",monospace; }
-.matrix small, .compare-metric dt small { display: block; font: 400 .875rem/1.5 "DM Sans",sans-serif; color: var(--muted); }
+.matrix small { display: block; font: 400 .875rem/1.5 "DM Sans",sans-serif; color: var(--muted); }
 .matrix td { overflow-wrap: anywhere; white-space: pre-wrap; }
-.compare-mobile { display: none; }
-.compare-metric { margin: 14px 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; break-inside: avoid; }
-.compare-metric > h3 { margin: 0; padding: 14px; font-size: 1rem; background: var(--blue-wash); }
-.compare-metric dl { margin: 0; }
-.compare-metric dl > div { padding: 14px; border-top: 1px solid var(--line); }
-.compare-metric dt { display: flex; align-items: start; gap: 10px; font-size: .875rem; }
-.compare-metric dd { margin: 10px 0 0 40px; font-size: 1rem; overflow-wrap: anywhere; white-space: pre-wrap; }
+/* v2.13.0's mark for a row the records do not agree on. The design system draws
+   it inside .sc-signal-matrix, which this table is not: adopting that component
+   would bring a 680px minimum width and its own sticky columns to a table that
+   has neither. The attribute contract is shared, the declaration is the sheet's
+   own, and the ink is this notebook's. Worth carrying upstream: the mark reads
+   as a property of `tr[data-differs]`, not of the matrix that happens to hold it. */
+.matrix tr[data-differs="true"] th[scope="row"] { box-shadow: inset 2px 0 0 var(--wine); padding-left: 10px; color: var(--ink); }
+/* The pair view is the design system's own component; what is local is the
+   notebook's palette, handed to it through the component's token channel. */
+.compare-pair { display: none; --sc-surface: var(--surface); --sc-raised: var(--bg); --sc-border: var(--line);
+  --sc-heading: var(--ink); --sc-text: var(--ink); --sc-text-2: var(--muted); --sc-accent: var(--wine);
+  --sc-font-body: "DM Sans", sans-serif; }
+.compare-pair .sc-compare-pair__head > .sc-eyebrow { color: var(--muted); overflow-wrap: anywhere; }
+.compare-pair select { width: 100%; margin-top: 8px; }
+.compare-pair .sc-figure { overflow-wrap: anywhere; white-space: pre-wrap; }
+@media (max-width: 360px) { .compare-pair .sc-figure { font-size: .875rem; } .compare-pair .sc-compare-pair__value { padding: 7px 8px; } }
+.compare-pair > .meta { margin: 0 0 10px; }
 .move-in-inputs { margin-top: 24px; }
 .move-in-output { padding-top: 24px; margin-top: 30px; border-top: 2px solid var(--wine); }
 .move-in-output h3 { font: 1.8rem "DM Serif Display",Georgia,serif; }
@@ -1579,19 +1589,18 @@ input, select, textarea { font-size: 1rem; }
   .atlas-legend { margin: 12px 10px; }
   .atlas-selection { padding: 20px; }
   .matrix-desktop { display: none; }
-  .compare-mobile { display: block; }
+  .compare-pair { display: block; }
   .compare-identities { grid-template-columns: 1fr; }
   .question-brief > summary > span { display: block; margin: 6px 0 0; }
   .move-in-inputs .lab-inputs { grid-template-columns: 1fr; }
 }
 @media print {
-  .compare-mobile, .compare-controls, .search-shelf, .question-brief .actions { display: none; }
+  .compare-pair, .compare-controls, .search-shelf, .question-brief .actions { display: none; }
   .matrix-desktop { display: block; overflow: visible; }
   .matrix { table-layout: fixed; }
   .matrix th, .matrix td { min-width: 0; padding: 8px; position: static !important; overflow-wrap: anywhere; }
 }
 
-.compare-metric dt > span:last-child { min-width: 0; overflow-wrap: anywhere; }
 .atlas-mobile-axis { display: none; }
 @media (max-width: 780px) { .atlas-mobile-axis { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: .875rem; padding: 4px 10px; color: #d4e0ed; }.atlas-chart svg text { display: none; } }
 

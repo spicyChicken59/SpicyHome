@@ -723,17 +723,26 @@ export function pricePulse(homes, workspace, prefs=defaults, savedOnly=false, no
   changes.sort((a,b)=>a.latest.date===b.latest.date ? a.delta-b.delta : b.latest.date.localeCompare(a.latest.date));
   return {changes,stale,baseline,total:pool.filter(h=>workspace.records[h.id]?.status!=='ruled out').length};
 }
-export function nextMoves(homes, workspace, prefs=defaults, now=new Date()) {
+// One saved home's single next step. The shortlist prints this beside the home
+// it belongs to and nextMoves() ranks the same objects, so the board and the
+// studio can never disagree about what is outstanding: there is one engine.
+export function nextMove(home, workspace, prefs=defaults, now=new Date()) {
+  const rec=workspace.records[home.id] ?? {};if(!rec.saved || rec.status==='ruled out')return null;
   const clock=chicagoTime(now);
-  return homes.flatMap(home=>{
-    const rec=workspace.records[home.id] ?? {};if(!rec.saved || rec.status==='ruled out')return [];
-    const cost=costs(home,rec,prefs),layout=layoutEvidence(home,rec),age=pickAge(amount(rec.rentOverride)!==null ? rec.quoteDate : home.observed_at,now);
-    const tour=chicagoTime(rec.tourDate);let task;
-    if(tour && tour>=clock && (Date.parse(tour)-Date.parse(clock))<=7*86400000)task={title:'Prepare for your tour',why:`Your saved appointment is ${tour.replace('T',' · ')} Chicago time.`,target:'tour-draft-count',priority:100};
-    else if(!layout.matches || layout.status!=='confirmed')task={title:'Check the exact layout',why:'Confirm separate bedrooms and the bathroom count before spending time on this option.',target:'layoutReview',priority:80};
-    else if(home.notebook_only || home.seen_in_latest===false || age===null || age>7 || cost.unknown.length)task={title:'Get a fresh, complete quote',why:cost.unknown.length ? `Still missing: ${cost.unknown.join(', ')}. Ask for a dated quote and current availability.` : 'The saved quote or source needs a fresh availability check.',target:'leasing-draft',priority:70};
-    else if(tourProgress(rec)<tourChecks.length)task={title:'Resolve the remaining tour checks',why:`You have reviewed ${tourProgress(rec)} of ${tourChecks.length} checks. Start with parking, charging and the everyday route.`,target:'tour-draft-count',priority:50};
-    else task={title:'Record your decision',why:'Your checklist is complete. Record remaining questions and your decision; completion does not certify the apartment.',target:'notes',priority:20};
-    return [{home,...task,priority:task.priority+(rec.finalist ? 10 : 0),reviewed:tourProgress(rec),finalist:!!rec.finalist}];
-  }).sort((a,b)=>b.priority-a.priority || a.home.id.localeCompare(b.home.id)).slice(0,3);
+  const cost=costs(home,rec,prefs),layout=layoutEvidence(home,rec),age=pickAge(amount(rec.rentOverride)!==null ? rec.quoteDate : home.observed_at,now);
+  const tour=chicagoTime(rec.tourDate);let task;
+  if(tour && tour>=clock && (Date.parse(tour)-Date.parse(clock))<=7*86400000)task={title:'Prepare for your tour',why:`Your saved appointment is ${tour.replace('T',' · ')} Chicago time.`,target:'tour-draft-count',priority:100};
+  else if(!layout.matches || layout.status!=='confirmed')task={title:'Check the exact layout',why:'Confirm separate bedrooms and the bathroom count before spending time on this option.',target:'layoutReview',priority:80};
+  else if(home.notebook_only || home.seen_in_latest===false || age===null || age>7 || cost.unknown.length)task={title:'Get a fresh, complete quote',why:cost.unknown.length ? `Still missing: ${cost.unknown.join(', ')}. Ask for a dated quote and current availability.` : 'The saved quote or source needs a fresh availability check.',target:'leasing-draft',priority:70};
+  else if(tourProgress(rec)<tourChecks.length)task={title:'Resolve the remaining tour checks',why:`You have reviewed ${tourProgress(rec)} of ${tourChecks.length} checks. Start with parking, charging and the everyday route.`,target:'tour-draft-count',priority:50};
+  else task={title:'Record your decision',why:'Your checklist is complete. Record remaining questions and your decision; completion does not certify the apartment.',target:'notes',priority:20};
+  return {home,...task,priority:task.priority+(rec.finalist ? 10 : 0),reviewed:tourProgress(rec),finalist:!!rec.finalist,unknown:cost.unknown,field:cost.unknown.length ? costField(cost.unknown[0]) : null};
+}
+// The exact notebook field that records a missing monthly amount. Opening a
+// field is not an answer -- saving one is -- so this only says where to type.
+export const costFields={'base rent':'rentOverride',parking:'parkingCost','monthly fees':'monthlyFees',utilities:'utilities'};
+export function costField(label) { return costFields[label] ?? 'leasing-draft'; }
+export function nextMoves(homes, workspace, prefs=defaults, now=new Date()) {
+  return homes.map(home=>nextMove(home,workspace,prefs,now)).filter(Boolean)
+    .sort((a,b)=>b.priority-a.priority || a.home.id.localeCompare(b.home.id)).slice(0,3);
 }

@@ -26,7 +26,7 @@ import {
   leasingQuestions,
   moveInScenario,
   spicyPicks,
-  recipeDefaults, recipeWeights, remixPicks, apartmentTradeoffs, areaMatch, pricePulse, nextMoves,
+  recipeDefaults, recipeWeights, remixPicks, apartmentTradeoffs, areaMatch, pricePulse, nextMoves, nextMove, costField,
 } from "../dist/model.js";
 const seed = JSON.parse(
   fs.readFileSync(new URL("../data/seed.json", import.meta.url)),
@@ -537,4 +537,36 @@ test('Decision Studio instant remix matches full scoring and preserves distinct 
   const fast=remixPicks(base,recipe),full=spicyPicks(homes,w,defaults,{},'balanced',pickNow,recipe);
   assert.deepEqual(fast.picks.map(p=>[p.home.id,p.score]),full.picks.map(p=>[p.home.id,p.score]));
   assert.equal(new Set(fast.picks.map(p=>p.group)).size,fast.picks.length);assert.equal(JSON.stringify(base),before);
+});
+test("one saved home's next move is the same object the studio ranks, and names the exact field for the gap", () => {
+  const homes=['a','b'].map((id,i)=>pickHome(id,{lat:41.88+i*.01})),w=emptyWorkspace();
+  for(const h of homes)w.records[h.id]={saved:true,snapshot:h};
+  // nextMoves is nextMove ranked, not a second engine: every ranked move is
+  // identical to the one the board prints beside its own home.
+  const ranked=nextMoves(homes,w,defaults,pickNow);
+  assert(ranked.length);
+  for(const move of ranked) {
+    const own=nextMove(move.home,w,defaults,pickNow);
+    assert.deepEqual([own.title,own.why,own.target,own.priority],[move.title,move.why,move.target,move.priority]);
+  }
+  // An unsaved home and a ruled-out home have no next move at all.
+  assert.equal(nextMove(pickHome('unsaved'),w,defaults,pickNow),null);
+  w.records.b.status='ruled out';
+  assert.equal(nextMove(homes[1],w,defaults,pickNow),null);
+  // Past the layout check, the gap is a cost, and `field` is the exact notebook
+  // input that records it while `target` stays the step itself.
+  w.records.a.layoutReview='one_bed';
+  const quote=nextMove(homes[0],w,defaults,pickNow);
+  assert.equal(quote.target,'leasing-draft');
+  assert.deepEqual(quote.unknown,['parking','utilities']);
+  assert.equal(quote.field,'parkingCost');
+  assert.equal(costField('monthly fees'),'monthlyFees');
+  assert.equal(costField('base rent'),'rentOverride');
+  assert.equal(costField('something the notebook has no field for'),'leasing-draft');
+  // Recording the amounts closes that gap; `field` then claims nothing.
+  // A recorded zero is an amount, not a gap: closing these with 0 must clear them.
+  Object.assign(w.records.a,{parkingCost:0,monthlyFees:0,utilities:0});
+  const after=nextMove(homes[0],w,defaults,pickNow);
+  assert.equal(after.field,null);
+  assert.deepEqual(after.unknown,[]);
 });

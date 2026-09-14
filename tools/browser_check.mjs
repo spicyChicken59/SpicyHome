@@ -397,6 +397,120 @@ try {
     check('an unreadable notebook raises no page error', errors.length === 0, errors.slice(0, 2).join(' '));
     await context.close();
   }
+
+  // --- 8. the controls that decide what you see, and the tray that holds -----
+  //        what you chose. Both are questions about position on a screen: how
+  //        far apart two presentation controls sit, and what a floating tray
+  //        covers. Measured at `main` before this section existed: the view
+  //        switch and the list-style switch were 869px apart at 1280 and
+  //        1,561px apart on a phone, with no visible caption on either, beside
+  //        a bedroom filter drawn in the same pills.
+  for (const [label, opts] of [['1280px', {}], ['390px', { width: 390, height: 844, mobile: true }],
+                               ['320px', { width: 320, height: 640, mobile: true }]]) {
+    const { context, page, errors } = await open(browser, { ...opts, theme: 'dark' });
+    await page.waitForTimeout(500);
+    const deck = await page.evaluate(() => {
+      const mid = (el) => { const r = el.getBoundingClientRect(); return r.top + scrollY + r.height / 2; };
+      const view = document.querySelector('#surface-switch'), rows = document.querySelector('#density-switch');
+      const beds = document.querySelector('#bed-switch');
+      const captions = [...document.querySelectorAll('.explore-deck .sc-field__label')]
+        .map((el) => ({ text: el.textContent, shown: el.getBoundingClientRect().height > 0 }));
+      return {
+        modesApart: Math.round(Math.abs(mid(view) - mid(rows))),
+        filterApart: Math.round(Math.abs(mid(view) - mid(beds))),
+        captions,
+        sameBand: view.closest('.explore-band') === rows.closest('.explore-band'),
+        filterBand: beds.closest('.explore-band') !== view.closest('.explore-band'),
+      };
+    });
+    check(`${label} both presentation controls sit in one band`,
+      deck.sameBand && deck.modesApart < 120, `${deck.modesApart}px apart`);
+    check(`${label} the bedroom filter is not in the presentation band`,
+      deck.filterBand && deck.filterApart > 0, `${deck.filterApart}px from the view switch`);
+    check(`${label} every control group carries a caption a reader can see`,
+      deck.captions.length === 3 && deck.captions.every((c) => c.shown && c.text.trim()),
+      deck.captions.map((c) => c.text).join(','));
+    // The tray floats over the page. It must clear the phone's navigation, and
+    // it must not take a screen to say what it holds.
+    const tray = await page.evaluate(async () => {
+      for (const box of [...document.querySelectorAll('#results [data-compare]')].slice(0, 3)) box.click();
+      await new Promise((r) => setTimeout(r, 250));
+      const el = document.querySelector('#compare-tray'), r = el.getBoundingClientRect();
+      const nav = document.querySelector('.topbar nav').getBoundingClientRect();
+      return {
+        height: Math.round(r.height), viewport: Math.round(innerHeight),
+        clearsNav: r.bottom <= nav.top + 1 || r.top >= nav.bottom - 1,
+        names: [...el.querySelectorAll('.tray-name strong')].length,
+        removes: el.querySelectorAll('[data-compare-remove]').length,
+        action: !!el.querySelector('#open-compare'),
+        sideways: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      };
+    });
+    check(`${label} the tray names all three, removes one at a time and offers the next action`,
+      tray.names >= 3 && tray.removes === 3 && tray.action, JSON.stringify({ names: tray.names, removes: tray.removes }));
+    // Two separate promises. The tray must never sit over the navigation, and
+    // it must never HAVE to cover the apartments: folding its identity list
+    // away leaves a compact bar at every width. Where it opens by default --
+    // a wide screen, where there is room -- it may be taller than that.
+    check(`${label} the tray clears the navigation`, tray.clearsNav,
+      `${tray.height}px of ${tray.viewport}px, nav ${tray.clearsNav ? 'clear' : 'covered'}`);
+    const folded = await page.evaluate(async () => {
+      const list = document.querySelector('#compare-tray .tray-list');
+      const was = list.open;
+      list.open = false;
+      await new Promise((r) => setTimeout(r, 150));
+      const height = Math.round(document.querySelector('#compare-tray').getBoundingClientRect().height);
+      list.open = was;
+      return height;
+    });
+    check(`${label} a folded tray is a compact bar`, folded < 200, `${folded}px folded, ${tray.height}px as it opens`);
+    // Chromium still lays a closed <details>'s content out -- it paints nothing
+    // and refuses it the focus, but the boxes are there, off the bar. Folded
+    // means gone from the layout, not merely unpainted.
+    const phantom = await page.evaluate(async () => {
+      const list = document.querySelector('#compare-tray .tray-list');
+      const was = list.open;
+      list.open = false;
+      await new Promise((r) => setTimeout(r, 150));
+      const boxes = [...list.querySelectorAll('[data-compare-remove]')]
+        .filter((b) => b.offsetParent || b.getBoundingClientRect().height).length;
+      list.open = was;
+      return boxes;
+    });
+    check(`${label} a folded tray draws no box for what it is hiding`, phantom === 0, `${phantom} still laid out`);
+    check(`${label} on a phone it opens folded and stays under a third of the screen`,
+      tray.viewport > 720 || (tray.height < tray.viewport / 3 && tray.height === folded),
+      `${tray.height}px of ${tray.viewport}px`);
+    check(`${label} a full tray does not push the page sideways`, !tray.sideways);
+    check(`${label} the explore deck and the tray raise no page error`, errors.length === 0, errors.slice(0, 2).join(' '));
+    await shot(page, `deck-${label}`);
+    await context.close();
+  }
+
+  // --- 9. the atlas axes are readings, not arbitrary fractions ---------------
+  {
+    const { context, page } = await open(browser, { width: 1280, height: 900, theme: 'dark' });
+    await page.evaluate(() => document.querySelector('[data-surface="atlas"]').click());
+    await page.waitForTimeout(700);
+    const axes = await page.evaluate(() => {
+      const svg = document.querySelector('#atlas-surface svg');
+      const labels = [...svg.querySelectorAll('text')].map((t) => t.textContent.trim())
+        .filter((t) => /^[$\d,]+$/.test(t));
+      const rings = svg.querySelectorAll('.atlas-ring').length;
+      return { labels, unique: new Set(labels).size, rings,
+        plotted: document.querySelector('.atlas-heading > p').textContent.trim() };
+    });
+    check('the atlas prints no axis label twice', axes.labels.length === axes.unique,
+      axes.labels.join(' '));
+    check('every atlas axis label is a round number', axes.labels.length >= 4 &&
+      axes.labels.every((t) => /^\$?[\d,]+$/.test(t) && Number(t.replace(/[$,]/g, '')) % 50 === 0),
+      axes.labels.join(' '));
+    check('the atlas rings exactly one selected point', axes.rings === 1, String(axes.rings));
+    check('the atlas says how many matches it could not place', /plotted/.test(axes.plotted), axes.plotted);
+    await shot(page, 'atlas-1280px');
+    await context.close();
+  }
+
 } finally {
   await browser.close();
   server.close();

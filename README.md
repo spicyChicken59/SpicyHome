@@ -114,7 +114,7 @@ The GitHub feed must be public for the static private Sites app to fetch it with
 
 ## Design provenance
 
-`dist/design-system/provenance.json` pins 22 unchanged assets from `spicyChicken59/design-system` commit `08cd626f658706e422e51cf23979fdceccc7a8f4`. The photograph is an attributed Chicago skyline, not a photograph of a listed apartment. Leaflet 1.9.4 is vendored with its license. No release tag is required.
+`dist/design-system/provenance.json` pins 22 unchanged assets from `spicyChicken59/design-system` commit `d292a00b5ed4b653c007d6a7c69412e738a40d0c` (v2.12.0), which is reachable on that repository's `main` through the merge `600283f`. The photograph is an attributed Chicago skyline, not a photograph of a listed apartment. Leaflet 1.9.4 is vendored with its license. No release tag is required.
 
 ## Deliberate limits
 
@@ -286,3 +286,63 @@ local save/compare actions. It adds no API, dependency, notebook schema or reque
 budget changes. A concurrent scheduled scan is retained in the release: the
 snapshot contains 390 records, including 93 source-reported two-bedroom entries.
 These counts do not establish current availability or separately enclosed rooms.
+
+## Find → Compare → Decide — September 13, 2026
+
+One workspace rather than a set of tools. Nothing new is tracked, ranked or
+persisted; what changed is where the controls are, how a selection is carried
+between surfaces, and what a number says about itself.
+
+1. **One control hierarchy in Discover.** The explore deck now reads in the order
+   a search is made: what you are looking for, then how you are looking at it.
+   A hard filter (bedrooms) and the presentation modes no longer share a row in
+   the same unlabeled pills — each group carries a caption a reader and a screen
+   reader both get (`beds`, `view`, `rows`), composed from the design system's
+   `.sc-field--group` / `.sc-field__label`. **Both** presentation controls sit in
+   one band; the list-style control used to be 869 px lower on a desktop and
+   1,561 px lower on a phone. Each band says what its kind of control does, and
+   the view band says what the chosen surface can and cannot draw, so a count
+   that differs between List, Map, Atlas and Focus is explained rather than
+   forced to match. SpicyPicks' priority row is captioned `priority`: it ranks,
+   it does not filter and it is not a view.
+2. **Comparison reachable from every surface, in one selection.** The apartment
+   record and the map's own list now carry the same save and compare controls
+   the cards carry, writing to the same selection and the same handler — no
+   second mechanism. The selection tray names each place by building and exact
+   plan, removes one without disturbing the others, and offers the next action.
+   A selection your filters later hide is kept, marked, named and reachable in
+   one press; your saved filter preferences are not changed to show it. A fourth
+   selection names the three it would have replaced and replaces none of them.
+   The comparison itself shows a rent or space difference only where every
+   compared place has that figure on the same basis, and names what is missing
+   otherwise. No winner is declared and no score is invented.
+3. **Cost evidence says what kind of number it is.** Base rent, an advertised
+   total, a known monthly subtotal, an amount no source supplied and your own
+   utility estimate are now visually and verbally distinct, using the design
+   system's figure-basis marks (`.sc-unreported`, `.sc-estimate`) with the word
+   in the markup beside the mark. A card names the costs that are unquoted
+   instead of saying some are, and offers the exact notebook field that records
+   the first of them. The comparison reaches each place's own cost breakdown and
+   its missing costs. A recorded $0 is still an amount; an unquoted item is still
+   not a total. Recurring monthly costs stay separate from deposits, one-time
+   fees and moving cash.
+4. **A saved home says what is unresolved and what to do next.** Each home on the
+   decision board carries its stage, the open question and one action, from the
+   same `nextMove()` engine Decision Studio's Next moves ranks — not a second
+   task list. The action opens the exact layout, quote, tour or notes field for
+   that apartment, and a cost gap offers the exact amount field beside it.
+   Opening a field is never treated as answering it: the step changes when an
+   answer is saved. An empty Final Three is a one-line prompt rather than a
+   panel, and the board's own controls are one wrapping row under the step.
+5. **The Atlas is readable and honest about what it cannot plot.** Axis labels
+   are round numbers off a real ladder, never fractions of an arbitrary span,
+   and no label is printed twice. The selected point wears a ring rather than
+   growing, since a bigger dot reads as a bigger number on these axes. Plans
+   recorded at the same rent and size share one dot: the summary names them and
+   reaches each in one press. The homes that cannot be placed are counted by
+   reason — no base rent on record, or a base rent with no reported size — and
+   nothing is substituted for a missing figure.
+
+No new dashboard, tab, ranking system or tracker. No provider request, schema
+change, dependency or framework migration. Saved searches, notebook records,
+snapshots, stages, quotes, tour notes and recovery paths are unchanged.

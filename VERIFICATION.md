@@ -544,10 +544,28 @@ casing check could not have failed as written — `textContent` returns the sour
 text and cannot see a CSS `text-transform` at all, the second shape this file
 names — so it reads the computed casing off the rendering instead. All ten die.
 
+**Merged**, on the owner's word, as `8614118` (#17): the tree on `main` is
+byte-identical to the tip these checks were run against, and `Checks` is green
+on it (run 60). *Publish website* fired on the `dist/**` change and **skipped**
+— its `if:` gate reads `SPICYHOME_PAGES_ENABLED`, which is still not `true`,
+as it was not for the four merges before this one. Nothing has been served yet.
+
+**The pre-publication sweep, since publishing is next.** What the Pages job
+would upload is `dist/` — 35 files, 2.3 MB, of which `data.json` is 1.2 MB.
+Read rather than assumed: no `.env`, key, token, credential-shaped string or
+private setup file anywhere in the tree (`check_site.py` refuses `usage.json`
+and `search.json` there by its own rule, and neither is present); the public
+feed carries 603 sourced apartment records and **none** of the notebook's
+personal fields — no notes, quotes, tour dates, saved searches or rent
+overrides, which live in the reader's own browser and never reach `dist/`; the
+`provider` block carries coverage and scan dates, no key. The seven hosts the
+page can contact are the OpenStreetMap tile server, raw.githubusercontent and
+api.github.com for the feed and its mirror, and google/openstreetmap/wikimedia
+for the links and the photograph attribution.
+
 **Not claimed:** no live map tiles, no physical phone, no provider request, no
-deployment. Publication is the owner's: `SPICYHOME_PAGES_ENABLED` was not
-`true` when #16 merged, so *Publish website* skipped; enabling it makes the next
-push to `main` touching `dist/**` a real publication.
+deployment. Publication remains the owner's: the repository variable is the one
+thing between this commit and a live page, and this sandbox cannot set it.
 
 ### NEXT BUILDER PROMPT — the family is level except SpicyStock
 
@@ -556,8 +574,8 @@ Verify the tips; these were true on 14 Sep 2026.
 - **design-system** `main` is `14a752d`, **v2.13.0, tagged**, and `check` is
   green on `main` (run 89, dispatched after the tag was cut).
 - **SpicyCar** `main` is `6fe36e4` (#78) and vendors **v2.13.0**.
-- **SpicyHome** `main` is `7c522d0` (#16); this milestone takes it to v2.13.0
-  and is open as a pull request.
+- **SpicyHome** `main` is `8614118` (#17, merged), vendoring **v2.13.0**;
+  `Checks` is green on it.
 - **SpicyStock** `main` is `97609cb` and still vendors **v2.11.0** (`6f10309`).
 
 Do these; do not redo the discovery hierarchy, the comparison tray, the
@@ -579,9 +597,14 @@ cost-basis marks, the shortlist's next step, the Atlas, or this adoption.
    390 px here, fixed in the consumer). Both are notes for whoever opens the
    next design-system release, not defects to route around.
 3. **Publication is a decision, not an oversight.** `SPICYHOME_PAGES_ENABLED`
-   has never been `true`, so every merge so far has skipped *Publish website*.
-   The owner wants it live: once that variable is set, the next push to `main`
-   touching `dist/**` deploys for real, and `check_site.py` gates it.
+   has never been `true`, so all five merges so far have skipped *Publish
+   website* — the job's own `if:` declines, which is why the run shows as
+   `skipped` and not as a failure. The owner wants it live. What that takes,
+   in order: **Settings → Pages** with **GitHub Actions** as the source, then
+   the repository **variable** `SPICYHOME_PAGES_ENABLED` set to `true`, then
+   either a dispatch of *Publish website* on `main` or the next push touching
+   `dist/**`. The job runs `check_site.py` before it uploads, so a bad tree
+   fails before anything is served.
 
 Offline gates, all of which must pass before a pull request: `npm ci
 --ignore-scripts`, `npm test` (137), `npm run check` (42 Python), `python

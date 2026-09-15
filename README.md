@@ -372,3 +372,63 @@ instead of a local copy of it. Nothing new is compared, ranked or stored.
   whatever else is put away.
 
 Print is unchanged: it uses the full matrix, every row, as before.
+
+## Traceable source access — September 15, 2026
+
+Nothing new is fetched, ranked or persisted publicly. What changed is that a
+record now says where its source actually goes, when each piece of evidence was
+recorded, and which query it was read under.
+
+1. **The link says what it reaches.** A record's source is labelled by its
+   destination type — a listing page on record, a building or floor-plan page,
+   your own link, or provider documentation — rather than "Official source".
+   A populated URL is not proof of an exact unit: a curated plan's link is the
+   building's floor-plan page and says so. Provider documentation is never
+   promoted into a rental listing, and a provider ID is never turned into a
+   guessed public listing address.
+2. **A missing listing URL is said out loud, and the way out is a search.**
+   Where no exact listing URL is on record, the record says so and offers
+   *Search this address & unit* or *Search this building & plan*, built only
+   from recorded public identity — address, unit, plan, building name and city.
+   Personal notes, quotes, tour dates and every other notebook field are
+   excluded by construction. A search is a search, not a found listing or a
+   verified source, and the label says that too. A record with no source link
+   and no recorded address or building name says there is nothing to search;
+   none is invented. Opening a source or a search saves nothing, marks nothing
+   verified and leaves a half-typed note where it was.
+3. **Each source reference keeps its own date.** The record prints the date each
+   reference was observed, and "Source date not recorded" where none was. A
+   missing date is never today, and the home's own observation date is never
+   copied onto a reference. The daily run now records when it read the
+   provider's documentation reference; the documented listing schema still
+   supplies no listing page, so none is invented.
+4. **The area's query is beside the home's own observation, never merged with
+   it.** Each record reads the retained scan for its *own* city — its date, its
+   returned and reported counts where known, and whether that query's coverage
+   was incomplete. An area with no recorded scan says so instead of borrowing
+   another area's. A home observed before its city's latest query says the two
+   were not captured together. Curated research is never described as a
+   provider-query result. Query completeness is completeness for that recorded
+   query, not proof of whole-market coverage or current availability.
+5. **Resident charging, its cost and public charging context are separate
+   answers.** "Building charging advertised", "no building charging" and
+   "building charging unknown" are three states, and "public charging context
+   unavailable" is a fourth that is not evidence that there are no chargers.
+   Nearby public stations never establish resident charging or parking rights.
+   No resident charging cost is quoted by any source here, so it is named
+   beside the known monthly subtotal and never folded into it.
+6. **A saved home keeps the query it was read under.** Saving freezes the
+   matching city's scan with its own dates alongside the snapshot. Where the
+   area has been scanned again since, both are shown, each labelled, and today's
+   result is never attached to an older observation. An archived record is never
+   re-stamped — not by reading it, and not by saving a note or moving its stage.
+   Notebooks saved before this read "not recorded"; the field validates on
+   import and travels through the existing backup path.
+
+The comparison carries two more rows — how each place's source is reached and
+the query behind it — and neither is folded away by "Differences only". Building
+EV charging and nearby public charging are separate rows. Cards name the
+destination type beside the evidence kind and date.
+
+No new dashboard, tab, ranking system, crawler or tracker. No provider request,
+schema change, dependency, request budget, geographic rule or schedule change.

@@ -190,6 +190,214 @@ export function safeUrl(s) {
 export function amount(v) {
   return typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : null;
 }
+// Hosts that publish a data interface rather than an apartment. A reference to
+// one of these is documentation: it explains how a feed reports listings, and
+// it is never promoted into a rental listing link for a home.
+export const documentationHosts = [
+  "developers.rentcast.io",
+  "developer.nlr.gov",
+  "developer.nrel.gov",
+  "data.cityofchicago.org",
+];
+export function isDocumentationUrl(value) {
+  const safe = safeUrl(value);
+  if (!safe) return false;
+  try {
+    const host = new URL(safe).hostname.toLowerCase().replace(/^www\./, "");
+    return documentationHosts.some((d) => host === d || host.endsWith("." + d));
+  } catch {
+    return false;
+  }
+}
+// The recorded public identity of a place, and nothing else. Personal notes,
+// quotes, tour dates and every other notebook field are excluded by
+// construction: only these five fields are ever read.
+export function searchIdentity(home = {}) {
+  const clean = (v) => (typeof v === "string" ? v.trim() : "");
+  const title = clean(home.title),
+    address = clean(home.address),
+    city = clean(home.city),
+    unit = clean(home.unit_label),
+    plan = clean(home.floor_plan);
+  const inAddress = unit && address.toLowerCase().includes(unit.toLowerCase());
+  if (plan && (title || address || city))
+    return {
+      scope: "building-plan",
+      label: "Search this building & plan ↗",
+      terms: [title, address || city, "floor plan " + plan].filter(Boolean),
+    };
+  if (address)
+    return unit && !inAddress
+      ? { scope: "address-unit", label: "Search this address & unit ↗", terms: [address, unit, "apartment for rent"] }
+      : { scope: unit ? "address-unit" : "address", label: unit ? "Search this address & unit ↗" : "Search this address ↗", terms: [address, "apartment for rent"] };
+  if (title && city)
+    return { scope: "building", label: "Search this building ↗", terms: [title, city, "apartments"] };
+  return null;
+}
+const sourceDestinations = {
+  listing_source: {
+    label: "Open the recorded listing ↗",
+    summary: "Listing page on record",
+    says: "The listing page this record was observed from. Confirm the exact unit is still offered.",
+  },
+  plan_source: {
+    label: "Open the building / plan source ↗",
+    summary: "Building / plan page",
+    says: "An official building or floor-plan page for the named plan — not proof that an exact unit is available.",
+  },
+  personal: {
+    label: "Open your source ↗",
+    summary: "Your own source",
+    says: "The link you recorded for this entry. SpicyHome has not checked where it leads.",
+  },
+  documentation: {
+    label: "Provider documentation ↗",
+    summary: "Provider documentation only",
+    says: "Describes how the provider reports apartments. It is not a rental listing for this home.",
+  },
+  none: {
+    label: "",
+    summary: "No source link on record",
+    says: "No source link was recorded for this home.",
+  },
+};
+// One answer about where a record's source can actually be reached, read off
+// what the record itself carries. A populated URL is not proof of an exact
+// unit, so the destination is named rather than assumed; a provider ID is
+// never turned into a guessed listing address. Where no exact listing URL was
+// supplied, that is said, and the way out is a labelled SEARCH over recorded
+// public identity -- which is a search, not a found listing.
+export function sourceAccess(home = {}) {
+  const references = sourceReferences(home);
+  // A safe URL that was actually supplied is preserved, whether the record
+  // carries it as its own link or only among its references. Nothing is
+  // promoted: documentation stays documentation.
+  const supplied = safeUrl(home.source_url) || references.find((s) => !s.documentation)?.url || "";
+  const documentation = !supplied && references.length > 0 && references.every((s) => s.documentation);
+  const url = documentation ? "" : supplied;
+  const kind = documentation
+    ? "documentation"
+    : !url
+      ? "none"
+      : isDocumentationUrl(url)
+        ? "documentation"
+        : home.kind === "manual"
+          ? "personal"
+          : home.kind === "building"
+            ? "plan_source"
+            : "listing_source";
+  const destination = sourceDestinations[kind];
+  const exact = kind === "listing_source";
+  const identity = exact ? null : searchIdentity(home);
+  const plan =
+    kind === "plan_source" && typeof home.floor_plan === "string" && home.floor_plan.trim()
+      ? `An official building or floor-plan page for plan ${home.floor_plan.trim()} — not proof that an exact unit is available.`
+      : null;
+  return {
+    kind,
+    url,
+    exact,
+    label: destination.label,
+    summary: exact || !identity ? destination.summary : `${destination.summary} · search available`,
+    says: plan ?? destination.says,
+    // Said plainly wherever the reader is offered a way to the source.
+    missing: exact ? "" : "No exact listing URL is on record for this home.",
+    fallback: identity
+      ? {
+          url: "https://www.google.com/search?q=" + encodeURIComponent(identity.terms.join(" ")),
+          label: identity.label,
+          scope: identity.scope,
+          terms: identity.terms,
+          note: "A search, not a found listing or a verified source.",
+        }
+      : null,
+    // No address, no building name: nothing is invented to fill the gap.
+    unavailable: !url && !identity,
+  };
+}
+// Every source reference this record retains, each keeping its own date. A
+// reference with no recorded date says so; the home's own observation date is
+// never copied onto it, and today's date is never assumed.
+export function sourceReferences(home = {}) {
+  const listed = Array.isArray(home.sources) ? home.sources : [];
+  const list = listed.length
+    ? listed
+    : safeUrl(home.source_url)
+      ? [{ url: home.source_url, supports: "Your source link" }]
+      : [];
+  return list
+    .filter((s) => isObj(s) && safeUrl(s.url))
+    .map((s) => ({
+      url: safeUrl(s.url),
+      supports: typeof s.supports === "string" ? s.supports : "",
+      observed_at: dateOk(s.observed_at) ? s.observed_at : null,
+      documentation: isDocumentationUrl(s.url),
+    }));
+}
+// The matching city's retained query, and never another city's. The global
+// "latest area" belongs to whichever city was scanned last, so it is not read
+// here: an area with no recorded scan says so instead of borrowing one. A
+// frozen copy from a saved record is preferred when one is supplied, and it
+// carries its own dates so a saved observation is never presented as having
+// been captured with today's query.
+export function scanContext(provider, home = {}, saved = null) {
+  const city = homeCity(home) || (typeof home.city === "string" ? home.city.trim() : "");
+  const frozen = isObj(saved) ? saved : null;
+  const basis =
+    frozen?.basis ??
+    (home.kind === "building" ? "curated_research" : home.kind === "manual" ? "manual_entry" : "provider_query");
+  const scan = frozen ?? (isObj(provider?.area_scans) ? provider.area_scans[city] : null);
+  const observed_at = dateOk(home.observed_at) ? home.observed_at : null;
+  const base = { city, basis, frozen: !!frozen, observed_at, saved_at: frozen && dateOk(frozen.saved_at) ? frozen.saved_at : null };
+  if (!isObj(scan) || !dateOk(scan.last_success) || basis !== "provider_query")
+    return { ...base, recorded: false, coverage: "unrecorded" };
+  const returned = Number.isInteger(scan.returned) ? scan.returned : null;
+  const total = Number.isInteger(scan.total) ? scan.total : null;
+  const truncated = scan.truncated === true || (total === null && returned === 500);
+  return {
+    ...base,
+    recorded: true,
+    last_success: scan.last_success,
+    returned,
+    total,
+    accepted: Number.isInteger(scan.accepted) ? scan.accepted : null,
+    truncated,
+    // Completeness of THAT recorded query, never of the market.
+    coverage: total === null ? "unknown-total" : truncated ? "capped" : "complete",
+    sameCapture: !!observed_at && observed_at === scan.last_success,
+    // Which of the two came first, so a newer observation is never called
+    // older than the query beside it.
+    order: !observed_at
+      ? "unknown"
+      : observed_at === scan.last_success
+        ? "same"
+        : Date.parse(observed_at) < Date.parse(scan.last_success)
+          ? "observed_first"
+          : "query_first",
+  };
+}
+// Four different states, never collapsed into one: the building advertises
+// charging, it does not, the source never established it, and the public
+// charging dataset was not available. A public station is not a resident
+// amenity and establishes no parking or charging right.
+export const publicChargingMiles = 0.5;
+export function chargingEvidence(home = {}, feed = {}) {
+  const status = ["yes", "no", "unknown"].includes(home.charging?.status) ? home.charging.status : "unknown";
+  const stations = Array.isArray(feed.charging_stations) ? feed.charging_stations : [];
+  const located = Number.isFinite(home.lat) && Number.isFinite(home.lng);
+  return {
+    status,
+    building: { yes: "Building charging advertised", no: "No building charging", unknown: "Building charging unknown" }[status],
+    cost: amount(home.charging?.monthly),
+    note: typeof home.charging?.note === "string" ? home.charging.note : "",
+    public: !stations.length ? "unavailable" : located ? "loaded" : "unlocated",
+    nearby: stations.length && located
+      ? stations.filter((s) => { const d = distanceMiles(home, s); return d !== null && d <= publicChargingMiles; }).length
+      : null,
+    observed_at: dateOk(feed.city_context?.afdc?.updated_at) ? feed.city_context.afdc.updated_at : null,
+    status_note: typeof feed.city_context?.afdc_status === "string" ? feed.city_context.afdc_status : "",
+  };
+}
 export function costs(home, record = {}, prefs = defaults) {
   const rent = amount(record.rentOverride) ?? amount(home.rent);
   const parking = amount(record.parkingCost) ?? amount(home.parking?.monthly);
@@ -212,6 +420,11 @@ export function costs(home, record = {}, prefs = defaults) {
     unknown,
     complete: !unknown.length,
     upfront: amount(record.oneTimeFees) ?? amount(home.fees?.one_time),
+    // Resident EV charging is reported by no source here and is quoted by
+    // none, so it is named beside the subtotal rather than folded into it. A
+    // subtotal that exists is not a subtotal that includes charging.
+    charging: amount(home.charging?.monthly),
+    chargingIncluded: false,
   };
 }
 export function visibleHomes(homes, workspace, prefs) {
@@ -406,6 +619,20 @@ export function emptyWorkspace() {
     savedSearches: [],
   };
 }
+// The query context a saved home was read under. Every field is optional
+// except the date the notebook froze it, so a notebook saved before this
+// existed stays valid and simply reads "not recorded".
+function savedScanOk(s) {
+  if (!isObj(s) || !["provider_query", "curated_research", "manual_entry"].includes(s.basis)) return false;
+  if (s.city != null && !textOk(s.city, 500)) return false;
+  if (!dateOk(s.saved_at)) return false;
+  for (const k of ["feed_generated_at", "observed_at", "last_success"])
+    if (s[k] != null && !dateOk(s[k])) return false;
+  for (const [k, max] of [["returned", 500], ["accepted", 500], ["total", 10000000]])
+    if (s[k] != null && (!Number.isInteger(s[k]) || s[k] < 0 || s[k] > max)) return false;
+  if (s.truncated !== undefined && typeof s.truncated !== "boolean") return false;
+  return true;
+}
 export function validateWorkspace(w) {
   if (
     w?.version !== VERSION ||
@@ -448,6 +675,8 @@ export function validateWorkspace(w) {
       !historyOk(r.quote_history)
     )
       throw Error("The backup contains an invalid saved home or quote.");
+    if (r.scan !== undefined && !savedScanOk(r.scan))
+      throw Error("The backup contains invalid saved source context.");
   }
   if (Object.values(w.records).filter((r) => r.finalist).length > 3)
     throw Error("A notebook can pin at most three finalists. Unpin one before combining these notebooks.");

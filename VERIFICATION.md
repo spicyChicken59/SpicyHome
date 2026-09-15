@@ -610,20 +610,142 @@ covered offline by `browser-check`, which serves a blank pixel for tiles. Also
 unclaimed, unchanged: no physical phone, no provider request, no leasing
 message.
 
+### Milestone, 15 September 2026 — traceable source access and dated evidence
+
+**Revision.** Branch `claude/spicyhome-source-evidence-m6fqo1`, cut from `main`
+at `2b1c8e1` — the tip when this began, and the same commit the branch already
+pointed at, so nothing was reset, rebased or reconciled. `dist/data.json`,
+`dist/status.json`, `data/history/`, `data/usage.json` and the whole vendored
+`dist/design-system/` are untouched to the byte. No sibling repository was read
+for anything but its pinned hashes, and none was written. No provider request,
+no dispatch, no merge, no deployment, no leasing contact.
+
+**Reproduced first, over the committed record** (`scratchpad/repro/source_repro.mjs`,
+run against `2b1c8e1` before anything was edited; 1,000 records = 22 curated
+plans + 978 provider rows, Chicago scanned 15 Sep returning 500 of 4,484):
+
+| what the reader was shown | what was true |
+|---|---|
+| AMLI Lofts A320: **“Official source ↗”** | the building's *floorplans* page — a plan page, not an available unit |
+| provider row: **“Find the listing ↗”** → a Google web search | a search labelled as a found listing; the absence of a listing URL was never said |
+| “Sources behind this record”: URL + claim | the retained `observed_at` on every reference was dropped — 61 dated references in the feed, 0 printed |
+| the fallback search | built from `address` alone; `unit_label` and `floor_plan` were lost |
+| the record | carried no city-query context at all; the only coverage line on the page is the global one, which names **whichever city was scanned last** |
+| a saved record | `{saved, finalist, snapshot, status}` — no query context, so nothing distinguished the query it was read under from today's |
+| the monthly subtotal | named base rent, parking, fees and utilities; said nothing about resident EV charging either way |
+
+All 978 provider rows carry `source_url: null` and a RentCast documentation
+reference. That is the documented contract, not a defect: the published listing
+schema has **no direct listing-page URL**, so none is invented and none is
+guessed from a provider ID. What was fixed is the reader's route to checking it.
+
+**Changed.** Five pure helpers in `dist/model.js` — `sourceAccess`,
+`searchIdentity`, `sourceReferences`, `scanContext`, `chargingEvidence` — and the
+surfaces that read them. A record's link is labelled by destination type
+(listing page on record / building or plan page / your own link / provider
+documentation); a missing exact listing URL is stated; the way out is a labelled
+search over recorded public identity only — address, unit, plan, building name,
+city, and nothing from the notebook. Each source reference prints its own date or
+“Source date not recorded”. Each record reads the retained scan for its **own**
+city, says when an area has none rather than borrowing one, and marks an
+observation older than that query as not captured with it. Curated research is
+never called a provider-query result. Building charging, its unquoted cost and
+public-charging context are four separate answers, and the charging cost is named
+beside the known subtotal, never inside it. Saving freezes the matching scan with
+its own dates (`record.scan`, validated, backward compatible, carried through the
+existing export/import); an archived record is never re-stamped, by a read or by
+a save. The comparison gained *Source access* and *Listing query for this area*,
+both unfoldable; cards name the destination type in the evidence stamp. One
+producer line: the run records **when** it read the documentation reference
+(`src/tracker.py`), which is the only date it genuinely has; the URL is unchanged.
+
+**Three defects the screenshots found that the assertions had not.** The
+source's own charging words were printed twice — once as the new status fact and
+once as the old standalone note. The provider's single “Not reported by the
+listing provider; confirm with leasing.” appeared as three identical bullets once
+charging joined parking and access; one voice per fact now, each naming its
+subject. And a saved record whose frozen query PREDATES the observation filed
+beside it read “Observed for this home: Sep 15, 2026 — older than the recorded
+query below”, which is a lie in the other direction: `scanContext` reports which
+of the two came first now, and the page says “later than” when it is. All three
+are pinned, the last by a check in each direction and by two mutants.
+
+**Gates, all run here at the tip.** `npm ci --ignore-scripts`; **`npm test`
+163** (137 before, 26 added); **`npm run check`** — JS syntax plus **43 Python**
+(42 before); **`python tools/check_site.py`** — 22 immutable design assets and
+1,000 apartment records verified; **`npm run browser-check --shots`
+190/190** (138 before, 52 added across 1280 px and 390 px in both themes, plus
+the reopened saved record); `git diff --check` clean. Playwright 1.56.1 was
+installed unsaved against the preinstalled Chromium 141 (revision 1194);
+`package.json` and `package-lock.json` are unchanged.
+
+**Every new check was run against `2b1c8e1` and fails there** — 30 of the 52 new
+browser scenarios fail on the pre-change tree, each naming its own reason
+(“Official source ↗”, “Find the listing ↗”, no source sentence, no query line,
+no charging row). The ones that pass on both are invariants the change had to
+preserve: an open record raises no page error, pushes the page sideways nowhere,
+and opens the record it named.
+
+**The mutation pass: 25 mutants, all dead.** Twelve over the model rules, eleven
+over the page's, two over the producer's, each run in a copy of the tree, and
+none run while the tree was being edited.
+**Two survived the first pass and both were holes**, closed with the check each
+showed was missing: “today's query is stamped onto an archived record” lived
+because no check ever ran a *save* path on an archived record — reading one
+cannot restamp it, so the check now moves its stage and saves its notes; and
+“provenance can be folded away” lived because the two compared places
+*disagreed* on both new rows, so the difference rule kept them and the “never
+folded” rule was never exercised — two places that agree is the case that can
+fail, and a matching row with no such rule is asserted to fold beside it. A
+third shape appeared in my own harness: `CSS.escape` escapes identifiers, not
+quoted attribute values, so `[data-detail="rentcast:…"]` matched nothing, the
+optional-chained click did nothing, and the provider assertions were re-reading
+the curated record still in the dialog. Each read names the record it opened now.
+
+**Screenshots looked at, not counted:** the record at 1280 px and 390 px in both
+themes, curated and provider, plus the reopened saved record. The links row fits
+one line at 1280 with the source route leading it and becomes full-width text
+links on a phone; every link is a 44 px target; the source sentence is 42 px at
+1280 and 84 px at 390 and stays inside the dialog; the two dated lines of a saved
+record are 63 + 42 px at 1280 and 147 + 126 px at 390; nothing scrolls sideways
+at either width. **No stylesheet changed**: every new element reuses `.meta`,
+`.sourceline`, `.detail-links`, `.fact-list` and `.cost-table`, with the design
+system's own `.sc-unreported` and `.sc-estimate` already carrying the figure
+basis.
+
+**Shared design.** Installed: **v2.13.0**, commit
+`14a752dd0269bd6ebbb7080eb0d9e1922cd1ef2c`, 22 files. Approved upstream: the same
+commit — it is the `v2.13.0` tag, it is `design-system`'s `main`, and `v2.13.0`
+is the newest tag published. **Measured drift: 0 of 22**, checked both ways —
+every installed file's SHA-256 equals its manifest entry *and* equals the blob at
+that commit in the source tree. Nothing was re-vendored. **Reusable promotion
+candidates: none this round**, and that is a measurement rather than a
+preference: this pass added no CSS at all.
+
+**Not claimed.** No live provider request and no new listing data — every check
+answers the remote feed with the committed records. No physical phone and no
+public origin: this sandbox's proxy still refuses `spicychicken59.github.io` with
+403 CONNECT, so the served page is still unread by anyone. Fixture navigation
+proves the route is labelled and reachable; it is **not** evidence that a live
+apartment is available or that a source still offers a particular lease. The 978
+provider rows still have no listing URL, and nothing here changes that — only
+what the reader is told about it and what they can do next.
+
 ### NEXT BUILDER PROMPT — live, and level except SpicyStock
 
-Verify the tips before trusting any of them; these were read on 14 Sep 2026,
-and two of these repositories commit to `main` on a schedule.
+Verify the tips before trusting any of them; the SpicyHome and design-system
+lines were re-read on 15 Sep 2026, the other two were not, and two of these
+repositories commit to `main` on a schedule.
 
-- **design-system** `main` is `14a752d`, **v2.13.0, tagged**, and `check` is
-  green on `main` (run 89, dispatched after the tag was cut).
-- **SpicyCar** `main` is `62db117`, a `snapshot 2026-09-14` tracker commit over
-  `aea4fa3` (#79, which took its own `main` back to green). It vendors
-  **v2.13.0**.
-- **SpicyHome** `main` is `b2a5a93` (#18), vendoring **v2.13.0**, `Checks`
-  green on it, **and served** at https://spicychicken59.github.io/SpicyHome/.
-- **SpicyStock** `main` is `ce2c6c1` (#61, the session-aware desk) and still
-  vendors **v2.11.0** (`6f10309`).
+- **design-system** `main` is `14a752d`, **v2.13.0, tagged**, and `v2.13.0` is
+  still the newest tag `origin` carries.
+- **SpicyCar** `main` was `62db117` on 14 Sep, a `snapshot 2026-09-14` tracker
+  commit over `aea4fa3` (#79). It vendors **v2.13.0**. Not re-read since.
+- **SpicyHome** `main` is `2b1c8e1`, a `data: record apartment tracking outcome`
+  commit from the daily scan over `19ddcf6` (#19), vendoring **v2.13.0** with
+  zero hash drift, **and served** at https://spicychicken59.github.io/SpicyHome/.
+- **SpicyStock** `main` was `ce2c6c1` (#61) on 14 Sep and still vendored
+  **v2.11.0** (`6f10309`). Not re-read since.
 
 Do these; do not redo the discovery hierarchy, the comparison tray, the
 cost-basis marks, the shortlist's next step, the Atlas, or this adoption.
@@ -662,12 +784,16 @@ cost-basis marks, the shortlist's next step, the Atlas, or this adoption.
      against a blank tile, which is precisely the gap.
 
 Offline gates, all of which must pass before a pull request: `npm ci
---ignore-scripts`, `npm test` (137), `npm run check` (42 Python), `python
-tools/check_site.py` (22 assets, 603 records), `npm run browser-check` (**138**
-Chromium scenarios; it needs a Playwright whose bundled Chromium revision
-matches the one installed — 1194 here, which is playwright 1.56.x — and reports
-SKIP and exits 1 without it). CI runs the first three on every push and pull
-request; it does **not** run the browser check, so run it yourself.
+--ignore-scripts`, `npm test` (**163**), `npm run check` (**43** Python),
+`python tools/check_site.py` (22 assets; it prints whatever the committed feed
+holds — **1,000 records** on `2b1c8e1`), `npm run browser-check --shots <dir>`
+(**190** Chromium scenarios; it needs a Playwright whose bundled Chromium
+revision matches the one installed — 1194 here, which is playwright 1.56.x, and
+`npm install --no-save --ignore-scripts playwright@1.56.1` gets it without
+touching `package.json` — and it reports SKIP and exits 1 without it). Also
+`git diff --check`, which CI enforces as `git diff --exit-code`. CI runs
+everything except the browser check on every push and pull request, so run that
+one yourself and LOOK at the shots.
 
 Standing hazards, still true:
 
@@ -681,6 +807,11 @@ Standing hazards, still true:
 - `.sc-eyebrow` lowercases. A proper noun inside one needs `.sc-case`.
 - Never vendor from an unmerged branch: pin a commit that is on the design
   system's `main`, and prefer the one its release tag points at.
+- A saved record's frozen query context is only honest while it is frozen. Any
+  new write path for a saved home must go through `savedScan()`, which refuses
+  to re-stamp a record the current feed no longer carries; a bare
+  `snapshot: getHome(id)` beside it would silently attach today's query to an
+  older observation, and only a check that *saves* something can see it.
 - `track.yml` commits a new scan daily and those commits run no *test*
   workflow, so `main` can go red between merges without anyone being told.
   Re-run every gate against the record actually on `main` before trusting an
@@ -689,9 +820,13 @@ Standing hazards, still true:
   record, held back only by `check_site.py`.
 
 Preserve without exception: base rent versus advertised total versus known
-subtotal, zero versus unknown, exact layout evidence, source dates, capped
-coverage, resident versus public charging, provider records, request and
-evidence ledgers, the notebook schema, local corrections, saved snapshots,
+subtotal, zero versus unknown, exact layout evidence, source dates (the home's
+own and each reference's, separately), a record's own area query versus another
+area's and versus the global latest-area line, capped coverage, resident versus
+public charging versus an unavailable public dataset, what a source link
+actually reaches versus what a search can only look for, provider records,
+request and evidence ledgers, the notebook schema including `record.scan` and
+its "not recorded" reading for older saves, local corrections, saved snapshots,
 cross-tab conflicts and transactional import/export recovery. Invent no
 availability, amenity or travel claim. Make no RentCast, leasing or tour call,
 no merge to `main` without approval, no force-push to a branch someone else

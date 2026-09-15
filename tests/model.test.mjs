@@ -28,6 +28,7 @@ import {
   spicyPicks,
   recipeDefaults, recipeWeights, remixPicks, apartmentTradeoffs, areaMatch, pricePulse, nextMoves, nextMove, costField,
   sourceAccess, sourceReferences, searchIdentity, scanContext, chargingEvidence, isDocumentationUrl, publicChargingMiles,
+  openQuestions, figureSpread, tourChecks,
 } from "../dist/model.js";
 const seed = JSON.parse(
   fs.readFileSync(new URL("../data/seed.json", import.meta.url)),
@@ -839,4 +840,122 @@ test("saved query context validates, survives a backup, and a notebook without i
   ])
     assert.throws(() => validateWorkspace({ ...emptyWorkspace(), records: { a: { saved: true, scan: bad } } }),
       /invalid saved source context/);
+});
+
+// --- What could change my mind? ----------------------------------------------
+const deskNow = new Date("2026-09-16T12:00:00Z");
+const deskHome = {
+  id: "desk-a", kind: "listing", title: "6700 S South Constance Ave",
+  address: "6700 S South Constance Ave, Unit 1, Chicago, IL 60649", city: "Chicago",
+  neighborhood: "Chicago · neighborhood unverified", unit_label: "Unit 1",
+  rent: 1750, sqft: 700, lat: 41.77, lng: -87.58, observed_at: "2026-09-15T13:00:00Z",
+  bedrooms: 1, bathrooms: 1, layout_status: "provider_reported",
+  parking: { status: "unknown", monthly: null }, charging: { status: "unknown" },
+  fees: { monthly: null, one_time: null }, source_url: null, seen_in_latest: true,
+  sources: [{ url: "https://developers.rentcast.io/reference/property-listings", supports: "RentCast listing ID" }],
+};
+const keys = (home, rec, now = deskNow) => openQuestions(home, rec, defaults, now).map((q) => q.key);
+
+test("the unresolved list is derived from recorded facts and names the exact field for each", () => {
+  const items = openQuestions(deskHome, { saved: true }, defaults, deskNow);
+  const byKey = Object.fromEntries(items.map((q) => [q.key, q]));
+  assert.equal(byKey.layout.target, "layoutReview");
+  assert.equal(byKey["cost:parking"].target, "parkingCost");
+  assert.equal(byKey["cost:monthly fees"].target, "monthlyFees");
+  assert.equal(byKey["cost:utilities"].target, "utilities");
+  assert.equal(byKey.parking.target, "leasing-draft");
+  assert.equal(byKey.charging.target, "leasing-draft");
+  assert.equal(byKey.tour.target, "tour-draft-count");
+  assert.equal(byKey.source.target, "detail-sources");
+  // Every field named is one the notebook actually has.
+  for (const q of items)
+    assert(["layoutReview", "leasing-draft", "tour-draft-count", "notes", "detail-sources", "rentOverride", "parkingCost", "monthlyFees", "utilities"].includes(q.target), q.target);
+  // Nothing speculative: every label states a recorded absence, not a guess.
+  for (const q of items) assert.doesNotMatch(q.label + q.detail, /probabl|likely|maybe|should be|we think/i);
+});
+
+test("a recorded $0 is a known amount; the source's silence about parking is a separate question", () => {
+  const zeroed = openQuestions(deskHome, { saved: true, parkingCost: 0 }, defaults, deskNow).map((q) => q.key);
+  assert(!zeroed.includes("cost:parking"), "$0 parking is quoted, so it is no longer an unquoted cost");
+  assert(zeroed.includes("parking"), "the source still never established that there is parking");
+  const unknown = keys(deskHome, { saved: true });
+  assert(unknown.includes("cost:parking"));
+  // A source that says parking exists closes the amenity question, not the cost.
+  const advertised = keys({ ...deskHome, parking: { status: "yes", monthly: null } }, { saved: true });
+  assert(!advertised.includes("parking"));
+  assert(advertised.includes("cost:parking"));
+});
+
+test("layout evidence closes the layout question only when the reader checked it", () => {
+  assert(keys(deskHome, { saved: true }).includes("layout"), "provider-reported is not a check");
+  assert(keys({ ...deskHome, kind: "building", floor_plan: "A320", layout_status: "source_listed",
+    sources: [{ url: "https://example.com/plan", supports: "A320" }] }, { saved: true }).includes("layout"),
+    "source-listed is not a check either");
+  assert(!keys(deskHome, { saved: true, layoutReview: "one_bed" }).includes("layout"));
+});
+
+test("charging yes, no and unknown are three answers and only unknown is an open question", () => {
+  for (const [status, open] of [["yes", false], ["no", false], ["unknown", true]])
+    assert.equal(keys({ ...deskHome, charging: { status } }, { saved: true }).includes("charging"), open, status);
+});
+
+test("a quote's age, an undated quote and an absent record are each their own question", () => {
+  const fresh = openQuestions(deskHome, { saved: true, rentOverride: 1725, quoteDate: "2026-09-15" }, defaults, deskNow);
+  assert(!fresh.some((q) => q.key === "quote"));
+  const old = openQuestions(deskHome, { saved: true, rentOverride: 1725, quoteDate: "2026-08-01" }, defaults, deskNow);
+  assert.match(old.find((q) => q.key === "quote").label, /Quote is 46 days old/);
+  const undated = openQuestions({ ...deskHome, observed_at: "not a date" }, { saved: true }, defaults, deskNow);
+  assert.match(undated.find((q) => q.key === "quote").label, /No dated quote on record/);
+  // Absence from a capped query is a question, never a claim that it is gone.
+  const absent = openQuestions({ ...deskHome, seen_in_latest: false }, { saved: true }, defaults, deskNow);
+  const gone = absent.find((q) => q.key === "presence");
+  assert.match(gone.label, /Absent from the latest area scan/);
+  assert.match(gone.detail, /not proof it is leased/);
+  assert.equal(gone.target, "detail-sources");
+  assert(keys({ ...deskHome, notebook_only: true }, { saved: true }).includes("presence"));
+  assert(!keys(deskHome, { saved: true }).includes("presence"));
+});
+
+test("a record with an exact listing URL stops asking for one", () => {
+  assert(keys(deskHome, { saved: true }).includes("source"));
+  assert(!keys({ ...deskHome, source_url: "https://example.com/listings/6700-1" }, { saved: true }).includes("source"));
+});
+
+test("tour checks clear the tour question only when every check is reviewed", () => {
+  const all = Object.fromEntries(tourChecks.map(([key]) => [key, true]));
+  assert(keys(deskHome, { saved: true, tourChecks: { layout: true } }).includes("tour"));
+  assert(!keys(deskHome, { saved: true, tourChecks: all }).includes("tour"));
+  assert.match(openQuestions(deskHome, { saved: true, tourChecks: { layout: true } }, defaults, deskNow)
+    .find((q) => q.key === "tour").label, new RegExp(`${tourChecks.length - 1} of ${tourChecks.length} tour checks`));
+});
+
+test("a record with nothing outstanding asks nothing", () => {
+  const settled = { ...deskHome, source_url: "https://example.com/listing", parking: { status: "yes", monthly: 150 },
+    charging: { status: "no" }, fees: { monthly: 40, one_time: null } };
+  const rec = { saved: true, layoutReview: "one_bed", rentOverride: 1750, quoteDate: "2026-09-15",
+    utilities: 90, tourChecks: Object.fromEntries(tourChecks.map(([key]) => [key, true])) };
+  assert.deepEqual(openQuestions(settled, rec, defaults, deskNow), []);
+});
+
+test("the unresolved list and nextMove agree about which step comes first", () => {
+  const workspace = { ...emptyWorkspace(), records: { "desk-a": { saved: true, status: "contacted" } } };
+  const move = nextMove(deskHome, workspace, defaults, deskNow);
+  const items = openQuestions(deskHome, workspace.records["desk-a"], defaults, deskNow);
+  assert.equal(items.filter((q) => q.target === move.target).length >= 1, true);
+  assert.equal(items[0].target, move.target, "the list opens on the step nextMove picked");
+});
+
+test("one spread engine answers for the finalists and the full comparison alike", () => {
+  const three = figureSpread([{ name: "A", value: 2663 }, { name: "B", value: 1725 }, { name: "C", value: 2507 }]);
+  assert.equal(three.comparable, true);
+  assert.equal(three.reason, "spread");
+  assert.equal(three.delta, 938);
+  assert.equal(figureSpread([{ name: "A", value: 2000 }, { name: "B", value: 2000 }]).reason, "same");
+  const missing = figureSpread([{ name: "A", value: 2663 }, { name: "B", value: null }]);
+  assert.equal(missing.comparable, false);
+  assert.deepEqual(missing.missing, ["B"]);
+  assert.equal(figureSpread([{ name: "A", value: 1 }]).reason, "one");
+  assert.equal(figureSpread([]).reason, "one");
+  // NaN and Infinity are not figures either.
+  assert.equal(figureSpread([{ name: "A", value: NaN }, { name: "B", value: 1 }]).comparable, false);
 });

@@ -33,7 +33,8 @@ import {
   pickLenses,
   recipeDefaults, recipeLabels, remixPicks, decisionPool, apartmentTradeoffs, areaMatch, pricePulse, nextMoves, nextMove, costField,
   sourceAccess, sourceReferences, scanContext, chargingEvidence, publicChargingMiles,
-} from "./model.js?v=20260915-source-evidence";
+  openQuestions, figureSpread,
+} from "./model.js?v=20260916-decision-desk";
 const $ = (s) => document.querySelector(s),
   KEY = "spicyhome.workspace.v1",
   CACHE = "spicyhome.feed.v1";
@@ -610,7 +611,8 @@ function focusHomeControl(id, attribute) {
     (element) => element.getAttribute(`data-${attribute}`) === id && !element.closest("[hidden]"),
   );
   const target = control ?? (prefs.surface === "focus" && view === "discover" ? $("#focus-save") ?? $("#focus-undo") : null) ?? $("#view-title");
-  control?.closest("details")?.setAttribute("open", "");
+  for (let element = control?.parentElement; element; element = element.parentElement)
+    if (element.tagName === "DETAILS") element.setAttribute("open", "");
   if (!control) target.tabIndex = -1;
   target.focus({ preventScroll: true });
 }
@@ -897,19 +899,68 @@ const MOVE_ACTIONS = {
   "tour-draft-count": "Open tour companion",
   notes: "Record my decision",
 };
-// A saved home's own next step, beside the home it belongs to. This is
-// nextMove() -- the engine Decision Studio already ranks -- not a second one,
-// and opening a field is never treated as having answered it.
-function boardNext(home) {
+// The compact evidence cue for a saved home: what kind of record it is, how old
+// it is, and what its source link actually reaches. The full provenance -- the
+// dated references and the city query behind them -- stays in the record, one
+// press away, rather than being reprinted under every home.
+function savedEvidenceCue(home) {
+  const absent = home.notebook_only
+    ? "Archived notebook entry · absent from the current feed"
+    : home.seen_in_latest === false
+      ? "Not in the last area scan"
+      : "";
+  return [evidence(home), dateLabel(home.observed_at), sourceAccess(home).summary, absent].filter(Boolean);
+}
+// What is still unresolved, each item opening the exact field or evidence
+// section that settles it. Folded away by default so a shortlist reads as
+// apartments rather than as a task list; the count is on the summary, so the
+// reader knows what folding costs them. The one nextMove() picked is marked,
+// because the button above is that same step.
+function openQuestionList(home, rec) {
+  const questions = openQuestions(home, rec, prefs);
+  if (!questions.length)
+    return '<p class="saved-clear">Nothing unresolved on record. Confirm the exact unit and the quote with leasing.</p>';
   const move = nextMove(home, state, prefs);
-  if (!move) return "";
-  const stage = record(home.id).status ?? "shortlisted";
-  return `<div class="board-next sc-actionbar"><span class="chip stage-chip">${esc(stage)}</span><p><strong>${esc(move.title)}.</strong> ${esc(move.why)}</p><button class="button small" data-studio-task="${esc(home.id)}" data-task-target="${esc(move.target)}">${esc(MOVE_ACTIONS[move.target] ?? "Open this record")}</button>${move.field ? `<div class="sc-actionbar__more board-next__field"><button class="text-button" data-studio-task="${esc(home.id)}" data-task-target="${esc(move.field)}">Record the ${esc(move.unknown[0])} amount ↗</button><span class="meta">Recording an amount updates this step; opening the field does not.</span></div>` : ""}</div>`;
+  const marked = move ? questions.findIndex((q) => q.target === move.target) : -1;
+  const chosen = (q, i) => i === marked;
+  return `<details class="saved-open"><summary>What could change my mind? <span>${questions.length}</span></summary><p class="meta">Each one opens the field or evidence that settles it. Opening is not answering — the item clears when an answer is saved.</p><ul>${questions
+    .map((q, i) => `<li${chosen(q, i) ? ' class="is-next"' : ""}><button class="text-button" data-studio-task="${esc(home.id)}" data-task-target="${esc(q.target)}">${esc(q.label)}</button>${chosen(q, i) ? '<span class="chip saved-chip">next</span>' : ""}<span class="meta">${esc(q.detail)}</span></li>`)
+    .join("")}</ul></details>`;
+}
+// A saved home as a decision, not as a discovery card again: who it is, what it
+// costs on which basis, the evidence that qualifies it, one next step, and the
+// rest folded. Every figure comes from the same helpers the cards use, so a
+// number cannot differ between the two surfaces.
+function savedRow(home) {
+  const rec = record(home.id),
+    layout = layoutEvidence(home, rec),
+    cost = costs(home, rec, prefs),
+    move = nextMove(home, state, prefs),
+    stage = rec.status ?? "shortlisted",
+    ruled = stage === "ruled out";
+  return `<article class="saved-row${rec.finalist ? " is-finalist" : ""}${ruled ? " is-ruled" : ""}" data-home="${esc(home.id)}" data-saved-stage="${esc(stage)}"><header class="saved-head"><div class="saved-identity"><h4>${esc(home.title)}</h4><p class="plan-label">${esc(planLabel(home))} · ${esc(homeCity(home) || home.neighborhood)}</p></div><div class="saved-money"><strong class="rent">${money(displayPrice(home))}</strong><span class="price-kind">${esc(priceKind(home))}</span></div></header><dl class="saved-facts"><div><dt>Known monthly subtotal</dt><dd>${subtotalValue(cost)}</dd></div><div><dt>Layout evidence</dt><dd>${esc(layout.label)}</dd></div></dl><p class="saved-cues">${cost.unknown.length ? `<span class="saved-gap">Unquoted: ${unreported(esc(cost.unknown.join(" · ")))}</span>` : '<span class="saved-gap">Every monthly item above is entered</span>'}</p><div class="chips saved-chips">${rec.finalist ? '<span class="chip finalist-chip">Final Three</span>' : ""}${chip(home, "parking", "Parking")}${chip(home, "charging", "EV")}<span class="chip stage-chip">${esc(stage)}</span></div><p class="saved-evidence">${savedEvidenceCue(home).map((part) => esc(part)).join(" · ")}</p>${openQuestionList(home, rec)}<div class="saved-actions">${move ? `<button class="button small" data-studio-task="${esc(home.id)}" data-task-target="${esc(move.target)}">${esc(MOVE_ACTIONS[move.target] ?? "Open this record")}</button>` : ""}<button class="button small secondary" data-detail="${esc(home.id)}">Open record</button><button class="save-button" data-save="${esc(home.id)}" aria-label="Remove ${esc(home.title)} ${esc(planLabel(home))} from your shortlist" aria-pressed="true">${heartIcon()}</button><label class="compare-label"><input type="checkbox" data-compare="${esc(home.id)}" ${comparison.has(home.id) ? "checked" : ""}>Compare</label><details class="saved-more"><summary>More</summary><div><button class="button small secondary" data-finalist="${esc(home.id)}" aria-pressed="${!!rec.finalist}">${rec.finalist ? "Unpin finalist" : "Pin as finalist"}</button><label for="stage-${esc(home.id)}">Move to stage</label><select id="stage-${esc(home.id)}" data-stage="${esc(home.id)}">${statuses.map((s) => `<option ${s === stage ? "selected" : ""}>${s}</option>`).join("")}</select><button class="button small secondary" data-lab="${esc(home.id)}">Try the monthly costs ↗</button><button class="text-button" data-tour="${esc(home.id)}">Tour companion ↗</button></div></details></div></article>`;
+}
+// The three groups a returning reader is actually sorting into: the finalists,
+// the homes still in contention, and the ones ruled out. The seven stages stay
+// authoritative -- every row carries and can change its own -- but a stage is a
+// label on a home, not the shape of the page. Ruled-out homes stay recoverable
+// behind their own disclosure so they stop competing with contenders.
+const CONTENDER_STAGES = statuses.filter((stage) => stage !== "ruled out");
+function savedGroups(saved) {
+  const stageOf = (home) => record(home.id).status ?? "shortlisted";
+  const order = (a, b) => CONTENDER_STAGES.indexOf(stageOf(a)) - CONTENDER_STAGES.indexOf(stageOf(b)) || a.title.localeCompare(b.title);
+  const scoped = boardStage === "all" ? saved : saved.filter((home) => stageOf(home) === boardStage);
+  return {
+    finalists: saved.filter((home) => record(home.id).finalist && stageOf(home) !== "ruled out"),
+    contenders: scoped.filter((home) => stageOf(home) !== "ruled out").sort(order),
+    ruled: scoped.filter((home) => stageOf(home) === "ruled out"),
+  };
 }
 function renderShortlist() {
   const saved = allHomes().filter((h) => record(h.id).saved);
-  const activeStages = statuses.filter((stage) => saved.some((h) => (record(h.id).status ?? "shortlisted") === stage));
-  $("#view-content").innerHTML = `<div class="board-heading"><p>From a maybe to a move-in. Move each home forward at your pace.</p><button class="button secondary" id="export-notebook">Export notebook</button></div>${finalistShelf(saved)}${renderTourAgenda(saved)}<div class="stage-tabs" aria-label="Filter saved homes by stage">${["all", ...statuses].map((stage) => `<button data-board-stage="${stage}" aria-pressed="${boardStage === stage}">${stage === "all" ? "All saved" : esc(stage)} <span>${stage === "all" ? saved.length : saved.filter((h) => (record(h.id).status ?? "shortlisted") === stage).length}</span></button>`).join("")}</div>${saved.length ? `<div class="decision-board">${(boardStage === "all" ? activeStages : [boardStage]).map((stage) => { const homes = saved.filter((h) => (record(h.id).status ?? "shortlisted") === stage); return `<section class="board-column"><div class="board-title"><span class="stage-dot"></span><h3>${esc(stage)}</h3><span>${homes.length}</span></div>${homes.length ? homes.map((h) => `<div class="board-home">${renderCard(h)}${boardNext(h)}<div class="board-controls"><button class="button small secondary" data-finalist="${esc(h.id)}" aria-pressed="${!!record(h.id).finalist}">${record(h.id).finalist ? "Unpin finalist" : "Pin as finalist"}</button><label for="stage-${esc(h.id)}">Move to stage</label><select id="stage-${esc(h.id)}" data-stage="${esc(h.id)}">${statuses.map((s) => `<option ${s === stage ? "selected" : ""}>${s}</option>`).join("")}</select><button class="button small secondary" data-lab="${esc(h.id)}">Try the monthly costs ↗</button></div></div>`).join("") : '<p class="meta">No homes at this stage yet.</p>'}</section>`; }).join("")}</div>` : empty("Your decision board starts here.", "Save a home from Discover or Focus, then track the ones worth a tour.", '<button class="button" data-go="discover">Find apartments</button>')}<p class="meta">Stages and tour checks are your notes. They do not change listing availability or contact a building.</p><div id="compare-tray"></div>`;
+  const groups = savedGroups(saved);
+  const counts = (stage) => stage === "all" ? saved.length : saved.filter((h) => (record(h.id).status ?? "shortlisted") === stage).length;
+  $("#view-content").innerHTML = `<div class="board-heading"><p>Your decision desk. Nothing here is ranked or scored for you.</p><button class="button secondary" id="export-notebook">Export notebook</button></div>${finalistShelf(saved, groups)}<div class="stage-tabs" aria-label="Filter saved homes by stage">${["all", ...statuses].map((stage) => `<button data-board-stage="${stage}" aria-pressed="${boardStage === stage}">${stage === "all" ? "All saved" : esc(stage)} <span>${counts(stage)}</span></button>`).join("")}</div>${saved.length ? `<section class="saved-section" aria-label="Homes in contention"><div class="saved-section__head"><h3>In contention</h3><span>${groups.contenders.length}${boardStage === "all" ? "" : " at this stage"}</span></div>${groups.contenders.length ? `<div class="saved-list">${groups.contenders.map(savedRow).join("")}</div>` : `<p class="meta">${boardStage === "all" ? "Every saved home is ruled out. Reopen one below to bring it back into contention." : "No homes at this stage."}</p>`}</section>${groups.ruled.length ? `<details class="saved-ruled"><summary>Ruled out <span>${groups.ruled.length}</span></summary><p class="meta">Kept with every note, quote and check. Move one back to a stage to return it to contention.</p><div class="saved-list">${groups.ruled.map(savedRow).join("")}</div></details>` : ""}${renderTourAgenda(saved)}` : empty("Your decision desk starts here.", "Save a home from Discover or Focus, then narrow it down to the ones worth a tour.", '<button class="button" data-go="discover">Find apartments</button>')}<p class="meta">Stages, finalists and tour checks are your notes. They do not change listing availability or contact a building.</p><div id="compare-tray"></div>`;
   $("#export-notebook").onclick = exportNotebook;
   document.querySelectorAll("[data-board-stage]").forEach((button) => { button.onclick = () => { boardStage = button.dataset.boardStage; render(); [...document.querySelectorAll("[data-board-stage]")].find((b) => b.dataset.boardStage === boardStage)?.focus(); }; });
   document.querySelectorAll("[data-stage]").forEach((select) => { select.onchange = () => { const id = select.dataset.stage; state.records[id] = { ...record(id), status: select.value, snapshot: getHome(id), scan: savedScan(id, getHome(id)), saved: true }; event(id, "Moved to " + select.value + "."); const ok = persist(); render(); focusHomeControl(id, "stage"); saveNotice(ok); }; });
@@ -1283,14 +1334,12 @@ function showCompare() {
   // guess, so it is named as not comparable instead of being computed anyway.
   // No column is called the winner and no score is invented here.
   const spread = (label, read, format, caveat) => {
-    const values = hs.map((h) => read(h));
-    const missing = hs.filter((h, i) => values[i] === null);
-    if (hs.length < 2)
+    const result = figureSpread(hs.map((h) => ({ name: h.title, value: read(h) })));
+    if (result.reason === "one")
       return `<li><strong>${label}:</strong> one place selected. Add a second to see the difference.</li>`;
-    if (missing.length)
-      return `<li><strong>${label}:</strong> ${unreported("not comparable")} — ${esc(missing.map((h) => h.title).join(", "))} ${missing.length === 1 ? "has" : "have"} no recorded figure. Nothing is substituted for it.</li>`;
-    const lo = Math.min(...values), hi = Math.max(...values);
-    return `<li><strong>${label}:</strong> ${lo === hi ? "the same for all " + hs.length : format(hi - lo) + " between the lowest and the highest"} — ${hs.map((h, i) => `${String.fromCharCode(65 + i)} ${format(values[i])}`).join(" · ")}. ${caveat}</li>`;
+    if (result.reason === "missing")
+      return `<li><strong>${label}:</strong> ${unreported("not comparable")} — ${esc(result.missing.join(", "))} ${result.missing.length === 1 ? "has" : "have"} no recorded figure. Nothing is substituted for it.</li>`;
+    return `<li><strong>${label}:</strong> ${result.reason === "same" ? "the same for all " + hs.length : format(result.delta) + " between the lowest and the highest"} — ${result.entries.map((e, i) => `${String.fromCharCode(65 + i)} ${format(e.value)}`).join(" · ")}. ${caveat}</li>`;
   };
   const differences = `<section class="compare-spread"><h3>Where these actually differ</h3><ul>${
     spread("Base rent", (h) => costs(h, record(h.id), prefs).rent, money, "Base rent only — parking, recurring fees and utilities are on top and are compared row by row below.")
@@ -1917,9 +1966,34 @@ function renderScanCard(home) {
   const rec=record(home.id), layout=layoutEvidence(home,rec), cost=costs(home,rec,prefs);
   return `<article class="home-card scan-card" data-home="${esc(home.id)}"><div class="scan-identity"><p class="neighborhood">${esc(homeCity(home) || home.neighborhood)}</p><h3>${esc(home.title)}</h3><p class="plan-label">${esc(planLabel(home))}</p><p class="address">${esc(home.address)}</p><p class="meta">${esc(layout.label)} · ${home.sqft ? home.sqft + " sq ft reported" : "Size unverified"}</p></div><div class="scan-price"><strong>${money(displayPrice(home))}<small> / mo</small></strong><p class="price-kind">${esc(priceKind(home))}</p><p class="meta">Known subtotal: ${subtotalValue(cost)}</p>${costGap(home, cost)}<p class="meta">${evidence(home)} · ${esc(dateLabel(home.observed_at))}${home.seen_in_latest === false ? " · Not in last area scan" : ""}</p></div><div class="scan-actions"><button class="button small secondary" data-detail="${esc(home.id)}">Details</button><button class="save-button" data-save="${esc(home.id)}" aria-label="${rec.saved ? "Remove" : "Save"} ${esc(home.title)} ${esc(planLabel(home))}" aria-pressed="${!!rec.saved}">${heartIcon()}</button><label class="compare-label"><input type="checkbox" data-compare="${esc(home.id)}" ${comparison.has(home.id) ? "checked" : ""}>Compare</label></div></article>`;
 }
-function finalistShelf(saved) {
-  const finalists=saved.filter((home)=>record(home.id).finalist);
-  return `<section class="finalist-shelf${finalists.length ? "" : " is-empty"}" aria-label="Your finalists"><div class="finalist-heading"><div><p class="eyebrow">THE FINAL THREE</p><h3>Your strongest maybes.</h3></div><span>${finalists.length}/3 pinned</span></div>${finalists.length ? `<div class="finalist-grid">${finalists.map((home,i)=>`<article><span class="finalist-number">0${i+1}</span><div><h4>${esc(home.title)}</h4><p>${esc(planLabel(home))}</p><p>${money(displayPrice(home))} / mo · ${esc(priceKind(home))}</p><div class="actions"><button class="button small secondary" data-detail="${esc(home.id)}">Open</button><button class="text-button" data-finalist="${esc(home.id)}" aria-label="Unpin ${esc(home.title)} ${esc(planLabel(home))}">Unpin</button></div></div></article>`).join("")}</div><button class="button" id="compare-finalists" ${finalists.length < 2 ? "disabled" : ""}>Compare finalists</button>` : '<p>Pin up to three saved apartments from the board below to compare them directly. Your other saved homes stay in place.</p>'}</section>`;
+// The decision core. Three finalists have to be tellable apart BEFORE the full
+// comparison opens, so each carries the same four facts and its own count of
+// what is unresolved; the line above them says what actually differs, using the
+// comparison's own arithmetic (figureSpread) so the two cannot report the same
+// numbers differently. No winner is named and nothing is scored.
+function finalistDifference(finalists) {
+  if (finalists.length < 2) return "";
+  const rents = figureSpread(finalists.map((home) => ({ name: home.title, value: costs(home, record(home.id), prefs).rent })));
+  const sizes = figureSpread(finalists.map((home) => ({ name: home.title, value: Number.isFinite(home.sqft) && home.sqft > 0 ? home.sqft : null })));
+  const line = (label, result, format) =>
+    result.reason === "missing"
+      ? `${label}: ${unreported("not comparable")} — ${esc(result.missing.join(", "))} ${result.missing.length === 1 ? "has" : "have"} no recorded figure.`
+      : result.reason === "same"
+        ? `${label}: the same for all ${finalists.length}.`
+        : `${label}: ${esc(format(result.delta))} between the lowest and the highest.`;
+  return `<p class="finalist-difference">${line("Base rent", rents, money)} ${line("Reported space", sizes, (v) => Math.round(v) + " sq ft")} Nothing here is ranked.</p>`;
+}
+function finalistShelf(saved, groups) {
+  const finalists = groups.finalists;
+  const open = (home) => openQuestions(home, record(home.id), prefs).length;
+  // Empty capacity is a prompt, not a panel: it names the contenders a press
+  // away rather than drawing an empty slot for each.
+  const room = 3 - finalists.length;
+  const candidates = groups.contenders.filter((home) => !record(home.id).finalist).slice(0, 3);
+  return `<section class="finalist-shelf${finalists.length ? "" : " is-empty"}" aria-label="Your finalists"><div class="finalist-heading"><div><p class="eyebrow">THE FINAL THREE</p><h3>${finalists.length ? "Your strongest maybes." : "Narrow it to three."}</h3></div><span>${finalists.length}/3 pinned</span></div>${finalists.length ? `${finalistDifference(finalists)}<div class="finalist-grid">${finalists.map((home, i) => {
+    const rec = record(home.id), cost = costs(home, rec, prefs), unresolved = open(home);
+    return `<article><div class="finalist-top"><span class="finalist-number">0${i + 1}</span><div><h4>${esc(home.title)}</h4><p>${esc(planLabel(home))}</p></div></div><p class="finalist-rent"><strong>${money(displayPrice(home))}</strong><span>${esc(priceKind(home))}</span></p><dl class="finalist-facts"><div data-fact="wide"><dt>Known subtotal</dt><dd>${subtotalValue(cost)}</dd></div><div data-fact="wide"><dt>Layout</dt><dd>${esc(layoutEvidence(home, rec).label)}</dd></div><div data-fact="always"><dt>Unresolved</dt><dd>${unresolved ? `${unresolved} open` : "none on record"}</dd></div></dl><div class="actions"><button class="button small secondary" data-detail="${esc(home.id)}">Open</button><button class="text-button" data-finalist="${esc(home.id)}" aria-label="Unpin ${esc(home.title)} ${esc(planLabel(home))}">Unpin</button></div></article>`;
+  }).join("")}</div><div class="finalist-foot"><button class="button" id="compare-finalists" ${finalists.length < 2 ? "disabled" : ""}>Compare finalists</button>${room ? `<p class="meta">Room for ${room} more.${candidates.length ? " Pin " + candidates.map((home) => `<button class="text-button" data-finalist="${esc(home.id)}">${esc(home.title)} · ${esc(planLabel(home))}</button>`).join(" or ") + "." : ""}</p>` : '<p class="meta">Three pinned. Unpin one to swap it.</p>'}</div>` : `<p>Pin up to three saved apartments to compare them directly.${candidates.length ? " Start with " + candidates.map((home) => `<button class="text-button" data-finalist="${esc(home.id)}">${esc(home.title)} · ${esc(planLabel(home))}</button>`).join(" or ") + "." : " Save a home first."}</p>`}</section>`;
 }
 function bindFinalists() {
   document.querySelectorAll("[data-finalist]").forEach((button)=>{button.onclick=()=>{

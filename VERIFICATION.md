@@ -731,6 +731,120 @@ apartment is available or that a source still offers a particular lease. The 978
 provider rows still have no listing URL, and nothing here changes that — only
 what the reader is told about it and what they can do next.
 
+### Milestone, 16 September 2026 — the saved-home decision desk
+
+**Revision.** Branch `claude/spicyhome-source-evidence-m6fqo1`, restarted from
+`main` at `c983f6a` (the merge of #20) because its own pull request was already
+merged; the branch carried only that merged history, so nothing unfinished was
+discarded and nothing was reconciled. `dist/data.json`, `dist/status.json`,
+`data/**` and the vendored `dist/design-system/` are untouched to the byte. No
+provider request, no dispatch, no merge, no deployment, no sibling write, and no
+notebook schema change.
+
+**Rendered before anything was decided** (`scratchpad/repro/board_before.mjs`
+against `c983f6a`, six saved homes: two curated plans, three provider rows, one
+archived, three pinned, one ruled out):
+
+| | 1280 px | 390 px |
+|---|---|---|
+| page height, six saved homes | 3,381 px | **9,199 px** |
+| one saved home | **1,065 px** | **1,247 px** |
+| controls under one saved home | **10** | 10 |
+| first saved home begins at | 966 px | **1,451 px** |
+| Final Three shelf | 358 px | 724 px |
+| what the Final Three said | name, plan, price | name, plan, price |
+
+The shortlist was the Discover card printed again, once per home, followed by a
+next-step bar and three more controls — and the same disclaimer, *“Recording an
+amount updates this step; opening the field does not.”*, under every single
+home. A ruled-out home was 731 px of the same card, smaller only because
+`nextMove()` returns nothing for it. Nothing on the first phone screen said what
+any saved home cost, what was unresolved, or what to do next.
+
+**Changed — composition, not mechanism.** Two pure helpers carry the new
+answers. `openQuestions()` derives the unresolved list from facts the record
+already holds — `costs().unknown`, `layoutEvidence()`, the parking and charging
+evidence, the quote's age, the record's presence in the latest scan,
+`sourceAccess()`, `tourProgress()` — and each item names the exact existing
+notebook field or evidence section that settles it. `figureSpread()` is the
+comparison's own difference arithmetic, extracted so the Final Three and the
+full comparison cannot report the same numbers differently. `savedRow()`
+replaces `renderCard()` on this surface; `savedGroups()` splits finalists,
+contenders and ruled-out homes while every row keeps and can change its own
+stage; the Final Three carries four comparable facts per finalist and one line
+naming what differs. **No new notebook field, no new engine, no second
+comparison, no ranking, score or winner.**
+
+| | 1280 px | 390 px |
+|---|---|---|
+| page height, the same six homes | 2,807 px | **5,234 px** |
+| one saved home | **475 px** | **648 px** |
+| controls a reader faces | **4** | 4 |
+| Final Three | 509 px, four facts each | 774 px, two lines each |
+| first phone screen | — | the difference line and a finalist's money |
+
+**Gates, all run here at the tip.** `npm ci --ignore-scripts`; **`npm test`
+181** (163 before, 18 added); **`npm run check`** — JS syntax plus 43 Python;
+**`python tools/check_site.py`** — 22 immutable design assets and 1,000 records;
+**`npm run browser-check --shots` 250/250** (190 before, 60 added across 1280,
+390 and 320 px in both themes); `git diff --check` clean. **47 of the 60 new
+browser scenarios fail on `c983f6a`**, each naming its own reason; the pass on
+both trees is either an invariant this had to preserve or was strengthened after
+it proved it could pass on an empty surface.
+
+**Six existing checks were updated, none weakened.** Four were selector-only
+(`.home-card` → `.saved-row`, `.board-controls` → `.saved-row`); one now asserts
+the row's step, its marked item and that exactly one item is marked; and one
+guard against calling an absent home *leased* had to be scoped to the parts that
+STATE a status, because the unresolved list says, correctly, that a capped query
+missing a home *is not proof it is leased* — a bare word match read that as the
+claim it refuses to make.
+
+**The mutation pass: 13 over the new rules, all dead** — and the previous
+milestone's 25 were re-run against this tree and all still die, so the source
+and evidence work #20 landed is intact. **One survived the first pass and was a
+hole:** a pinned home's *Final Three* marker on its own row was asserted only by
+the browser gate, which CI does not run, so a jsdom-level regression would have
+reached `main` unseen. It is pinned in both now, in each direction — pinning
+adds the marker, unpinning removes it.
+
+**One defect this milestone's own journey found.** Ruling a home out moves it
+into a folded section, inside its own folded *More* — and a control inside a
+closed `<details>` is not focusable, so the focus fell to the body in the exact
+journey the brief names. `focusHomeControl()` opens **every** ancestor
+disclosure now, not just the nearest; the section opens where the reader put the
+home and is folded again on a later visit. Reproduced by a check that fails
+without the fix, and by a mutant.
+
+**Screenshots looked at, not counted**, at 1280, 390 and 320 px in both themes:
+the desk, the unresolved list open, and the ruled-out section. A ruled-out home
+is dashed and at 0.72 opacity — measured at **8.9:1** contrast in dark and
+**6.3:1** in light, so it is demoted, not made hard to read — and returns to
+full opacity on hover or focus. Nothing scrolls sideways at any width, and
+every control a reader faces is a 44 px target; the one that was not, the tour
+agenda's *Directions* link at 27 px, is fixed.
+
+**Shared design.** Installed **v2.13.0**, commit
+`14a752dd0269bd6ebbb7080eb0d9e1922cd1ef2c`, 22 files; the newest tag `origin`
+carries is still v2.13.0. **Measured drift: 0 of 22**, both ways. Nothing was
+re-vendored and no vendored byte moved. One honest consequence: the old
+next-step bar was the design system's `.sc-actionbar`, and **this surface no
+longer uses it** — the pattern it models (chip, one sentence, one action, a
+follow-on row) is gone from the desk, and with it `nextMove().why`, which is
+still printed by Decision Studio's Next moves. `.sc-unreported` still carries
+the unquoted amounts on every row. **Reusable upstream candidates, as candidates
+only:** a *counted disclosure* (a folded section whose summary carries the count
+of what it holds, so folding never hides how much is open) and a *demoted
+record* (dashed, reduced opacity, restored on hover and focus). Each has exactly
+one consumer today, so neither is proven shared; neither was released and no
+sibling was edited.
+
+**Not claimed.** No live provider request and no new listing data: every check
+answers the remote feed with the committed records. No physical phone and no
+public origin — the proxy still refuses `spicychicken59.github.io` with 403
+CONNECT. A fixture is not proof of a lease, an availability, an amenity or an
+external source.
+
 ### NEXT BUILDER PROMPT — live, and level except SpicyStock
 
 Verify the tips before trusting any of them; the SpicyHome and design-system
@@ -741,9 +855,10 @@ repositories commit to `main` on a schedule.
   still the newest tag `origin` carries.
 - **SpicyCar** `main` was `62db117` on 14 Sep, a `snapshot 2026-09-14` tracker
   commit over `aea4fa3` (#79). It vendors **v2.13.0**. Not re-read since.
-- **SpicyHome** `main` is `2b1c8e1`, a `data: record apartment tracking outcome`
-  commit from the daily scan over `19ddcf6` (#19), vendoring **v2.13.0** with
-  zero hash drift, **and served** at https://spicychicken59.github.io/SpicyHome/.
+- **SpicyHome** `main` is `c983f6a` (the merge of #20), vendoring **v2.13.0**
+  with zero hash drift, **and served** at
+  https://spicychicken59.github.io/SpicyHome/ — the publish job validated and
+  deployed that commit (run 35026663139).
 - **SpicyStock** `main` was `ce2c6c1` (#61) on 14 Sep and still vendored
   **v2.11.0** (`6f10309`). Not re-read since.
 
@@ -784,10 +899,10 @@ cost-basis marks, the shortlist's next step, the Atlas, or this adoption.
      against a blank tile, which is precisely the gap.
 
 Offline gates, all of which must pass before a pull request: `npm ci
---ignore-scripts`, `npm test` (**163**), `npm run check` (**43** Python),
+--ignore-scripts`, `npm test` (**181**), `npm run check` (**43** Python),
 `python tools/check_site.py` (22 assets; it prints whatever the committed feed
-holds — **1,000 records** on `2b1c8e1`), `npm run browser-check --shots <dir>`
-(**190** Chromium scenarios; it needs a Playwright whose bundled Chromium
+holds — **1,000 records** on `c983f6a`), `npm run browser-check --shots <dir>`
+(**250** Chromium scenarios; it needs a Playwright whose bundled Chromium
 revision matches the one installed — 1194 here, which is playwright 1.56.x, and
 `npm install --no-save --ignore-scripts playwright@1.56.1` gets it without
 touching `package.json` — and it reports SKIP and exits 1 without it). Also
@@ -807,6 +922,11 @@ Standing hazards, still true:
 - `.sc-eyebrow` lowercases. A proper noun inside one needs `.sc-case`.
 - Never vendor from an unmerged branch: pin a commit that is on the design
   system's `main`, and prefer the one its release tag points at.
+- A control inside a closed `<details>` is not focusable, and the saved desk
+  nests them: a row's *More* sits inside the ruled-out section. Anything that
+  hands focus to a control after a re-render has to open every ancestor
+  disclosure, not the nearest one, and only a check that actually moves a home
+  between stages can see it.
 - A saved record's frozen query context is only honest while it is frozen. Any
   new write path for a saved home must go through `savedScan()`, which refuses
   to re-stamp a record the current feed no longer carries; a bare

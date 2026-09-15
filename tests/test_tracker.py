@@ -34,6 +34,17 @@ class FeedTests(unittest.TestCase):
  def test_studio_unknown_and_bool_layouts_are_not_coerced(self):
   for patch in [dict(bedrooms=0),dict(bedrooms=True),dict(bathrooms=True),dict(bedrooms=None),dict(bedrooms=1,unitLayout='Studio')]:
    homes,excluded=t.normalize([row(**patch)],CFG,t.stamp(NOW));self.assertEqual(homes,[]);self.assertIn('rentcast:a',excluded['layout_corrections'])
+ def test_a_provider_row_records_when_its_documentation_reference_was_read(self):
+  # The published listing schema supplies no listing page, so none is invented:
+  # the reference stays the provider's own documentation, and the only date the
+  # run genuinely has -- this attempt's instant -- is recorded on it.
+  at=t.stamp(NOW);homes,_=t.normalize([row()],CFG,at)
+  source=homes[0]['sources'][0]
+  self.assertIsNone(homes[0]['source_url'])
+  self.assertEqual(source['url'],'https://developers.rentcast.io/reference/property-listings')
+  self.assertEqual(source['observed_at'],at)
+  self.assertEqual(source['observed_at'],homes[0]['observed_at'])
+  self.assertIn('no direct listing URL supplied by the API',source['supports'])
  def test_amenity_mentions_do_not_classify_a_unit(self):
   homes,_=t.normalize([row(description='Yoga studio and studios, one and two bedrooms available',addressLine2='Unit 2',propertyType='Apartment')],CFG,t.stamp(NOW))
   self.assertEqual(homes[0]['layout_status'],'provider_reported');self.assertEqual(homes[0]['unit_label'],'Unit 2')

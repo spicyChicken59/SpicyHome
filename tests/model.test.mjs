@@ -27,6 +27,7 @@ import {
   moveInScenario,
   spicyPicks,
   recipeDefaults, recipeWeights, remixPicks, apartmentTradeoffs, areaMatch, pricePulse, nextMoves, nextMove, costField,
+  sourceAccess, sourceReferences, searchIdentity, scanContext, chargingEvidence, isDocumentationUrl, publicChargingMiles,
 } from "../dist/model.js";
 const seed = JSON.parse(
   fs.readFileSync(new URL("../data/seed.json", import.meta.url)),
@@ -569,4 +570,273 @@ test("one saved home's next move is the same object the studio ranks, and names 
   const after=nextMove(homes[0],w,defaults,pickNow);
   assert.equal(after.field,null);
   assert.deepEqual(after.unknown,[]);
+});
+
+// --- Traceable source access -------------------------------------------------
+const curatedPlan = {
+  id: "amli-lofts", kind: "building", title: "AMLI Lofts",
+  address: "850 S. Clark St., Chicago, IL 60605", city: "Chicago", neighborhood: "South Loop",
+  floor_plan: "A320", rent: 2663, observed_at: "2026-09-07",
+  source_url: "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-lofts/floorplans",
+  sources: [
+    { url: "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-lofts", supports: "Address and plan", observed_at: "2026-09-07" },
+    { url: "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-lofts/floorplans", supports: "A320 details" },
+  ],
+  charging: { status: "yes", note: "Building advertises charging." },
+  parking: { status: "yes", monthly: null }, fees: { monthly: 120, one_time: null },
+};
+const providerRow = {
+  id: "rentcast:6700-S-South-Constance-Ave,-Unit-1,-Chicago,-IL-60649", kind: "listing",
+  title: "6700 S South Constance Ave", address: "6700 S South Constance Ave, Unit 1, Chicago, IL 60649",
+  city: "Chicago", neighborhood: "Chicago · neighborhood unverified", unit_label: "Unit 1",
+  rent: 1750, observed_at: "2026-09-15T13:28:27.690566Z", source_url: null,
+  sources: [{ url: "https://developers.rentcast.io/reference/property-listings", supports: "RentCast listing ID; no direct listing URL supplied by the API." }],
+  charging: { status: "unknown" }, parking: { status: "unknown", monthly: null },
+};
+
+test("a curated plan's broader building URL is labelled as a plan page, never as an available unit", () => {
+  const access = sourceAccess(curatedPlan);
+  assert.equal(access.kind, "plan_source");
+  assert.equal(access.url, curatedPlan.source_url);
+  assert.match(access.says, /plan A320/);
+  assert.match(access.says, /not proof that an exact unit is available/);
+  // A populated URL does not make it an exact-unit destination.
+  assert.equal(access.exact, false);
+  assert.match(access.missing, /No exact listing URL/);
+  assert.equal(access.fallback.scope, "building-plan");
+  assert.match(access.fallback.label, /Search this building & plan/);
+  assert.match(decodeURIComponent(access.fallback.url), /AMLI Lofts.*floor plan A320/);
+  assert.match(access.fallback.note, /A search, not a found listing/);
+});
+
+test("a safe supplied listing URL is preserved; missing, unsafe and documentation URLs are not promoted into one", () => {
+  const supplied = sourceAccess({ ...providerRow, source_url: "https://example.com/listings/6700-constance-1" });
+  assert.equal(supplied.kind, "listing_source");
+  assert.equal(supplied.exact, true);
+  assert.equal(supplied.url, "https://example.com/listings/6700-constance-1");
+  // An exact listing needs no search detour.
+  assert.equal(supplied.fallback, null);
+  assert.equal(supplied.missing, "");
+
+  // Documentation only: the provider ID is never turned into a listing URL.
+  const documented = sourceAccess(providerRow);
+  assert.equal(documented.kind, "documentation");
+  assert.equal(documented.url, "");
+  assert.match(documented.says, /not a rental listing/);
+  assert.match(documented.summary, /Provider documentation only/);
+  assert.equal(documented.exact, false);
+  assert(!documented.fallback.url.includes("6700-S-South-Constance-Ave,-Unit-1"), "the provider ID is not the search");
+
+  // Unsafe: refused, and a safe reference is used instead of it.
+  const unsafe = sourceAccess({ ...providerRow, source_url: "javascript:alert(1)",
+    sources: [{ url: "https://example.com/plan", supports: "The plan" }] });
+  assert.equal(unsafe.url, "https://example.com/plan");
+  const unsafeOnly = sourceAccess({ ...providerRow, source_url: "javascript:alert(1)", sources: [] });
+  assert.equal(unsafeOnly.kind, "none");
+  assert.equal(unsafeOnly.url, "");
+  assert.match(unsafeOnly.says, /No source link was recorded/);
+  assert(unsafeOnly.fallback, "a record with an address still has a labelled search");
+
+  // A user's own link is labelled as theirs, not as an official source.
+  const mine = sourceAccess({ ...providerRow, kind: "manual", source_url: "https://example.com/mine" });
+  assert.equal(mine.kind, "personal");
+  assert.match(mine.label, /Open your source/);
+});
+
+test("the search fallback carries recorded public identity only, and missing identity produces an honest unavailable state", () => {
+  const withNotes = { ...providerRow,
+    notes: "my landlord contact is Dana", quote_history: [{ date: "2026-09-01", rent: 1700 }],
+    tourDate: "2026-09-20T10:00", rentOverride: 1699 };
+  const terms = sourceAccess(withNotes).fallback.terms.join(" ");
+  for (const secret of ["Dana", "landlord", "1699", "2026-09-20"])
+    assert(!terms.includes(secret), `the search must not carry ${secret}`);
+  assert.deepEqual(sourceAccess(providerRow).fallback.terms,
+    ["6700 S South Constance Ave, Unit 1, Chicago, IL 60649", "apartment for rent"]);
+  // A unit the address does not already name is added rather than lost.
+  assert(searchIdentity({ ...providerRow, address: "6700 S South Constance Ave, Chicago, IL 60649" })
+    .terms.includes("Unit 1"));
+
+  const nameless = sourceAccess({ kind: "listing", id: "x", observed_at: "2026-09-15" });
+  assert.equal(nameless.kind, "none");
+  assert.equal(nameless.fallback, null);
+  assert.equal(nameless.unavailable, true);
+  // A record with nothing to search for must not advertise a search.
+  assert.equal(nameless.summary, "No source link on record");
+  assert.match(sourceAccess(providerRow).summary, /· search available$/);
+});
+
+test("documentation hosts are recognised and ordinary building sites are not", () => {
+  assert.equal(isDocumentationUrl("https://developers.rentcast.io/reference/property-listings"), true);
+  assert.equal(isDocumentationUrl("https://data.cityofchicago.org/resource/8pix-ypme.json"), true);
+  assert.equal(isDocumentationUrl("https://www.amli.com/apartments/chicago"), false);
+  assert.equal(isDocumentationUrl("javascript:alert(1)"), false);
+  assert.equal(isDocumentationUrl(null), false);
+});
+
+test("each source reference keeps its own date, and a missing one reads as not recorded rather than today", () => {
+  const refs = sourceReferences(curatedPlan);
+  assert.equal(refs.length, 2);
+  assert.equal(refs[0].observed_at, "2026-09-07");
+  assert.equal(refs[1].observed_at, null);
+  assert.equal(refs[0].documentation, false);
+  assert.equal(sourceReferences(providerRow)[0].documentation, true);
+  assert.equal(sourceReferences(providerRow)[0].observed_at, null);
+  // A run that records the reference's date keeps it.
+  assert.equal(sourceReferences({ ...providerRow,
+    sources: [{ ...providerRow.sources[0], observed_at: "2026-09-15T13:28:27.690566Z" }] })[0].observed_at,
+    "2026-09-15T13:28:27.690566Z");
+  assert.deepEqual(sourceReferences({ kind: "manual", source_url: "javascript:bad" }), []);
+});
+
+// --- City-query context ------------------------------------------------------
+const providerBlock = {
+  query: { city: "Chicago" },
+  area_scans: {
+    Chicago: { last_success: "2026-09-15T13:28:27.690566Z", returned: 500, total: 4484, truncated: true, accepted: 500 },
+    Evanston: { last_success: "2026-09-08T13:29:28.215967Z", returned: 176, total: 176, truncated: false, accepted: 176 },
+    Naperville: { last_success: "2026-09-14T13:30:09.810813Z", returned: 385, total: null, truncated: false, accepted: 385 },
+  },
+};
+
+test("a home reads its own city's recorded query, never another city's and never a borrowed one", () => {
+  const chicago = scanContext(providerBlock, providerRow);
+  assert.equal(chicago.city, "Chicago");
+  assert.equal(chicago.recorded, true);
+  assert.equal(chicago.total, 4484);
+  assert.equal(chicago.coverage, "capped");
+  assert.equal(chicago.sameCapture, true);
+
+  // Evanston's own scan is a different date and complete for that query.
+  const evanston = scanContext(providerBlock,
+    { ...providerRow, id: "e", city: "Evanston", address: "1 Main St, Evanston, IL 60201", observed_at: "2026-09-08T13:29:28.215967Z" });
+  assert.equal(evanston.last_success, "2026-09-08T13:29:28.215967Z");
+  assert.equal(evanston.coverage, "complete");
+  assert.notEqual(evanston.last_success, chicago.last_success);
+
+  // An unavailable total is its own state, not a completeness claim.
+  assert.equal(scanContext(providerBlock,
+    { ...providerRow, id: "n", city: "Naperville", address: "1 Main St, Naperville, IL 60540" }).coverage, "unknown-total");
+
+  // A city with no recorded scan says so instead of taking the latest area's.
+  const unscanned = scanContext(providerBlock,
+    { ...providerRow, id: "o", city: "Oak Park", address: "1 Main St, Oak Park, IL 60301" });
+  assert.equal(unscanned.recorded, false);
+  assert.equal(unscanned.coverage, "unrecorded");
+  assert.equal(unscanned.city, "Oak Park");
+  assert.equal(scanContext({}, providerRow).recorded, false);
+});
+
+test("a home observed before its city's latest query keeps both dates apart, and says which came first", () => {
+  const older = scanContext(providerBlock, { ...providerRow, observed_at: "2026-09-09T13:00:00Z" });
+  assert.equal(older.recorded, true);
+  assert.equal(older.observed_at, "2026-09-09T13:00:00Z");
+  assert.equal(older.last_success, "2026-09-15T13:28:27.690566Z");
+  assert.equal(older.sameCapture, false);
+  assert.equal(older.order, "observed_first");
+  assert.equal(scanContext(providerBlock, providerRow).order, "same");
+  // A saved record can hold a query OLDER than the observation beside it, and
+  // calling that observation "older" would be a lie in the other direction.
+  assert.equal(scanContext(providerBlock, providerRow, { basis: "provider_query", city: "Chicago",
+    saved_at: "2026-09-16T00:00:00Z", last_success: "2026-09-09T13:00:00Z", returned: 500, total: 4100, truncated: true }).order,
+    "query_first");
+  assert.equal(scanContext(providerBlock, { ...providerRow, observed_at: undefined }).order, "unknown");
+});
+
+test("curated research is never described as a provider-query result", () => {
+  const curated = scanContext(providerBlock, curatedPlan);
+  assert.equal(curated.basis, "curated_research");
+  assert.equal(curated.recorded, false);
+  assert.equal(scanContext(providerBlock, { ...curatedPlan, kind: "manual" }).basis, "manual_entry");
+  // A frozen copy is preferred over the live block and keeps its own dates.
+  const frozen = scanContext(providerBlock, providerRow, {
+    basis: "provider_query", city: "Chicago", saved_at: "2026-09-10T00:00:00Z",
+    observed_at: "2026-09-09T13:00:00Z", last_success: "2026-09-09T13:00:00Z", returned: 500, total: 4100, truncated: true });
+  assert.equal(frozen.frozen, true);
+  assert.equal(frozen.total, 4100);
+  assert.equal(frozen.last_success, "2026-09-09T13:00:00Z");
+  assert.equal(frozen.saved_at, "2026-09-10T00:00:00Z");
+  // An older save that recorded nothing stays "not recorded".
+  assert.equal(scanContext(providerBlock, providerRow,
+    { basis: "provider_query", city: "Chicago", saved_at: "2026-09-10T00:00:00Z" }).recorded, false);
+});
+
+// --- Charging evidence -------------------------------------------------------
+test("building charging and public charging context are four separate states", () => {
+  const noStations = { charging_stations: [], city_context: { afdc_status: "Key not configured; no public charging dataset fetched." } };
+  const yes = chargingEvidence({ ...curatedPlan, lat: 41.87, lng: -87.63 }, noStations);
+  assert.equal(yes.status, "yes");
+  assert.match(yes.building, /Building charging advertised/);
+  assert.equal(yes.public, "unavailable");
+  assert.equal(yes.nearby, null);
+
+  const none = chargingEvidence({ ...providerRow, lat: 41.87, lng: -87.63, charging: { status: "no" } }, noStations);
+  assert.match(none.building, /No building charging/);
+  assert.equal(none.public, "unavailable");
+
+  const unknown = chargingEvidence({ ...providerRow, lat: 41.87, lng: -87.63 }, noStations);
+  assert.match(unknown.building, /Building charging unknown/);
+
+  // A loaded public dataset counts nearby stations and still changes nothing
+  // about the building's own three states.
+  const loaded = { charging_stations: [
+      { title: "Near", lat: 41.8705, lng: -87.6305 },
+      { title: "Far", lat: 42.2, lng: -87.9 }],
+    city_context: { afdc: { updated_at: "2026-09-14T13:01:29Z" } } };
+  const near = chargingEvidence({ ...providerRow, lat: 41.87, lng: -87.63 }, loaded);
+  assert.equal(near.public, "loaded");
+  assert.equal(near.nearby, 1);
+  assert.equal(near.status, "unknown");
+  assert.equal(near.observed_at, "2026-09-14T13:01:29Z");
+  assert(publicChargingMiles > 0 && publicChargingMiles <= 1);
+
+  // No coordinates: nothing is measured and no location is invented.
+  const unlocated = chargingEvidence({ ...providerRow, lat: null, lng: null }, loaded);
+  assert.equal(unlocated.public, "unlocated");
+  assert.equal(unlocated.nearby, null);
+});
+
+test("a charging cost is never folded into the known monthly subtotal", () => {
+  const base = costs({ ...curatedPlan, parking: { status: "yes", monthly: 200 } }, {}, defaults);
+  assert.equal(base.charging, null);
+  assert.equal(base.chargingIncluded, false);
+  assert.equal(base.known, 2663 + 200 + 120);
+  // Even a recorded amount stays outside the subtotal rather than implying it.
+  const priced = costs({ ...curatedPlan, parking: { status: "yes", monthly: 200 }, charging: { status: "yes", monthly: 35 } }, {}, defaults);
+  assert.equal(priced.charging, 35);
+  assert.equal(priced.known, base.known);
+  assert(!priced.unknown.includes("charging"));
+});
+
+test("a record with no coordinates stays inspectable and source-accessible", () => {
+  const unlocated = { ...curatedPlan, id: "unlocated-plan", lat: null, lng: null };
+  const access = sourceAccess(unlocated);
+  assert.equal(access.kind, "plan_source");
+  assert(access.fallback.terms.length > 0);
+  assert.equal(distanceMiles(unlocated, searchCenter), null);
+  assert.equal(validateHome({ ...unlocated, id: "unlocated-plan" }), true);
+});
+
+// --- Saved query context -----------------------------------------------------
+const scanRecord = { basis: "provider_query", city: "Chicago", saved_at: "2026-09-15T14:00:00Z",
+  feed_generated_at: "2026-09-15T13:28:27.690566Z", observed_at: "2026-09-15T13:28:27.690566Z",
+  last_success: "2026-09-15T13:28:27.690566Z", returned: 500, total: 4484, truncated: true, accepted: 500 };
+
+test("saved query context validates, survives a backup, and a notebook without it stays valid", () => {
+  const notebook = { ...emptyWorkspace(), records: { a: { saved: true, scan: scanRecord } } };
+  assert.deepEqual(validateWorkspace(notebook).records.a.scan, scanRecord);
+  // Backward compatible: a version-1 notebook that never recorded one is fine.
+  assert.doesNotThrow(() => validateWorkspace({ ...emptyWorkspace(), records: { a: { saved: true } } }));
+  // Only the three recorded bases, real dates and bounded counts are accepted.
+  for (const bad of [
+    { ...scanRecord, basis: "guessed" },
+    { ...scanRecord, saved_at: "not a date" },
+    { ...scanRecord, last_success: "not a date" },
+    { ...scanRecord, returned: 501 },
+    { ...scanRecord, returned: 1.5 },
+    { ...scanRecord, total: -1 },
+    { ...scanRecord, truncated: "yes" },
+    "a string instead of a record",
+  ])
+    assert.throws(() => validateWorkspace({ ...emptyWorkspace(), records: { a: { saved: true, scan: bad } } }),
+      /invalid saved source context/);
 });

@@ -32,7 +32,8 @@ import {
   spicyPicks,
   pickLenses,
   recipeDefaults, recipeLabels, remixPicks, decisionPool, apartmentTradeoffs, areaMatch, pricePulse, nextMoves, nextMove, costField,
-} from "./model.js?v=20260913-connected";
+  sourceAccess, sourceReferences, scanContext, chargingEvidence, publicChargingMiles,
+} from "./model.js?v=20260915-source-evidence";
 const $ = (s) => document.querySelector(s),
   KEY = "spicyhome.workspace.v1",
   CACHE = "spicyhome.feed.v1";
@@ -98,6 +99,29 @@ const allHomes = () => {
 };
 const getHome = (id) => allHomes().find((h) => h.id === id);
 const record = (id) => state.records[id] ?? {};
+// A saved home keeps the query context it was read under, with its own dates,
+// so a later scan is never presented as having been captured with an older
+// observation. An archived record -- one the current feed no longer carries --
+// is never re-stamped with today's query: it keeps whatever it recorded, and an
+// older save that recorded nothing stays "not recorded".
+function savedScan(id, home) {
+  const prior = record(id).scan;
+  if (!home || home.notebook_only) return prior;
+  const basis =
+    home.kind === "building" ? "curated_research" : home.kind === "manual" ? "manual_entry" : "provider_query";
+  const context = {
+    basis,
+    city: homeCity(home) || null,
+    saved_at: new Date().toISOString(),
+    feed_generated_at: feed?.generated_at ?? null,
+    observed_at: home.observed_at ?? null,
+  };
+  const scan = basis === "provider_query" ? feed?.provider?.area_scans?.[context.city] : null;
+  if (!scan) return context;
+  for (const key of ["last_success", "returned", "total", "truncated", "accepted"])
+    if (scan[key] !== undefined && scan[key] !== null) context[key] = scan[key];
+  return context;
+}
 const dateLabel = (s) => {
   const d = new Date(s);
   return Number.isFinite(d.getTime())
@@ -196,6 +220,94 @@ function link(url, label, classes = "") {
   return u
     ? `<a class="${classes}" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>`
     : "";
+}
+// The way to a record's source, in the words the record earns: the link that
+// exists is labelled by what it actually reaches, a missing exact listing URL
+// is said out loud, and the way out is a labelled search over recorded public
+// identity -- never a guessed listing address and never anything personal.
+function sourceLinks(h) {
+  const a = sourceAccess(h);
+  return (
+    (a.url ? link(a.url, a.label, "button secondary") : "") +
+    (a.fallback ? link(a.fallback.url, a.fallback.label, "button secondary") : "")
+  );
+}
+function sourceSentence(h) {
+  const a = sourceAccess(h);
+  if (a.unavailable)
+    return "No source link and no recorded address or building name, so there is nothing to open and nothing to search. None is invented.";
+  return [a.says, a.missing, a.fallback ? a.fallback.note : ""].filter(Boolean).join(" ");
+}
+// The home's own observation and the area's recorded query are two dates about
+// two different things, so they are printed as two sentences. A curated plan is
+// never described as a provider-query result, and an area with no recorded scan
+// says so rather than borrowing another area's coverage. These build plain text;
+// escaping happens once, where the text is put into the page.
+function scanSentence(context) {
+  const where = context.city || "this area";
+  if (!context.recorded)
+    return context.basis === "curated_research"
+      ? "Researched from the building's own source. No provider listing query stands behind this record."
+      : context.basis === "manual_entry"
+        ? "Entered by you. No provider listing query stands behind this record."
+        : `No listing query is recorded for ${where}${context.frozen ? " in this saved record" : ""}.`;
+  const counts =
+    context.total === null
+      ? `returned ${context.returned ?? "an unrecorded number of"} listings; the total matching count was not recorded`
+      : `returned ${context.returned} of ${context.total.toLocaleString("en-US")} reported matches`;
+  const completeness =
+    context.coverage === "complete"
+      ? "Complete for that recorded query."
+      : "Coverage of that query is incomplete; it is not a reading of the whole market or of current availability.";
+  return `Listing query for ${where}, ${dateLabel(context.last_success)}: ${counts}. ${completeness}`;
+}
+// A short form of the same answer, for a comparison cell.
+function scanCell(h) {
+  const context = scanContext(feed.provider, h, record(h.id).scan);
+  if (!context.recorded)
+    return context.basis === "provider_query"
+      ? "Not recorded"
+      : "No provider query — " + (context.basis === "curated_research" ? "official-source research" : "your own entry");
+  const counts = context.total === null ? `${context.returned ?? "?"} returned · total not recorded` : `${context.returned} of ${context.total.toLocaleString("en-US")}`;
+  return `${context.city || "Area"} · ${dateLabel(context.last_success)} · ${counts} · ${context.coverage === "complete" ? "complete for that query" : "incomplete"}`;
+}
+// A saved record keeps the query context it was read under. Where the area has
+// been scanned again since, both are shown with their own dates rather than
+// merged, and an older save that recorded none says "not recorded".
+function evidenceDates(h, r) {
+  const frozen = scanContext(feed.provider, h, r.scan);
+  const live = r.scan ? scanContext(feed.provider, h, null) : null;
+  const moved = live && live.recorded && live.last_success !== frozen.last_success;
+  return (
+    `<p class="meta source-dates">Observed for this home: <strong>${esc(dateLabel(h.observed_at))}</strong>${
+      !frozen.recorded || frozen.order === "same" || frozen.order === "unknown"
+        ? "."
+        : frozen.order === "observed_first"
+          ? " — older than the recorded query below, which was not captured with it."
+          : " — later than the recorded query below, which was not captured with it."
+    } ${esc(scanSentence(frozen))}${frozen.frozen ? " Recorded when you saved this home." : ""}</p>` +
+    (moved
+      ? `<p class="meta source-dates">Current feed context, separate from your saved record: ${esc(scanSentence(live))}</p>`
+      : "")
+  );
+}
+function chargingLines(h) {
+  const ev = chargingEvidence(h, feed);
+  const caveat =
+    ev.status === "yes"
+      ? "An advertised charger is not a guaranteed compatible, available or priced one."
+      : ev.status === "no"
+        ? "That is the source's answer for the building, not a check of your own."
+        : "Unknown is not the same as none.";
+  const resident = [ev.note || (ev.status === "unknown" ? "The source never established resident charging here." : ""), caveat]
+    .filter(Boolean).join(" ");
+  const publicLine =
+    ev.public === "unavailable"
+      ? `Nearby public charging: context unavailable — no public charging dataset is loaded${ev.status_note ? " (" + ev.status_note + ")" : ""}. That is not evidence that there are no chargers.`
+      : ev.public === "unlocated"
+        ? "Nearby public charging: this record has no coordinates, so no public station can be measured against it."
+        : `Nearby public charging: ${ev.nearby} public station${ev.nearby === 1 ? "" : "s"} within ${publicChargingMiles} straight-line miles, observed ${dateLabel(ev.observed_at)}. Public stations are not a resident amenity and grant no parking or charging right.`;
+  return `<li>${esc(ev.building)}. ${esc(resident)}</li><li>${esc(publicLine)}</li>`;
 }
 function chip(h, key, label) {
   const status = h[key]?.status ?? "unknown";
@@ -456,7 +568,7 @@ function renderCard(h) {
     c = costs(h, r, prefs),
     delta = changeFor(h),
     saved = !!r.saved;
-  return `<article class="home-card" data-home="${esc(h.id)}"><div class="card-top"><span class="neighborhood">${esc(homeCity(h) || h.neighborhood)}</span><button class="save-button" data-save="${esc(h.id)}" aria-label="${saved ? "Remove" : "Save"} ${esc(h.title)} ${saved ? "from" : "to"} shortlist" aria-pressed="${saved}">${heartIcon()}</button></div><h3>${esc(h.title)}</h3><p class="address">${esc(h.address)}</p><p class="plan-label">${esc(planLabel(h))} · ${h.sqft ? esc(h.sqft) + " sq ft" : "Size unverified"}</p><div class="rent-row"><strong class="rent">${money(displayPrice(h))}</strong>${displayPrice(h) !== null ? "<small>/ mo</small>" : ""}</div><p class="price-kind">${esc(priceKind(h))}</p><p class="meta layout-evidence">${esc(layout.label)}</p><div class="cost-line"><span>Known monthly subtotal</span><strong>${subtotalValue(c)}</strong></div><div class="chips">${chip(h, "parking", "Parking")}${chip(h, "charging", "EV")}</div>${costGap(h, c)}${delta !== null && delta !== 0 ? `<div class="price-change">${delta < 0 ? "↓" : "↑"} ${money(Math.abs(delta))} since previous observation</div>` : ""}${r.tourDate ? `<p class="tour-note">Tour: ${esc(r.tourDate.replace("T", " · "))}</p>` : ""}${h.notebook_only ? '<p class="price-change">Archived notebook entry · absent from the current feed</p>' : h.seen_in_latest === false ? '<p class="price-change">Not seen in this area’s last scan · availability unverified</p>' : ""}<div class="evidence-stamp">${evidence(h)} · ${esc(dateLabel(h.observed_at))}</div>${r.status ? `<p class="meta card-status">${esc(r.status)}</p>` : ""}${tourProgress(r) ? `<p class="tour-progress">Your tour review · ${tourProgress(r)}/${tourChecks.length} checked</p>` : ""}<div class="card-actions"><button class="button small secondary" data-detail="${esc(h.id)}">Details &amp; check layout</button><label class="compare-label"><input type="checkbox" data-compare="${esc(h.id)}" ${comparison.has(h.id) ? "checked" : ""}>Compare</label><button class="text-button" data-tour="${esc(h.id)}">Tour companion ↗</button></div></article>`;
+  return `<article class="home-card" data-home="${esc(h.id)}"><div class="card-top"><span class="neighborhood">${esc(homeCity(h) || h.neighborhood)}</span><button class="save-button" data-save="${esc(h.id)}" aria-label="${saved ? "Remove" : "Save"} ${esc(h.title)} ${saved ? "from" : "to"} shortlist" aria-pressed="${saved}">${heartIcon()}</button></div><h3>${esc(h.title)}</h3><p class="address">${esc(h.address)}</p><p class="plan-label">${esc(planLabel(h))} · ${h.sqft ? esc(h.sqft) + " sq ft" : "Size unverified"}</p><div class="rent-row"><strong class="rent">${money(displayPrice(h))}</strong>${displayPrice(h) !== null ? "<small>/ mo</small>" : ""}</div><p class="price-kind">${esc(priceKind(h))}</p><p class="meta layout-evidence">${esc(layout.label)}</p><div class="cost-line"><span>Known monthly subtotal</span><strong>${subtotalValue(c)}</strong></div><div class="chips">${chip(h, "parking", "Parking")}${chip(h, "charging", "EV")}</div>${costGap(h, c)}${delta !== null && delta !== 0 ? `<div class="price-change">${delta < 0 ? "↓" : "↑"} ${money(Math.abs(delta))} since previous observation</div>` : ""}${r.tourDate ? `<p class="tour-note">Tour: ${esc(r.tourDate.replace("T", " · "))}</p>` : ""}${h.notebook_only ? '<p class="price-change">Archived notebook entry · absent from the current feed</p>' : h.seen_in_latest === false ? '<p class="price-change">Not seen in this area’s last scan · availability unverified</p>' : ""}<div class="evidence-stamp">${evidence(h)} · ${esc(dateLabel(h.observed_at))} · ${esc(sourceAccess(h).summary)}</div>${r.status ? `<p class="meta card-status">${esc(r.status)}</p>` : ""}${tourProgress(r) ? `<p class="tour-progress">Your tour review · ${tourProgress(r)}/${tourChecks.length} checked</p>` : ""}<div class="card-actions"><button class="button small secondary" data-detail="${esc(h.id)}">Details &amp; check layout</button><label class="compare-label"><input type="checkbox" data-compare="${esc(h.id)}" ${comparison.has(h.id) ? "checked" : ""}>Compare</label><button class="text-button" data-tour="${esc(h.id)}">Tour companion ↗</button></div></article>`;
 }
 function empty(title, text, action = "") {
   return `<div class="empty"><h3>${esc(title)}</h3><p>${esc(text)}</p>${action}</div>`;
@@ -800,7 +912,7 @@ function renderShortlist() {
   $("#view-content").innerHTML = `<div class="board-heading"><p>From a maybe to a move-in. Move each home forward at your pace.</p><button class="button secondary" id="export-notebook">Export notebook</button></div>${finalistShelf(saved)}${renderTourAgenda(saved)}<div class="stage-tabs" aria-label="Filter saved homes by stage">${["all", ...statuses].map((stage) => `<button data-board-stage="${stage}" aria-pressed="${boardStage === stage}">${stage === "all" ? "All saved" : esc(stage)} <span>${stage === "all" ? saved.length : saved.filter((h) => (record(h.id).status ?? "shortlisted") === stage).length}</span></button>`).join("")}</div>${saved.length ? `<div class="decision-board">${(boardStage === "all" ? activeStages : [boardStage]).map((stage) => { const homes = saved.filter((h) => (record(h.id).status ?? "shortlisted") === stage); return `<section class="board-column"><div class="board-title"><span class="stage-dot"></span><h3>${esc(stage)}</h3><span>${homes.length}</span></div>${homes.length ? homes.map((h) => `<div class="board-home">${renderCard(h)}${boardNext(h)}<div class="board-controls"><button class="button small secondary" data-finalist="${esc(h.id)}" aria-pressed="${!!record(h.id).finalist}">${record(h.id).finalist ? "Unpin finalist" : "Pin as finalist"}</button><label for="stage-${esc(h.id)}">Move to stage</label><select id="stage-${esc(h.id)}" data-stage="${esc(h.id)}">${statuses.map((s) => `<option ${s === stage ? "selected" : ""}>${s}</option>`).join("")}</select><button class="button small secondary" data-lab="${esc(h.id)}">Try the monthly costs ↗</button></div></div>`).join("") : '<p class="meta">No homes at this stage yet.</p>'}</section>`; }).join("")}</div>` : empty("Your decision board starts here.", "Save a home from Discover or Focus, then track the ones worth a tour.", '<button class="button" data-go="discover">Find apartments</button>')}<p class="meta">Stages and tour checks are your notes. They do not change listing availability or contact a building.</p><div id="compare-tray"></div>`;
   $("#export-notebook").onclick = exportNotebook;
   document.querySelectorAll("[data-board-stage]").forEach((button) => { button.onclick = () => { boardStage = button.dataset.boardStage; render(); [...document.querySelectorAll("[data-board-stage]")].find((b) => b.dataset.boardStage === boardStage)?.focus(); }; });
-  document.querySelectorAll("[data-stage]").forEach((select) => { select.onchange = () => { const id = select.dataset.stage; state.records[id] = { ...record(id), status: select.value, snapshot: getHome(id), saved: true }; event(id, "Moved to " + select.value + "."); const ok = persist(); render(); focusHomeControl(id, "stage"); saveNotice(ok); }; });
+  document.querySelectorAll("[data-stage]").forEach((select) => { select.onchange = () => { const id = select.dataset.stage; state.records[id] = { ...record(id), status: select.value, snapshot: getHome(id), scan: savedScan(id, getHome(id)), saved: true }; event(id, "Moved to " + select.value + "."); const ok = persist(); render(); focusHomeControl(id, "stage"); saveNotice(ok); }; });
   bindFinalists();
   renderTray();
 }
@@ -923,6 +1035,7 @@ function bindCards() {
           saved,
           finalist: saved ? !!r.finalist : false,
           snapshot: getHome(id),
+          scan: savedScan(id, getHome(id)),
           status: r.status ?? "shortlisted",
         };
         event(id, saved ? "Added to shortlist." : "Removed from shortlist.");
@@ -992,7 +1105,7 @@ function showDetail(id) {
     .sort((a, b) => a.distance - b.distance)
     .slice(0, 2);
   $("#detail-content").innerHTML =
-    `<div class="dialog-body"><div class="dialog-header"><div><p class="eyebrow">${esc(h.neighborhood)} / ${evidence(h)}</p><h2 id="detail-title">${esc(h.title)}</h2></div><button class="dialog-close" data-close aria-label="Close apartment details">×</button></div><p class="detail-sub">${esc(h.address)} · ${esc(layoutEvidence(h, r).label)} · ${esc(planLabel(h))}${h.sqft ? " · " + esc(h.sqft) + " sq ft" : ""}</p><div class="detail-actions"><button class="button secondary" data-save="${esc(id)}" aria-pressed="${!!r.saved}">${heartIcon()}<span data-save-text="${esc(id)}">${r.saved ? "Saved to your shortlist" : "Save to shortlist"}</span></button><label class="compare-label"><input type="checkbox" data-compare="${esc(id)}" ${comparison.has(id) ? "checked" : ""}>Compare this place</label><p class="meta" id="detail-compare-status" role="status"></p></div>${detailDock()}<div class="callout">${h.kind === "building" ? "This is a researched building prospect, not a guaranteed available unit. " : ""}${h.seen_in_latest === false ? "Not in this area’s latest capped snapshot; current availability is unverified. " : ""}${esc(h.availability_note ?? "Confirm the current unit and move-in date with the listing source.")} Observed ${esc(dateLabel(h.observed_at))}${ageDays(h.observed_at) > 7 ? " — this quote needs refreshing." : "."}</div><div class="detail-links">${link("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(h.title+" "+h.address),"Check resident reviews ↗","button secondary")}${link(h.source_url, h.kind === "manual" ? "Your source ↗" : "Official source ↗", "button secondary")}${link("https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(h.address), "Map & directions ↗", "button secondary")}${h.kind === "listing" ? link("https://www.google.com/search?q=" + encodeURIComponent(h.address + " apartment for rent"), "Find the listing ↗", "button secondary") : ""}</div><section class="layout-review"><h3>Check the layout</h3><p class="meta">${esc(h.layout_note ?? "The source has not supplied a floor plan confirming a separate bedroom.")}</p><div class="field full"><label for="layoutReview">What did you find when checking the floor plan?</label><select id="layoutReview" name="layoutReview" form="record-form" aria-describedby="layout-help"><option value="unverified" ${!r.layoutReview || r.layoutReview === "unverified" ? "selected" : ""}>Not checked yet</option>${Object.entries(checkedLayouts).map(([value, [beds, baths]]) => `<option value="${value}" ${r.layoutReview === value ? "selected" : ""}>I checked: ${beds} separate bedroom${beds === 1 ? "" : "s"} · ${baths} bathroom${baths === 1 ? "" : "s"}</option>`).join("")}<option value="studio" ${r.layoutReview === "studio" ? "selected" : ""}>Studio / convertible — hide from search</option><option value="other" ${r.layoutReview === "other" ? "selected" : ""}>Different layout — hide from search</option></select><p class="meta" id="layout-help">Compare the exact unit or named plan with the source. Your correction stays in this browser and survives feed refreshes; saved notes remain in your shortlist.</p></div><button class="button small" type="submit" form="record-form">Save changes</button></section>${questionBrief(h, r)}${tourCompanion(h, r)}<div class="detail-grid"><section class="detail-section" id="detail-costs" tabindex="-1"><h3>The monthly picture</h3><table class="cost-table"><tr><td>Base rent<small>${amount(r.rentOverride) !== null ? "Your quote" : h.rent !== null ? "Source amount" : "Not quoted"}</small></td><td>${c.rent === null ? unreported("not quoted") : money(c.rent)}</td></tr><tr><td>Parking<small>${amount(r.parkingCost) !== null ? "Your quote" : "Source amount"}</small></td><td>${c.parking === null ? unreported("not quoted") : money(c.parking)}</td></tr><tr><td>Recurring fees<small>${amount(r.monthlyFees) !== null ? "Your quote" : "Source amount"}</small></td><td>${c.fees === null ? unreported("not quoted") : money(c.fees)}</td></tr><tr><td>Utilities<small>Your estimate, not a quote</small></td><td>${c.utilities !== null ? `<span class="sc-estimate">${money(c.utilities)}</span>` : unreported("not entered")}</td></tr><tr><td>Known monthly subtotal<small>${c.unknown.length ? "The amounts that exist — not a complete monthly cost" : "Every monthly item above"}</small></td><td>${subtotalValue(c)}</td></tr></table><p class="range-note">${c.unknown.length ? "Still unquoted: " + esc(c.unknown.join(", ")) + ". This is not an all-in total. A recorded $0 is an amount; an unquoted item is not." : "All entered monthly items included. Confirm the quote’s completeness with leasing."}</p>${c.unknown.length ? `<p class="meta cost-complete"><button class="text-button" type="button" data-detail-jump="${esc(costField(c.unknown[0]))}">Complete missing costs ↓</button><span>Recurring monthly amounts only. Deposits, one-time fees and moving costs are recorded separately below.</span></p>` : ""}<p class="meta">One-time nonrefundable fees: ${money(c.upfront)}. Refundable deposits are separate; record them in your notes.</p></section><section class="detail-section"><h3>Parking, charging & access</h3><ul class="fact-list"><li>${esc(h.parking?.note ?? "Parking terms unverified.")}</li><li>${esc(h.charging?.note ?? "EV charging unverified.")}</li><li>${esc(h.access?.note ?? "Step-free access unverified.")}</li><li>Confirm space availability, charger compatibility and fees for your lease.</li><li>Distances below cover the loaded CTA station reference only. See the area guide for suburban Metra options; station proximity is not a commute estimate.</li>${stations.map((s) => `<li>${esc(s.title)}: ${s.distance.toFixed(2)} mi straight-line. This is not a walking route or accessibility rating.</li>`).join("")}</ul></section></div><section class="detail-section"><h3>The feel of the place</h3><p class="detail-sub">${esc(h.atmosphere ?? "Add your own impression after a visit.")}</p><div class="chips">${(h.amenities ?? []).map((a) => `<span class="chip">${esc(a)}</span>`).join("")}</div></section><section class="detail-section" id="detail-history" tabindex="-1"><h3>Observed base rent</h3>${priceChart(h)}${r.quote_history?.length ? "<h3>Your recorded quotes</h3>" + priceChart({ history: r.quote_history }) : ""}</section><section class="detail-section"><h3>Your quotes & tour notebook</h3><form id="record-form" data-id="${esc(id)}"><div class="form-grid"><div class="field"><label for="status">Where you are</label><select id="status" name="status">${statuses.map((s) => `<option ${r.status === s ? "selected" : ""}>${s}</option>`).join("")}</select></div><div class="field"><label for="tourDate">Tour date & Chicago time</label><input id="tourDate" name="tourDate" type="datetime-local" value="${esc(r.tourDate ? chicagoTime(r.tourDate) ?? "" : "")}"></div>${[
+    `<div class="dialog-body"><div class="dialog-header"><div><p class="eyebrow">${esc(h.neighborhood)} / ${evidence(h)}</p><h2 id="detail-title">${esc(h.title)}</h2></div><button class="dialog-close" data-close aria-label="Close apartment details">×</button></div><p class="detail-sub">${esc(h.address)} · ${esc(layoutEvidence(h, r).label)} · ${esc(planLabel(h))}${h.sqft ? " · " + esc(h.sqft) + " sq ft" : ""}</p><div class="detail-actions"><button class="button secondary" data-save="${esc(id)}" aria-pressed="${!!r.saved}">${heartIcon()}<span data-save-text="${esc(id)}">${r.saved ? "Saved to your shortlist" : "Save to shortlist"}</span></button><label class="compare-label"><input type="checkbox" data-compare="${esc(id)}" ${comparison.has(id) ? "checked" : ""}>Compare this place</label><p class="meta" id="detail-compare-status" role="status"></p></div>${detailDock()}<div class="callout">${h.kind === "building" ? "This is a researched building prospect, not a guaranteed available unit. " : ""}${h.seen_in_latest === false ? "Not in this area’s latest capped snapshot; current availability is unverified. " : ""}${esc(h.availability_note ?? "Confirm the current unit and move-in date with the listing source.")} Observed ${esc(dateLabel(h.observed_at))}${ageDays(h.observed_at) > 7 ? " — this quote needs refreshing." : "."}</div><div class="detail-links">${sourceLinks(h)}${link("https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(h.address), "Map & directions ↗", "button secondary")}${link("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(h.title+" "+h.address),"Check resident reviews ↗","button secondary")}</div><p class="meta source-access">${esc(sourceSentence(h))}</p><section class="layout-review"><h3>Check the layout</h3><p class="meta">${esc(h.layout_note ?? "The source has not supplied a floor plan confirming a separate bedroom.")}</p><div class="field full"><label for="layoutReview">What did you find when checking the floor plan?</label><select id="layoutReview" name="layoutReview" form="record-form" aria-describedby="layout-help"><option value="unverified" ${!r.layoutReview || r.layoutReview === "unverified" ? "selected" : ""}>Not checked yet</option>${Object.entries(checkedLayouts).map(([value, [beds, baths]]) => `<option value="${value}" ${r.layoutReview === value ? "selected" : ""}>I checked: ${beds} separate bedroom${beds === 1 ? "" : "s"} · ${baths} bathroom${baths === 1 ? "" : "s"}</option>`).join("")}<option value="studio" ${r.layoutReview === "studio" ? "selected" : ""}>Studio / convertible — hide from search</option><option value="other" ${r.layoutReview === "other" ? "selected" : ""}>Different layout — hide from search</option></select><p class="meta" id="layout-help">Compare the exact unit or named plan with the source. Your correction stays in this browser and survives feed refreshes; saved notes remain in your shortlist.</p></div><button class="button small" type="submit" form="record-form">Save changes</button></section>${questionBrief(h, r)}${tourCompanion(h, r)}<div class="detail-grid"><section class="detail-section" id="detail-costs" tabindex="-1"><h3>The monthly picture</h3><table class="cost-table"><tr><td>Base rent<small>${amount(r.rentOverride) !== null ? "Your quote" : h.rent !== null ? "Source amount" : "Not quoted"}</small></td><td>${c.rent === null ? unreported("not quoted") : money(c.rent)}</td></tr><tr><td>Parking<small>${amount(r.parkingCost) !== null ? "Your quote" : "Source amount"}</small></td><td>${c.parking === null ? unreported("not quoted") : money(c.parking)}</td></tr><tr><td>Recurring fees<small>${amount(r.monthlyFees) !== null ? "Your quote" : "Source amount"}</small></td><td>${c.fees === null ? unreported("not quoted") : money(c.fees)}</td></tr><tr><td>Utilities<small>Your estimate, not a quote</small></td><td>${c.utilities !== null ? `<span class="sc-estimate">${money(c.utilities)}</span>` : unreported("not entered")}</td></tr><tr><td>Resident EV charging<small>Never part of this subtotal</small></td><td>${h.charging?.status === "no" ? unreported("not offered here") : c.charging === null ? unreported("not quoted") : money(c.charging)}</td></tr><tr><td>Known monthly subtotal<small>${c.unknown.length ? "The amounts that exist — not a complete monthly cost" : "Every monthly item above"}</small></td><td>${subtotalValue(c)}</td></tr></table><p class="range-note">${c.unknown.length ? "Still unquoted: " + esc(c.unknown.join(", ")) + ". This is not an all-in total. A recorded $0 is an amount; an unquoted item is not." : "All entered monthly items included. Confirm the quote’s completeness with leasing."} ${h.charging?.status === "no" ? "No resident charging is offered here." : "No resident EV charging cost is quoted, and none is included in this subtotal."}</p>${c.unknown.length ? `<p class="meta cost-complete"><button class="text-button" type="button" data-detail-jump="${esc(costField(c.unknown[0]))}">Complete missing costs ↓</button><span>Recurring monthly amounts only. Deposits, one-time fees and moving costs are recorded separately below.</span></p>` : ""}<p class="meta">One-time nonrefundable fees: ${money(c.upfront)}. Refundable deposits are separate; record them in your notes.</p></section><section class="detail-section"><h3>Parking, charging & access</h3><ul class="fact-list"><li>Parking: ${esc(h.parking?.note ?? "terms unverified.")}</li>${chargingLines(h)}<li>Step-free access: ${esc(h.access?.note ?? "unverified.")}</li><li>Confirm space availability, charger compatibility and fees for your lease.</li><li>Distances below cover the loaded CTA station reference only. See the area guide for suburban Metra options; station proximity is not a commute estimate.</li>${stations.map((s) => `<li>${esc(s.title)}: ${s.distance.toFixed(2)} mi straight-line. This is not a walking route or accessibility rating.</li>`).join("")}</ul></section></div><section class="detail-section"><h3>The feel of the place</h3><p class="detail-sub">${esc(h.atmosphere ?? "Add your own impression after a visit.")}</p><div class="chips">${(h.amenities ?? []).map((a) => `<span class="chip">${esc(a)}</span>`).join("")}</div></section><section class="detail-section" id="detail-history" tabindex="-1"><h3>Observed base rent</h3>${priceChart(h)}${r.quote_history?.length ? "<h3>Your recorded quotes</h3>" + priceChart({ history: r.quote_history }) : ""}</section><section class="detail-section"><h3>Your quotes & tour notebook</h3><form id="record-form" data-id="${esc(id)}"><div class="form-grid"><div class="field"><label for="status">Where you are</label><select id="status" name="status">${statuses.map((s) => `<option ${r.status === s ? "selected" : ""}>${s}</option>`).join("")}</select></div><div class="field"><label for="tourDate">Tour date & Chicago time</label><input id="tourDate" name="tourDate" type="datetime-local" value="${esc(r.tourDate ? chicagoTime(r.tourDate) ?? "" : "")}"></div>${[
       ["rentOverride", "Quoted base rent"],
       ["parkingCost", "Parking / month"],
       ["monthlyFees", "Other recurring fees / month"],
@@ -1005,7 +1118,7 @@ function showDetail(id) {
       )
       .join(
         "",
-      )}<div class="field"><label for="quoteDate">Quote date</label><input id="quoteDate" name="quoteDate" type="date" value="${esc(r.quoteDate ?? "")}"></div><div class="field full"><label for="notes">The details that matter to you</label><textarea id="notes" name="notes" maxlength="20000" placeholder="Light, noise, storage, lease terms, parking quote, connector type, tour questions…">${esc(r.notes ?? "")}</textarea></div></div><div class="form-actions"><button class="button" type="submit">Save changes</button>${r.tourDate ? '<button class="button secondary" id="download-tour" type="button">Save tour to calendar</button>' : ""}</div><p class="meta">Saved on this device. No message is sent to the building.</p></form></section><section class="detail-section" id="detail-sources" tabindex="-1"><h3>Sources behind this record</h3>${(h.sources ?? [{ url: h.source_url, supports: "Your source link" }]).map((s) => `<p class="sourceline">${link(s.url, s.url)}<br>${esc(s.supports ?? "")}</p>`).join("")}</section></div>`;
+      )}<div class="field"><label for="quoteDate">Quote date</label><input id="quoteDate" name="quoteDate" type="date" value="${esc(r.quoteDate ?? "")}"></div><div class="field full"><label for="notes">The details that matter to you</label><textarea id="notes" name="notes" maxlength="20000" placeholder="Light, noise, storage, lease terms, parking quote, connector type, tour questions…">${esc(r.notes ?? "")}</textarea></div></div><div class="form-actions"><button class="button" type="submit">Save changes</button>${r.tourDate ? '<button class="button secondary" id="download-tour" type="button">Save tour to calendar</button>' : ""}</div><p class="meta">Saved on this device. No message is sent to the building.</p></form></section><section class="detail-section" id="detail-sources" tabindex="-1"><h3>Sources behind this record</h3>${evidenceDates(h, r)}${sourceReferences(h).map((s) => `<p class="sourceline">${link(s.url, s.url)}<br>${esc(s.supports)}<br><span class="meta">${s.documentation ? "Provider documentation, not a listing for this home. " : ""}${s.observed_at ? "Observed " + esc(dateLabel(s.observed_at)) : "Source date not recorded"}</span></p>`).join("") || '<p class="meta">No source reference is recorded for this home.</p>'}</section></div>`;
   $("#detail-dialog").showModal();
   // The record carries the same save and compare controls as every card, so it
   // is bound by the same handler rather than growing a second mechanism.
@@ -1039,6 +1152,7 @@ function showDetail(id) {
       next[k] = v === "" ? null : Number(v);
     }
     next.snapshot = h;
+    next.scan = savedScan(id, h);
     if (next.rentOverride !== null && next.rentOverride !== r.rentOverride) {
       next.quote_history = [
         ...(r.quote_history ?? []),
@@ -1118,13 +1232,26 @@ function showCompare() {
     ],
     ["Parking / month", (h) => money(costs(h, record(h.id), prefs).parking)],
     [
-      "EV charging",
+      "Building EV charging",
       (h) =>
         h.charging?.status === "yes"
           ? "Advertised; access unverified"
           : h.charging?.status === "no"
             ? "Not offered"
             : "Unverified",
+    ],
+    // Public stations are not a resident amenity, so they are never read in the
+    // row above; an unavailable dataset is its own answer, not "none nearby".
+    [
+      "Nearby public charging",
+      (h) => {
+        const ev = chargingEvidence(h, feed);
+        return ev.public === "unavailable"
+          ? "Context unavailable — not evidence of no chargers"
+          : ev.public === "unlocated"
+            ? "No coordinates on record — cannot be measured"
+            : `${ev.nearby} within ${publicChargingMiles} mi straight-line`;
+      },
     ],
     ["Space", (h) => (h.sqft ? `${h.sqft} sq ft` : "Unverified")],
     [
@@ -1137,6 +1264,10 @@ function showCompare() {
             : "Unverified",
     ],
     ["Observed", (h) => dateLabel(h.observed_at), true],
+    // What the source link actually reaches, and the query the record was read
+    // under -- two things a reader needs before trusting a row above.
+    ["Source access", (h) => sourceAccess(h).summary, true],
+    ["Listing query for this area", (h) => scanCell(h), true],
     ["Your status", (h) => record(h.id).status ?? "Researching"],
     ["Your notes", (h) => record(h.id).notes || "No notes yet"],
   ];
@@ -1167,7 +1298,7 @@ function showCompare() {
     spread("Reported space", (h) => (Number.isFinite(h.sqft) && h.sqft > 0 ? h.sqft : null), (v) => `${Math.round(v)} sq ft`, "Reported by the source for the named plan; the exact unit still needs confirming.")
   }</ul><p class="meta">No place is ranked here and no score is calculated. A difference is shown only where every selected place has that figure on the same basis.</p></section>`;
   $("#compare-content").innerHTML =
-    `<div class="dialog-body"><div class="dialog-header"><div><p class="eyebrow">THE APARTMENT FACE-OFF</p><h2 id="compare-title">Picture your everyday.</h2></div><button class="dialog-close" data-close aria-label="Close comparison">×</button></div><p class="detail-sub">The same facts for every place. Differences only hides matching facts, including shared unknowns. Rent, square footage and amenity claims need confirmation for the exact unit.</p><div class="compare-controls"><label><input id="compare-differences" type="checkbox" ${compareDifferences ? "checked" : ""} ${hs.length < 2 ? "disabled" : ""}>Differences only</label><span role="status">${visibleRows.length} of ${rows.length} facts shown${compareDifferences && folded.length ? ` · ${folded.length} matching fact${folded.length === 1 ? "" : "s"} folded away` : ""}</span></div>${compareDifferences && folded.length ? `<p class="meta compare-folded">Folded because every place records the same answer: ${esc(folded.map(([label]) => label).join(", "))}. The plan, the layout evidence, the price basis and the source date are never folded. Turn the toggle off to read them all.</p>` : ""}<div class="compare-identities">${hs.map((h,i) => { const c = costs(h, record(h.id), prefs); return `<article><span class="compare-letter">${String.fromCharCode(65+i)}</span><div><h3>${esc(h.title)}</h3><p>${esc(planLabel(h))}</p><p class="meta">${esc(h.address)}</p><div class="compare-actions"><button class="text-button" data-studio-task="${esc(h.id)}" data-task-target="detail-costs">See cost breakdown ↗</button>${c.unknown.length ? `<button class="text-button" data-studio-task="${esc(h.id)}" data-task-target="${esc(costField(c.unknown[0]))}">Complete missing costs ↗</button>` : ""}</div></div></article>`; }).join("")}</div>${differences}${visibleRows.length ? `<div class="matrix-wrap matrix-desktop"><table class="matrix"><thead><tr><th scope="col">Your priorities</th>${hs.map((h,i) => `<th scope="col">${String.fromCharCode(65+i)} · ${esc(h.title)}<small>${esc(planLabel(h))}</small></th>`).join("")}</tr></thead><tbody>${visibleRows.map((row) => `<tr${differs(row) ? ' data-differs="true"' : ""}><th scope="row">${row[0]}</th>${hs.map((h) => `<td>${esc(row[1](h))}</td>`).join("")}</tr>`).join("")}</tbody></table></div>${comparePair(hs, visibleRows)}` : empty("These recorded facts match.","Turn off Differences only to review every fact, including shared unknowns.")}<div class="form-actions"><button class="button secondary" id="print-comparison">Print comparison</button></div></div>`;
+    `<div class="dialog-body"><div class="dialog-header"><div><p class="eyebrow">THE APARTMENT FACE-OFF</p><h2 id="compare-title">Picture your everyday.</h2></div><button class="dialog-close" data-close aria-label="Close comparison">×</button></div><p class="detail-sub">The same facts for every place. Differences only hides matching facts, including shared unknowns. Rent, square footage and amenity claims need confirmation for the exact unit.</p><div class="compare-controls"><label><input id="compare-differences" type="checkbox" ${compareDifferences ? "checked" : ""} ${hs.length < 2 ? "disabled" : ""}>Differences only</label><span role="status">${visibleRows.length} of ${rows.length} facts shown${compareDifferences && folded.length ? ` · ${folded.length} matching fact${folded.length === 1 ? "" : "s"} folded away` : ""}</span></div>${compareDifferences && folded.length ? `<p class="meta compare-folded">Folded because every place records the same answer: ${esc(folded.map(([label]) => label).join(", "))}. The plan, the layout evidence, the price basis, the source date, how the source is reached and the query behind it are never folded. Turn the toggle off to read them all.</p>` : ""}<div class="compare-identities">${hs.map((h,i) => { const c = costs(h, record(h.id), prefs); return `<article><span class="compare-letter">${String.fromCharCode(65+i)}</span><div><h3>${esc(h.title)}</h3><p>${esc(planLabel(h))}</p><p class="meta">${esc(h.address)}</p><div class="compare-actions"><button class="text-button" data-studio-task="${esc(h.id)}" data-task-target="detail-costs">See cost breakdown ↗</button>${c.unknown.length ? `<button class="text-button" data-studio-task="${esc(h.id)}" data-task-target="${esc(costField(c.unknown[0]))}">Complete missing costs ↗</button>` : ""}</div></div></article>`; }).join("")}</div>${differences}${visibleRows.length ? `<div class="matrix-wrap matrix-desktop"><table class="matrix"><thead><tr><th scope="col">Your priorities</th>${hs.map((h,i) => `<th scope="col">${String.fromCharCode(65+i)} · ${esc(h.title)}<small>${esc(planLabel(h))}</small></th>`).join("")}</tr></thead><tbody>${visibleRows.map((row) => `<tr${differs(row) ? ' data-differs="true"' : ""}><th scope="row">${row[0]}</th>${hs.map((h) => `<td>${esc(row[1](h))}</td>`).join("")}</tr>`).join("")}</tbody></table></div>${comparePair(hs, visibleRows)}` : empty("These recorded facts match.","Turn off Differences only to review every fact, including shared unknowns.")}<div class="form-actions"><button class="button secondary" id="print-comparison">Print comparison</button></div></div>`;
   $("#compare-dialog").showModal();
   bindStudioTasks();
   $("#compare-content [data-close]").onclick = () =>
@@ -1629,7 +1760,7 @@ function renderFocus(homes) {
     $("#focus-save").onclick = () => {
       const previous = record(home.id);
       focusUndo = { action: "save", id: home.id, saved: !!previous.saved };
-      state.records[home.id] = { ...previous, saved: true, status: previous.status ?? "shortlisted", snapshot: home };
+      state.records[home.id] = { ...previous, saved: true, status: previous.status ?? "shortlisted", snapshot: home, scan: savedScan(home.id, home) };
       event(home.id, "Saved from Focus."); const ok = persist(); renderResults(); bindContent(); focusHomeControl("", "focus-next"); saveNotice(ok);
     };
   }
@@ -1794,7 +1925,7 @@ function bindFinalists() {
   document.querySelectorAll("[data-finalist]").forEach((button)=>{button.onclick=()=>{
     const id=button.dataset.finalist, rec=record(id), next=!rec.finalist;
     if(next && Object.values(state.records).filter((r)=>r.finalist).length>=3){toast("Three finalists are pinned. Unpin one before adding another.");return;}
-    state.records[id]={...rec,saved:true,finalist:next,snapshot:getHome(id)};
+    state.records[id]={...rec,saved:true,finalist:next,snapshot:getHome(id),scan:savedScan(id,getHome(id))};
     event(id,next ? "Pinned as a finalist." : "Unpinned finalist.");const ok=persist();render();focusHomeControl(id,"finalist");saveNotice(ok);
   };});
   if($("#compare-finalists")) $("#compare-finalists").onclick=()=>{comparison=new Set(allHomes().filter((home)=>record(home.id).saved && record(home.id).finalist).map((home)=>home.id));renderTray();showCompare();};

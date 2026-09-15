@@ -570,6 +570,147 @@ try {
     await context.close();
   }
 
+  // --- 7. the source route and the evidence behind it, on a screen ---------
+  //         jsdom can say the words are in the markup. Only a browser can say
+  //         the links wrap instead of pushing the page sideways, that a finger
+  //         can hit them, and that the dated evidence is actually visible.
+  const ARCHIVED = JSON.parse(FEED).homes.find((h) => h.kind === 'listing');
+  // A home the current feed no longer carries: the notebook is keyed by the
+  // snapshot's own id, which is how a saved record is read back.
+  const ARCHIVED_ID = ARCHIVED.id + '-archived';
+  const savedNotebook = JSON.stringify({
+    version: 1, manual: [], events: [], preferences: {}, savedSearches: [],
+    records: { [ARCHIVED_ID]: { saved: true, status: 'toured', notes: 'Ask about the garage waitlist',
+      snapshot: { ...ARCHIVED, id: ARCHIVED_ID },
+      scan: { basis: 'provider_query', city: 'Chicago', saved_at: '2026-09-09T14:00:00Z',
+        feed_generated_at: '2026-09-09T13:00:00Z', observed_at: '2026-09-09T13:00:00Z',
+        last_success: '2026-09-09T13:00:00Z', returned: 500, total: 4100, truncated: true, accepted: 500 } } },
+  });
+  for (const [label, opts] of [['1280px dark', { theme: 'dark' }],
+                               ['1280px light', { theme: 'light' }],
+                               ['390px dark', { width: 390, height: 844, mobile: true, theme: 'dark' }],
+                               ['390px light', { width: 390, height: 844, mobile: true, theme: 'light' }]]) {
+    const { context, page, errors } = await open(browser, opts);
+    const read = await page.evaluate(async (id) => {
+      const open = async (home) => {
+        const button = [...document.querySelectorAll('[data-detail]')].find((b) => b.dataset.detail === home);
+        if (!button) return { opened: null };
+        button.click();
+        await new Promise((r) => setTimeout(r, 350));
+        const box = document.querySelector('#detail-content');
+        const dialog = document.querySelector('#detail-dialog').getBoundingClientRect();
+        const links = [...box.querySelectorAll('.detail-links a')].map((a) => {
+          const r = a.getBoundingClientRect();
+          return { text: a.textContent.trim(), h: Math.round(r.height), w: Math.round(r.width),
+            inside: r.left >= dialog.left - 1 && r.right <= dialog.right + 1 };
+        });
+        const line = (sel) => { const el = box.querySelector(sel); if (!el) return null;
+          const r = el.getBoundingClientRect();
+          return { text: el.textContent.trim(), h: Math.round(r.height), inside: r.right <= dialog.right + 1 }; };
+        const out = { opened: box.querySelector('[data-save]')?.dataset.save ?? null,
+          links, access: line('.source-access'), dates: line('.source-dates'),
+          references: [...box.querySelectorAll('.sourceline')].map((p) => p.textContent.trim()),
+          charging: [...box.querySelectorAll('.fact-list li')].map((li) => li.textContent.trim()),
+          costRows: [...box.querySelectorAll('.cost-table tr')].map((r) => r.textContent.trim()),
+          sideways: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1 };
+        document.querySelector('#detail-dialog').close();
+        return out;
+      };
+      const curated = await open('amli-lofts');
+      const provider = await open(id);
+      return { curated, provider };
+    }, ARCHIVED.id);
+    const hitable = (r) => r.links.every((l) => l.h >= 24 && l.w > 0 && l.inside);
+    check(`${label} each read opened the record it named`,
+      read.curated.opened === 'amli-lofts' && read.provider.opened === ARCHIVED.id,
+      `${read.curated.opened} | ${read.provider.opened}`);
+    check(`${label} a curated plan's source is labelled as a plan page and reachable`,
+      read.curated.links.some((l) => /Open the building \/ plan source/.test(l.text)) &&
+      read.curated.links.some((l) => /Search this building & plan/.test(l.text)) && hitable(read.curated),
+      read.curated.links.map((l) => `${l.text} ${l.h}px`).join(' · '));
+    check(`${label} a provider row offers a labelled search and no invented listing link`,
+      read.provider.links.some((l) => /Search this address/.test(l.text)) &&
+      !read.provider.links.some((l) => /Open the recorded listing|Find the listing/.test(l.text)) && hitable(read.provider),
+      read.provider.links.map((l) => l.text).join(' · '));
+    check(`${label} the sentence about the source is on screen and inside the record`,
+      read.provider.access?.h > 0 && read.provider.access.inside &&
+      /No exact listing URL is on record/.test(read.provider.access.text), `${read.provider.access?.h}px`);
+    check(`${label} the incomplete provider query is readable beside the home's own date`,
+      read.provider.dates?.h > 0 && read.provider.dates.inside &&
+      /Observed for this home/.test(read.provider.dates.text) &&
+      /Coverage of that query is incomplete/.test(read.provider.dates.text), `${read.provider.dates?.h}px`);
+    check(`${label} every source reference prints a date or says it is not recorded`,
+      read.curated.references.length > 0 &&
+      read.curated.references.every((r) => /Observed |Source date not recorded/.test(r)),
+      `${read.curated.references.length} references`);
+    check(`${label} building charging and public charging context stay apart`,
+      read.curated.charging.some((c) => /Building charging advertised/.test(c)) &&
+      read.curated.charging.some((c) => /public charging: context unavailable/i.test(c)) &&
+      read.curated.charging.filter((c) => /Building advertises electric car charging stations\./.test(c)).length === 1,
+      read.curated.charging.slice(1, 3).join(' | ').slice(0, 90));
+    check(`${label} the charging cost is named outside the subtotal`,
+      read.curated.costRows.some((r) => /^Resident EV charging/.test(r) && /Never part of this subtotal/.test(r)));
+    check(`${label} an open record does not push the page sideways`,
+      !read.curated.sideways && !read.provider.sideways);
+    check(`${label} the record raises no page error`, errors.length === 0, errors.slice(0, 2).join(' '));
+    // The record itself is what this suite is about, so the artifact shows it
+    // open rather than the page behind it.
+    await page.evaluate(async (id) => {
+      [...document.querySelectorAll('[data-detail]')].find((b) => b.dataset.detail === id)?.click();
+      await new Promise((r) => setTimeout(r, 350));
+      document.querySelector('#detail-sources')?.scrollIntoView({ block: 'center' });
+    }, ARCHIVED.id);
+    await page.waitForTimeout(250);
+    await shot(page, `source-${label.replace(/\s+/g, '-')}`);
+    await page.evaluate(async () => {
+      [...document.querySelectorAll('[data-detail]')].find((b) => b.dataset.detail === 'amli-lofts')?.click();
+      await new Promise((r) => setTimeout(r, 350));
+    });
+    await page.waitForTimeout(250);
+    await shot(page, `source-curated-${label.replace(/\s+/g, '-')}`);
+    await context.close();
+  }
+  // The saved record the feed no longer carries: its own frozen query, beside
+  // today's, each labelled -- and its notes still in the form.
+  for (const [label, opts] of [['1280px', { theme: 'dark' }],
+                               ['390px', { width: 390, height: 844, mobile: true, theme: 'light' }]]) {
+    const { context, page, errors } = await open(browser, { ...opts, storage: { 'spicyhome.workspace.v1': savedNotebook } });
+    const saved = await page.evaluate(async (id) => {
+      document.querySelector('[data-view="shortlist"]').click();
+      await new Promise((r) => setTimeout(r, 400));
+      const card = [...document.querySelectorAll('[data-home]')].find((el) => el.dataset.home === id);
+      card?.querySelector('[data-detail]')?.click();
+      await new Promise((r) => setTimeout(r, 400));
+      const box = document.querySelector('#detail-content');
+      const dialog = document.querySelector('#detail-dialog').getBoundingClientRect();
+      const lines = [...box.querySelectorAll('.source-dates')].map((p) => {
+        const r = p.getBoundingClientRect();
+        return { text: p.textContent.trim(), h: Math.round(r.height), inside: r.right <= dialog.right + 1 };
+      });
+      return { opened: box.querySelector('[data-save]')?.dataset.save ?? null, cardText: card?.textContent ?? '', lines,
+        notes: box.querySelector('[name="notes"]')?.value ?? '',
+        search: [...box.querySelectorAll('.detail-links a')].map((a) => a.textContent.trim()),
+        sideways: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1 };
+    }, ARCHIVED_ID);
+    check(`${label} the reopened record is the saved one`, saved.opened === ARCHIVED_ID, String(saved.opened));
+    check(`${label} a saved home the feed dropped is archived, never called leased`,
+      /Archived notebook entry/.test(saved.cardText) && !/leased|no longer available/i.test(saved.cardText));
+    check(`${label} its own recorded query is shown, and today's beside it as separate context`,
+      saved.lines.length === 2 && /4,100/.test(saved.lines[0].text) &&
+      /Recorded when you saved this home/.test(saved.lines[0].text) &&
+      /Current feed context, separate from your saved record/.test(saved.lines[1].text) &&
+      !/4,100/.test(saved.lines[1].text),
+      saved.lines.map((l) => `${l.h}px`).join(' + '));
+    check(`${label} the saved evidence is readable inside the record`,
+      saved.lines.every((l) => l.h > 0 && l.inside) && !saved.sideways);
+    check(`${label} the notes and the labelled search survive with it`,
+      saved.notes === 'Ask about the garage waitlist' && saved.search.some((s) => /Search this address/.test(s)),
+      saved.search.join(' · '));
+    check(`${label} the reopened saved record raises no page error`, errors.length === 0, errors.slice(0, 2).join(' '));
+    await shot(page, `saved-evidence-${label}`);
+    await context.close();
+  }
+
 } finally {
   await browser.close();
   server.close();

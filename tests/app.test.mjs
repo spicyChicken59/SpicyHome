@@ -1397,3 +1397,411 @@ test("the vendored design snapshot is the released v2.13.0 and every hash matche
                         '.sc-compare-pair__values', '.sc-compare-pair__value', 'tr[data-differs="true"]'])
     assert(sheet.includes(needed), `${needed} is defined by the vendored sheet`);
 });
+
+// --- Traceable source access and evidence continuity -------------------------
+// One connected record set with two cities scanned on different dates, a
+// curated plan whose only URL is a building floor-plan page, and a provider row
+// the API supplies no listing URL for -- the three shapes this journey turns on.
+function sourceFeed(at = "2026-09-15T13:28:27.690566Z") {
+  const curated = {
+    ...seed.homes[0], id: "curated-plan", kind: "building", title: "AMLI Lofts",
+    address: "850 S. Clark St., Chicago, IL 60605", city: "Chicago", neighborhood: "South Loop",
+    floor_plan: "A320", rent: 2663, lat: 41.8713, lng: -87.6306, observed_at: "2026-09-07",
+    source_url: "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-lofts/floorplans",
+    sources: [
+      { url: "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-lofts", supports: "Address, neighborhood, A320 1BR/1BA", observed_at: "2026-09-07" },
+      { url: "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-lofts/floorplans", supports: "A320 floor-plan details" },
+    ],
+    parking: { status: "yes", monthly: 0 }, fees: { monthly: 120, one_time: null },
+    charging: { status: "yes", note: "Building advertises electric car charging stations." },
+    layout_status: "source_listed",
+  };
+  const listing = {
+    id: "rentcast:6700-S-South-Constance-Ave,-Unit-1,-Chicago,-IL-60649", kind: "listing",
+    title: "6700 S South Constance Ave", address: "6700 S South Constance Ave, Unit 1, Chicago, IL 60649",
+    city: "Chicago", neighborhood: "Chicago · neighborhood unverified", unit_label: "Unit 1",
+    rent: 1750, sqft: null, lat: 41.7731, lng: -87.5808, observed_at: at,
+    bedrooms: 1, bathrooms: 1, layout_status: "provider_reported", layout_declaration: null,
+    parking: { status: "unknown", note: "Not reported by the listing provider; confirm with leasing.", monthly: null },
+    charging: { status: "unknown", note: "Not reported by the listing provider; confirm with leasing." },
+    access: { status: "unknown", note: "Not reported by the listing provider; confirm with leasing." },
+    fees: { monthly: null, one_time: null }, amenities: [], source_url: null, seen_in_latest: true,
+    sources: [{ url: "https://developers.rentcast.io/reference/property-listings", supports: "RentCast listing ID; no direct listing URL supplied by the API." }],
+    history: [{ date: at, rent: 1750 }],
+  };
+  const suburb = {
+    ...listing, id: "rentcast:evanston-1", title: "1 Main St", address: "1 Main St, Unit 4, Evanston, IL 60201",
+    city: "Evanston", neighborhood: "Evanston", unit_label: "Unit 4", rent: 1900,
+    lat: 42.045, lng: -87.688, observed_at: "2026-09-08T13:29:28.215967Z",
+    history: [{ date: "2026-09-08T13:29:28.215967Z", rent: 1900 }],
+  };
+  return {
+    ...seed, mode: "connected", generated_at: at, charging_stations: [],
+    city_context: { afdc_status: "Key not configured; no public charging dataset fetched." },
+    homes: [curated, listing, suburb],
+    provider: {
+      configured: true, status: "success", last_success: at, coverage: "Latest area: Chicago.",
+      returned: 500, total: 4484, truncated: true, query: { city: "Chicago" },
+      area_scans: {
+        Chicago: { last_success: at, returned: 500, total: 4484, truncated: true, accepted: 500, query: { city: "Chicago", bedrooms: "1|2" } },
+        Evanston: { last_success: "2026-09-08T13:29:28.215967Z", returned: 176, total: 176, truncated: false, accepted: 176, query: { city: "Evanston", bedrooms: "1|2" } },
+      },
+    },
+  };
+}
+const openRecord = (d, id) => { d.doc.querySelector(`[data-detail="${id}"]`).click(); return d.doc.querySelector("#detail-content"); };
+const linkNamed = (box, pattern) => [...box.querySelectorAll("a")].find((a) => pattern.test(a.textContent));
+
+test("a curated plan's source is labelled as a building/plan page and offers a labelled plan search", async () => {
+  const feed = sourceFeed();
+  const d = await boot({ remote: feed, packaged: feed });
+  const box = openRecord(d, "curated-plan");
+  const source = linkNamed(box, /Open the building \/ plan source/);
+  assert.equal(source.getAttribute("href"), feed.homes[0].source_url);
+  assert.equal(source.target, "_blank");
+  assert.equal(source.rel, "noopener noreferrer");
+  const fallback = linkNamed(box, /Search this building & plan/);
+  assert.match(decodeURIComponent(fallback.href), /AMLI Lofts.*floor plan A320/);
+  const sentence = box.querySelector(".source-access").textContent;
+  assert.match(sentence, /plan A320/);
+  assert.match(sentence, /not proof that an exact unit is available/);
+  assert.match(sentence, /No exact listing URL is on record/);
+  assert.match(sentence, /A search, not a found listing/);
+  // Each reference keeps its own recorded date; the one without says so.
+  const lines = [...box.querySelectorAll(".sourceline")].map((p) => p.textContent);
+  assert.match(lines[0], /Observed Sep 7, 2026/);
+  assert.match(lines[1], /Source date not recorded/);
+  // Curated research is not a provider-query result.
+  const dates = box.querySelector(".source-dates").textContent;
+  assert.match(dates, /Observed for this home: Sep 7, 2026/);
+  assert.match(dates, /No provider listing query stands behind this record/);
+  assert.doesNotMatch(dates, /4,484/);
+  d.close();
+});
+
+test("a provider row with no listing URL says so, labels its documentation, and offers an address search", async () => {
+  const feed = sourceFeed();
+  const id = feed.homes[1].id;
+  const d = await boot({ remote: feed, packaged: feed });
+  const box = openRecord(d, id);
+  assert.equal(linkNamed(box, /Open the recorded listing/), undefined);
+  // The provider ID never becomes a guessed public listing address.
+  for (const a of box.querySelectorAll(".detail-links a"))
+    assert(!decodeURIComponent(a.href).includes("rentcast:"), a.href);
+  const fallback = linkNamed(box, /Search this address & unit/);
+  assert.match(decodeURIComponent(fallback.href), /6700 S South Constance Ave, Unit 1, Chicago, IL 60649 apartment for rent/);
+  assert.match(box.querySelector(".source-access").textContent, /It is not a rental listing for this home\./);
+  assert.match(box.querySelector(".source-access").textContent, /No exact listing URL is on record/);
+  assert.match(box.querySelector(".sourceline").textContent, /Provider documentation, not a listing for this home/);
+  // Its own city's capped query, with the counts the record retained.
+  const dates = box.querySelector(".source-dates").textContent;
+  assert.match(dates, /Listing query for Chicago, Sep 15, 2026: returned 500 of 4,484 reported matches/);
+  assert.match(dates, /Coverage of that query is incomplete/);
+  d.close();
+});
+
+test("a suburb reads its own scan date, never Chicago's, and an unscanned area says it is not recorded", async () => {
+  const feed = sourceFeed();
+  const d = await boot({ remote: feed, packaged: feed });
+  const evanston = openRecord(d, "rentcast:evanston-1").querySelector(".source-dates").textContent;
+  assert.match(evanston, /Listing query for Evanston, Sep 8, 2026: returned 176 of 176 reported matches/);
+  assert.match(evanston, /Complete for that recorded query\./);
+  assert.doesNotMatch(evanston, /Chicago|4,484/);
+  d.doc.querySelector("#detail-dialog").close();
+  // An area the feed has never scanned borrows nothing.
+  const unscanned = { ...feed, provider: { ...feed.provider, area_scans: { Evanston: feed.provider.area_scans.Evanston } } };
+  const d2 = await boot({ remote: unscanned, packaged: unscanned });
+  const chicago = openRecord(d2, feed.homes[1].id).querySelector(".source-dates").textContent;
+  assert.match(chicago, /No listing query is recorded for Chicago\./);
+  assert.doesNotMatch(chicago, /176/);
+  d.close(); d2.close();
+});
+
+test("a home observed before its area's latest query keeps the two dates apart, in the right order", async () => {
+  const feed = sourceFeed();
+  feed.homes[1] = { ...feed.homes[1], observed_at: "2026-09-09T13:00:00Z", seen_in_latest: false };
+  const d = await boot({ remote: feed, packaged: feed });
+  const dates = openRecord(d, feed.homes[1].id).querySelector(".source-dates").textContent;
+  assert.match(dates, /Observed for this home: Sep 9, 2026 — older than the recorded query below, which was not captured with it\./);
+  assert.match(dates, /Listing query for Chicago, Sep 15, 2026/);
+  d.close();
+  // The other direction happens on a saved record whose frozen query predates
+  // the observation it is filed beside; calling that one "older" is a lie.
+  const later = sourceFeed();
+  const notebook = { version: 1, manual: [], events: [], preferences: {}, savedSearches: [],
+    records: { [later.homes[1].id]: { saved: true, snapshot: later.homes[1],
+      scan: { basis: "provider_query", city: "Chicago", saved_at: "2026-09-16T00:00:00Z",
+        observed_at: "2026-09-09T13:00:00Z", last_success: "2026-09-09T13:00:00Z",
+        returned: 500, total: 4100, truncated: true } } } };
+  const d2 = await boot({ remote: later, packaged: later, notebook });
+  const reversed = openRecord(d2, later.homes[1].id).querySelector(".source-dates").textContent;
+  assert.match(reversed, /Observed for this home: Sep 15, 2026 — later than the recorded query below, which was not captured with it\./);
+  assert.doesNotMatch(reversed, /Sep 15, 2026 — older/);
+  d2.close();
+});
+
+test("looking up a source changes no saved or unsaved personal note, quote or check", async () => {
+  const feed = sourceFeed();
+  const id = feed.homes[1].id;
+  const notebook = { version: 1, records: { [id]: { saved: true, status: "toured", notes: "Landlord said the garage is full",
+    rentOverride: 1699, quoteDate: "2026-09-12", layoutReview: "one_bed", tourChecks: { parking: true } } },
+    manual: [], events: [], preferences: {} };
+  const d = await boot({ remote: feed, packaged: feed, notebook });
+  const box = openRecord(d, id);
+  // A half-typed note, not yet saved, is part of this check.
+  const notes = box.querySelector('[name="notes"]');
+  notes.value = "half-typed: ask about the charger";
+  const before = JSON.parse(d.w.localStorage.getItem("spicyhome.workspace.v1"));
+  for (const a of [...box.querySelectorAll(".detail-links a"), ...box.querySelectorAll(".sourceline a")]) a.click();
+  const after = JSON.parse(d.w.localStorage.getItem("spicyhome.workspace.v1"));
+  assert.deepEqual(after.records[id], before.records[id]);
+  assert.equal(after.records[id].notes, "Landlord said the garage is full");
+  assert.equal(after.records[id].rentOverride, 1699);
+  assert.equal(after.records[id].tourChecks.parking, true);
+  assert.equal(box.querySelector('[name="notes"]').value, "half-typed: ask about the charger");
+  // Returning lands on the same record, with the same plan identity.
+  assert.equal(d.doc.querySelector("#detail-title").textContent, "6700 S South Constance Ave");
+  assert.match(box.querySelector(".detail-sub").textContent, /Unit 1/);
+  assert.equal(d.doc.querySelector("#detail-dialog").open, true);
+  d.close();
+});
+
+test("a recorded $0 is an amount, unquoted fees are not, and charging is never treated as included", async () => {
+  const feed = sourceFeed();
+  const d = await boot({ remote: feed, packaged: feed });
+  const curated = openRecord(d, "curated-plan");
+  const rows = [...curated.querySelectorAll(".cost-table tr")].map((r) => r.textContent);
+  assert.match(rows.find((r) => r.startsWith("Parking")), /\$0/);
+  assert.match(rows.find((r) => r.startsWith("Resident EV charging")), /Never part of this subtotal/);
+  assert.match(rows.find((r) => r.startsWith("Resident EV charging")), /not quoted/);
+  // $2,663 + $0 parking + $120 fees, with utilities still unquoted.
+  assert.match(rows.find((r) => r.startsWith("Known monthly subtotal")), /\$2,783\+/);
+  assert.match(curated.querySelector(".range-note").textContent, /Still unquoted: utilities/);
+  assert.doesNotMatch(curated.querySelector(".range-note").textContent, /Still unquoted:[^.]*parking/);
+  assert.match(curated.querySelector(".range-note").textContent, /No resident EV charging cost is quoted, and none is included in this subtotal/);
+  d.doc.querySelector("#detail-dialog").close();
+  // The provider row has no parking and no fees at all: both stay unquoted.
+  const listing = openRecord(d, feed.homes[1].id);
+  assert.match(listing.querySelector(".range-note").textContent, /Still unquoted: parking, monthly fees, utilities/);
+  assert.match(listing.querySelector(".range-note").textContent, /not an all-in total/);
+  d.close();
+});
+
+test("building charging, no charging and unknown charging stay separate from an unavailable public context", async () => {
+  const feed = sourceFeed();
+  feed.homes[2] = { ...feed.homes[2], charging: { status: "no", note: "Leasing confirmed no resident charging." } };
+  const d = await boot({ remote: feed, packaged: feed });
+  const facts = (id) => [...openRecord(d, id).querySelectorAll(".fact-list li")].map((li) => li.textContent);
+  const advertised = facts("curated-plan");
+  assert(advertised.some((f) => /Building charging advertised\./.test(f)));
+  assert(advertised.some((f) => /Nearby public charging: context unavailable/.test(f) && /not evidence that there are no chargers/.test(f)));
+  // The source's own words are evidence and the status word is a reading of
+  // them: printing both as separate facts said one thing twice.
+  assert.equal(advertised.filter((f) => f.includes("Building advertises electric car charging stations.")).length, 1,
+    "the source's charging note is printed once");
+  assert(advertised.some((f) => /Building charging advertised\. Building advertises electric car charging stations\. An advertised charger is not a guaranteed/.test(f)));
+  d.doc.querySelector("#detail-dialog").close();
+  const unknown = facts(feed.homes[1].id);
+  assert(unknown.some((f) => /Building charging unknown\. Not reported by the listing provider; confirm with leasing\. Unknown is not the same as none\./.test(f)));
+  assert.equal(unknown.filter((f) => /^Building charging/.test(f)).length, 1, "one building-charging fact, not two voices");
+  assert.equal(unknown.filter((f) => /^Nearby public charging/.test(f)).length, 1, "one public-charging fact");
+  // The provider writes one unknown note for parking, charging and access, so
+  // each fact has to say which one it is about.
+  assert.equal(new Set(unknown).size, unknown.length, "no two facts read as the same sentence");
+  assert(unknown.some((f) => /^Parking: Not reported by the listing provider/.test(f)));
+  assert(unknown.some((f) => /^Step-free access: Not reported by the listing provider/.test(f)));
+  d.doc.querySelector("#detail-dialog").close();
+  const refused = facts("rentcast:evanston-1");
+  assert(refused.some((f) => /No building charging\. Leasing confirmed no resident charging\./.test(f)));
+  assert(refused.some((f) => /Nearby public charging: context unavailable/.test(f)),
+    "a building that offers none still says the public context is unavailable, not that there is none");
+  d.close();
+  // A record whose source said nothing at all about charging gets the words
+  // for that, rather than an empty status sentence.
+  const silent = sourceFeed();
+  silent.homes[1] = { ...silent.homes[1], charging: { status: "unknown" } };
+  const quiet = await boot({ remote: silent, packaged: silent });
+  assert([...openRecord(quiet, silent.homes[1].id).querySelectorAll(".fact-list li")]
+    .some((li) => /Building charging unknown\. The source never established resident charging here\. Unknown is not the same as none\./.test(li.textContent)));
+  quiet.close();
+});
+
+test("the comparison names how each source is reached and which query stands behind it", async () => {
+  const feed = sourceFeed();
+  const d = await boot({ remote: feed, packaged: feed });
+  for (const id of ["curated-plan", feed.homes[1].id]) {
+    const box = d.doc.querySelector(`#results [data-compare="${id}"]`);
+    box.checked = true; box.dispatchEvent(new d.w.Event("change"));
+  }
+  d.doc.querySelector("#open-compare").click();
+  const row = (label) => [...d.doc.querySelectorAll(".matrix tbody tr")]
+    .find((r) => r.querySelector("th").textContent === label);
+  assert.match(row("Source access").textContent, /Building \/ plan page · search available/);
+  assert.match(row("Source access").textContent, /Provider documentation only · search available/);
+  assert.match(row("Listing query for this area").textContent, /No provider query — official-source research/);
+  assert.match(row("Listing query for this area").textContent, /Chicago · Sep 15, 2026 · 500 of 4,484 · incomplete/);
+  assert.match(row("Building EV charging").textContent, /Advertised; access unverified/);
+  assert.match(row("Nearby public charging").textContent, /Context unavailable — not evidence of no chargers/);
+  d.close();
+});
+
+test("provenance is never folded away, even when every compared place records the same answer", async () => {
+  // Two provider rows in one city agree on how their source is reached and on
+  // the query behind them, so only the "always" rule can keep those rows.
+  const feed = sourceFeed();
+  const twin = { ...feed.homes[1], id: "rentcast:twin", title: "6702 S South Constance Ave",
+    address: "6702 S South Constance Ave, Unit 2, Chicago, IL 60649", unit_label: "Unit 2", rent: 1800 };
+  feed.homes = [feed.homes[1], twin];
+  const d = await boot({ remote: feed, packaged: feed });
+  for (const id of [feed.homes[0].id, twin.id]) {
+    const box = d.doc.querySelector(`#results [data-compare="${id}"]`);
+    box.checked = true; box.dispatchEvent(new d.w.Event("change"));
+  }
+  d.doc.querySelector("#open-compare").click();
+  const row = (label) => [...d.doc.querySelectorAll(".matrix tbody tr")]
+    .find((r) => r.querySelector("th").textContent === label);
+  assert.equal(row("Source access").dataset.differs, undefined, "the two agree on how the source is reached");
+  assert.equal(row("Listing query for this area").dataset.differs, undefined, "and on the query behind them");
+  const toggle = d.doc.querySelector("#compare-differences");
+  toggle.checked = true; toggle.dispatchEvent(new d.w.Event("change"));
+  assert(row("Source access"), "source access survives Differences only");
+  assert(row("Listing query for this area"), "the query behind the record survives Differences only");
+  // A matching fact with no such rule does fold, so the check is not vacuous.
+  assert.equal(row("Nearby public charging"), undefined);
+  assert.match(d.doc.querySelector(".compare-folded").textContent, /how the source is reached and the query behind it are never folded/);
+  d.close();
+});
+
+test("a saved home keeps the query it was read under, and a later scan is shown as separate context", async () => {
+  const feed = sourceFeed();
+  const id = feed.homes[1].id;
+  const d = await boot({ remote: feed, packaged: feed });
+  d.doc.querySelector(`[data-save="${id}"]`).click();
+  const stored = JSON.parse(d.w.localStorage.getItem("spicyhome.workspace.v1")).records[id];
+  assert.equal(stored.scan.basis, "provider_query");
+  assert.equal(stored.scan.city, "Chicago");
+  assert.equal(stored.scan.total, 4484);
+  assert.equal(stored.scan.observed_at, feed.homes[1].observed_at);
+  assert.equal(stored.scan.last_success, feed.homes[1].observed_at);
+  const notebook = JSON.parse(d.w.localStorage.getItem("spicyhome.workspace.v1"));
+  d.close();
+
+  // The area is scanned again, more widely, and the saved record leaves the page.
+  const later = sourceFeed("2026-09-22T13:00:00Z");
+  later.homes = [later.homes[0], later.homes[2]];
+  later.provider.area_scans.Chicago = { last_success: "2026-09-22T13:00:00Z", returned: 500, total: 5000, truncated: true, accepted: 500 };
+  const d2 = await boot({ remote: later, packaged: later, notebook });
+  d2.doc.querySelector('[data-view="shortlist"]').click();
+  const box = openRecord(d2, id);
+  const dates = [...box.querySelectorAll(".source-dates")].map((p) => p.textContent);
+  assert.match(dates[0], /returned 500 of 4,484 reported matches/);
+  assert.match(dates[0], /Recorded when you saved this home\./);
+  assert.match(dates[0], /Observed for this home: Sep 15, 2026\. /, "the save froze the query it was read under, so the two dates match");
+  assert.match(dates[1], /Current feed context, separate from your saved record/);
+  assert.match(dates[1], /returned 500 of 5,000 reported matches/);
+  // The two are never merged into one claim.
+  assert.doesNotMatch(dates[0], /5,000/);
+  d2.close();
+});
+
+test("a saved home outlives a changed, stale, empty and absent feed with its dated evidence intact", async () => {
+  const feed = sourceFeed();
+  const id = feed.homes[1].id;
+  const first = await boot({ remote: feed, packaged: feed });
+  first.doc.querySelector(`[data-save="${id}"]`).click();
+  const box = openRecord(first, id);
+  box.querySelector('[name="notes"]').value = "Garage is full; ask about the waitlist";
+  box.querySelector("#record-form").dispatchEvent(new first.w.Event("submit"));
+  const notebook = JSON.parse(first.w.localStorage.getItem("spicyhome.workspace.v1"));
+  first.close();
+
+  const gone = { ...sourceFeed("2026-09-22T13:00:00Z"), homes: [sourceFeed().homes[0]] };
+  for (const [name, remote, packaged] of [
+    ["changed", gone, gone],
+    ["empty", { ...gone, homes: [] }, { ...gone, homes: [] }],
+    ["absent", null, gone],
+  ]) {
+    const d = await boot({ remote, mirror: null, packaged, notebook });
+    d.doc.querySelector('[data-view="shortlist"]').click();
+    const saved = d.doc.querySelector(`[data-home="${id}"]`);
+    assert(saved, `the saved home is reachable with an ${name} feed`);
+    assert.match(saved.textContent, /Archived notebook entry · absent from the current feed/);
+    assert.doesNotMatch(saved.textContent, /leased|no longer available|unavailable/i);
+    const detail = openRecord(d, id);
+    assert.match(detail.querySelector(".detail-sub").textContent, /Unit 1/);
+    assert.match(detail.querySelector(".source-dates").textContent, /Observed for this home: Sep 15, 2026/);
+    assert.match(detail.querySelector(".source-dates").textContent, /returned 500 of 4,484 reported matches/);
+    assert.match(detail.querySelector(".sourceline").textContent, /Provider documentation, not a listing/);
+    assert(linkNamed(detail, /Search this address & unit/), "the labelled search still reaches it");
+    assert.equal(detail.querySelector('[name="notes"]').value, "Garage is full; ask about the waitlist");
+    // An archived record is never re-stamped with today's query -- not by
+    // reading it, and not by saving something else about it either.
+    const stamp = () => JSON.parse(d.w.localStorage.getItem("spicyhome.workspace.v1")).records[id].scan;
+    assert.equal(stamp().total, 4484);
+    assert.equal(stamp().last_success, "2026-09-15T13:28:27.690566Z");
+    detail.querySelector("#record-form").dispatchEvent(new d.w.Event("submit"));
+    assert.equal(stamp().total, 4484, `saving notes must not restamp the ${name} feed's query`);
+    d.doc.querySelector("#detail-dialog").close();
+    const stage = d.doc.querySelector(`[data-stage="${id}"]`);
+    stage.value = "contacted";
+    stage.dispatchEvent(new d.w.Event("change"));
+    assert.equal(stamp().total, 4484, `moving the stage must not restamp the ${name} feed's query`);
+    assert.equal(stamp().last_success, "2026-09-15T13:28:27.690566Z");
+    d.close();
+  }
+});
+
+test("saved query context travels through export and import, and an invalid one is refused before anything changes", async () => {
+  const feed = sourceFeed();
+  const id = feed.homes[1].id;
+  const d = await boot({ remote: feed, packaged: feed });
+  d.doc.querySelector(`[data-save="${id}"]`).click();
+  let exported = null;
+  d.w.Blob = class { constructor(parts) { exported = parts[0]; } };
+  d.w.HTMLAnchorElement.prototype.click = () => {};
+  d.doc.querySelector('[data-view="setup"]').click();
+  d.doc.querySelector("#export-notebook").click();
+  const backup = JSON.parse(exported);
+  assert.equal(backup.records[id].scan.total, 4484);
+  assert.equal(backup.records[id].scan.basis, "provider_query");
+  d.close();
+
+  // A second browser imports it through the notebook's own import path.
+  const fresh = await boot({ remote: feed, packaged: feed });
+  await fresh.doc.querySelector("#import-file").onchange(
+    { target: { files: [{ size: exported.length, text: async () => exported }], value: "" } });
+  const landed = JSON.parse(fresh.w.localStorage.getItem("spicyhome.workspace.v1")).records[id];
+  assert.equal(landed.scan.total, 4484);
+  assert.equal(landed.scan.city, "Chicago");
+  // A backup whose context is not a recorded shape is refused whole, before
+  // anything in the notebook is replaced.
+  const before = fresh.w.localStorage.getItem("spicyhome.workspace.v1");
+  const bad = JSON.stringify({ ...backup, records: { ...backup.records,
+    [id]: { ...backup.records[id], notes: "would have overwritten", scan: { basis: "guessed", saved_at: "2026-09-15T00:00:00Z" } } } });
+  await fresh.doc.querySelector("#import-file").onchange(
+    { target: { files: [{ size: bad.length, text: async () => bad }], value: "" } });
+  assert.equal(fresh.w.localStorage.getItem("spicyhome.workspace.v1"), before);
+  assert.match(fresh.doc.querySelector("#toast").textContent, /invalid saved source context/);
+  fresh.close();
+});
+test("a record with no coordinates is still inspectable and still reaches its source", async () => {
+  const feed = sourceFeed();
+  feed.homes[1] = { ...feed.homes[1], lat: null, lng: null };
+  const d = await boot({ remote: feed, packaged: feed });
+  const box = openRecord(d, feed.homes[1].id);
+  assert.equal(d.doc.querySelector("#detail-title").textContent, "6700 S South Constance Ave");
+  assert(linkNamed(box, /Search this address & unit/));
+  assert(![...box.querySelectorAll(".fact-list li")].some((li) => /within 0.5 straight-line miles/.test(li.textContent)),
+    "no public station is measured against a place with no coordinates");
+  assert([...box.querySelectorAll(".fact-list li")].some((li) => /no coordinates, so no public station can be measured|context unavailable/.test(li.textContent)));
+  d.close();
+});
+
+test("every card says what its source link actually reaches", async () => {
+  const feed = sourceFeed();
+  const d = await boot({ remote: feed, packaged: feed });
+  const stamp = (id) => d.doc.querySelector(`[data-home="${id}"] .evidence-stamp`).textContent;
+  assert.match(stamp("curated-plan"), /Building research · Sep 7, 2026 · Building \/ plan page · search available/);
+  assert.match(stamp(feed.homes[1].id), /Listing snapshot · Sep 15, 2026 · Provider documentation only · search available/);
+  d.close();
+});

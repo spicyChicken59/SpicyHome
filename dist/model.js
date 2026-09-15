@@ -967,6 +967,61 @@ export function nextMove(home, workspace, prefs=defaults, now=new Date()) {
   else task={title:'Record your decision',why:'Your checklist is complete. Record remaining questions and your decision; completion does not certify the apartment.',target:'notes',priority:20};
   return {home,...task,priority:task.priority+(rec.finalist ? 10 : 0),reviewed:tourProgress(rec),finalist:!!rec.finalist,unknown:cost.unknown,field:cost.unknown.length ? costField(cost.unknown[0]) : null};
 }
+// What is still unresolved about a saved home, derived from facts the record
+// already carries and from nothing else. Every item names the exact existing
+// field or evidence section that can settle it; none of them settles anything
+// by being opened, and none of them guesses. Ordered by decision weight, the
+// same order nextMove() picks its one step from, so the two cannot disagree
+// about what matters most.
+export function openQuestions(home = {}, record = {}, prefs = defaults, now = new Date()) {
+  const cost = costs(home, record, prefs);
+  const layout = layoutEvidence(home, record);
+  const access = sourceAccess(home);
+  const quoteAge = ageDays(amount(record.rentOverride) !== null ? record.quoteDate : home.observed_at, now);
+  const reviewed = tourProgress(record);
+  const items = [];
+  if (layout.status !== "confirmed")
+    items.push({ key: "layout", kind: "layout", label: "Layout not checked by you",
+      detail: layout.label, target: "layoutReview" });
+  for (const missing of cost.unknown)
+    items.push({ key: "cost:" + missing, kind: "cost", label: `${missing[0].toUpperCase()}${missing.slice(1)} not quoted`,
+      detail: missing === "utilities" ? "Your own estimate, not a quote from anyone." : "No source or quote records this amount.",
+      target: costField(missing), field: costField(missing) });
+  if (quoteAge === null)
+    items.push({ key: "quote", kind: "freshness", label: "No dated quote on record",
+      detail: "Ask for a dated quote and current availability.", target: "leasing-draft" });
+  else if (quoteAge > 7)
+    items.push({ key: "quote", kind: "freshness", label: `Quote is ${quoteAge} days old`,
+      detail: "Rent, fees and availability can move. Ask for a fresh one.", target: "leasing-draft" });
+  if (home.parking?.status === "unknown")
+    items.push({ key: "parking", kind: "amenity", label: "Parking not established by the source",
+      detail: "Unknown is not none, and it is not free.", target: "leasing-draft" });
+  if (home.charging?.status === "unknown")
+    items.push({ key: "charging", kind: "amenity", label: "Resident charging not established",
+      detail: "A nearby public station is not a resident amenity.", target: "leasing-draft" });
+  if (reviewed < tourChecks.length)
+    items.push({ key: "tour", kind: "tour", label: `${tourChecks.length - reviewed} of ${tourChecks.length} tour checks not reviewed`,
+      detail: "Your own review at a visit, not a certification.", target: "tour-draft-count" });
+  if (home.notebook_only || home.seen_in_latest === false)
+    items.push({ key: "presence", kind: "freshness", label: "Absent from the latest area scan",
+      detail: "A capped query missing it is not proof it is leased.", target: "detail-sources" });
+  if (!access.exact)
+    items.push({ key: "source", kind: "source", label: "No exact listing URL on record",
+      detail: access.fallback ? "The record offers a labelled search instead." : "Nothing recorded to search for.",
+      target: "detail-sources" });
+  return items;
+}
+// A difference is only a fact when every place holds that figure on the same
+// basis. One engine, so the Final Three and the full comparison cannot report
+// the same set of numbers differently; neither of them names a winner.
+export function figureSpread(entries = []) {
+  const missing = entries.filter((e) => !Number.isFinite(e.value));
+  if (entries.length < 2) return { comparable: false, reason: "one", missing: [], entries };
+  if (missing.length) return { comparable: false, reason: "missing", missing: missing.map((e) => e.name), entries };
+  const values = entries.map((e) => e.value);
+  const lo = Math.min(...values), hi = Math.max(...values);
+  return { comparable: true, reason: lo === hi ? "same" : "spread", missing: [], lo, hi, delta: hi - lo, entries };
+}
 // The exact notebook field that records a missing monthly amount. Opening a
 // field is not an answer -- saving one is -- so this only says where to type.
 export const costFields={'base rent':'rentOverride',parking:'parkingCost','monthly fees':'monthlyFees',utilities:'utilities'};

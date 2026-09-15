@@ -679,6 +679,8 @@ try {
       document.querySelector('[data-view="shortlist"]').click();
       await new Promise((r) => setTimeout(r, 400));
       const card = [...document.querySelectorAll('[data-home]')].find((el) => el.dataset.home === id);
+      const stated = card ? ['.saved-evidence', '.saved-chips', '.saved-head']
+        .map((sel) => card.querySelector(sel)?.textContent ?? '').join(' ') : '';
       card?.querySelector('[data-detail]')?.click();
       await new Promise((r) => setTimeout(r, 400));
       const box = document.querySelector('#detail-content');
@@ -687,14 +689,15 @@ try {
         const r = p.getBoundingClientRect();
         return { text: p.textContent.trim(), h: Math.round(r.height), inside: r.right <= dialog.right + 1 };
       });
-      return { opened: box.querySelector('[data-save]')?.dataset.save ?? null, cardText: card?.textContent ?? '', lines,
+      return { opened: box.querySelector('[data-save]')?.dataset.save ?? null, cardText: card?.textContent ?? '', stated, lines,
         notes: box.querySelector('[name="notes"]')?.value ?? '',
         search: [...box.querySelectorAll('.detail-links a')].map((a) => a.textContent.trim()),
         sideways: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1 };
     }, ARCHIVED_ID);
     check(`${label} the reopened record is the saved one`, saved.opened === ARCHIVED_ID, String(saved.opened));
     check(`${label} a saved home the feed dropped is archived, never called leased`,
-      /Archived notebook entry/.test(saved.cardText) && !/leased|no longer available/i.test(saved.cardText));
+      /Archived notebook entry/.test(saved.stated) && !/leased|no longer available|unavailable/i.test(saved.stated),
+      saved.stated.replace(/\s+/g, ' ').trim().slice(-70));
     check(`${label} its own recorded query is shown, and today's beside it as separate context`,
       saved.lines.length === 2 && /4,100/.test(saved.lines[0].text) &&
       /Recorded when you saved this home/.test(saved.lines[0].text) &&
@@ -708,6 +711,147 @@ try {
       saved.search.join(' · '));
     check(`${label} the reopened saved record raises no page error`, errors.length === 0, errors.slice(0, 2).join(' '));
     await shot(page, `saved-evidence-${label}`);
+    await context.close();
+  }
+
+  // --- 8. the saved decision desk, on a screen -----------------------------
+  //         jsdom can say the facts are in the markup. Only a browser can say
+  //         whether a returning reader meets a decision or a wall: what is in
+  //         the first viewport, how tall one saved home is, how many controls
+  //         it faces them with, and whether a ruled-out home still competes.
+  const DESK_HOMES = JSON.parse(FEED).homes;
+  const deskNotebook = JSON.stringify({
+    version: 1, manual: [], events: [], preferences: {}, savedSearches: [],
+    records: Object.fromEntries([
+      [DESK_HOMES.find((h) => h.kind === 'building').id, { saved: true, status: 'shortlisted', finalist: true }],
+      [DESK_HOMES.filter((h) => h.kind === 'building')[1].id, { saved: true, status: 'tour scheduled', finalist: true, layoutReview: 'one_bed' }],
+      [DESK_HOMES.find((h) => h.kind === 'listing').id, { saved: true, status: 'contacted', finalist: true, rentOverride: 1725, quoteDate: '2026-09-14', parkingCost: 0 }],
+      [DESK_HOMES.filter((h) => h.kind === 'listing')[1].id, { saved: true, status: 'researching' }],
+      [DESK_HOMES.filter((h) => h.kind === 'listing')[2].id, { saved: true, status: 'ruled out', notes: 'Too far from the train.' }],
+    ]),
+  });
+  for (const [label, opts] of [['1280px dark', { theme: 'dark' }],
+                               ['1280px light', { theme: 'light' }],
+                               ['390px dark', { width: 390, height: 844, mobile: true, theme: 'dark' }],
+                               ['390px light', { width: 390, height: 844, mobile: true, theme: 'light' }],
+                               ['320px dark', { width: 320, height: 640, mobile: true, theme: 'dark' }]]) {
+    const { context, page, errors } = await open(browser, { ...opts, storage: { 'spicyhome.workspace.v1': deskNotebook } });
+    const viewport = opts.height ?? 900;
+    const desk = await page.evaluate(async (fold) => {
+      document.querySelector('[data-view="shortlist"]').click();
+      await new Promise((r) => setTimeout(r, 500));
+      const box = (el) => el?.getBoundingClientRect() ?? null;
+      const rows = [...document.querySelectorAll('.saved-row')];
+      const stageOf = (row) => row.querySelector('[data-stage]')?.value ?? '';
+      const contender = rows.find((r) => stageOf(r) && stageOf(r) !== 'ruled out');
+      const ruled = document.querySelector('.saved-ruled .saved-row');
+      const painted = (el) => { const r = box(el); return !!r && r.height > 0 && r.width > 0 && getComputedStyle(el).visibility !== 'hidden'; };
+      // What a reader can actually reach without opening anything.
+      const facing = contender ? [...contender.querySelectorAll('button, select, input, a')]
+        .filter((el) => painted(el) && !el.closest('details:not([open])')).length : null;
+      const top = (el) => el ? Math.round(box(el).top + window.scrollY) : null;
+      const firstScreen = [...document.querySelectorAll('#view-content *')]
+        .filter((el) => { const r = box(el); return r.top >= 0 && r.top < fold && r.height > 0; });
+      return {
+        rows: rows.length,
+        rowHeight: contender ? Math.round(box(contender).height) : null,
+        facing,
+        docHeight: Math.round(document.documentElement.scrollHeight),
+        sideways: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+        firstRowTop: top(rows[0]),
+        shelfHeight: Math.round(box(document.querySelector('.finalist-shelf'))?.height ?? 0),
+        // The decision facts a phone shows before any scrolling.
+        firstScreenHasMoney: firstScreen.some((el) => el.matches('.finalist-rent, .saved-money')),
+        firstScreenHasDifference: firstScreen.some((el) => el.matches('.finalist-difference')),
+        openLists: document.querySelectorAll('.saved-open').length,
+        foldedOpen: [...document.querySelectorAll('.saved-open')].every((el) => !el.open),
+        ruledFolded: !document.querySelector('.saved-ruled')?.open,
+        ruledInFlow: !!ruled && !!ruled.closest('.saved-section'),
+        ruledOpacity: ruled ? Number(getComputedStyle(ruled.closest('.saved-row')).opacity) : null,
+        ruledContrast: (() => {
+          if (!ruled) return null;
+          const parse = (c) => (c.match(/[\d.]+/g) ?? []).map(Number);
+          const lum = ([r, g, b]) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+            return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
+          const behind = parse(getComputedStyle(document.body).backgroundColor);
+          const a = Number(getComputedStyle(ruled).opacity);
+          const text = parse(getComputedStyle(ruled.querySelector('h4')).color);
+          // The row is composited at its own opacity over the page behind it.
+          const blended = text.slice(0, 3).map((v, i) => v * a + behind[i] * (1 - a));
+          const [l1, l2] = [lum(blended), lum(behind)].sort((x, y) => y - x);
+          return Math.round(((l1 + 0.05) / (l2 + 0.05)) * 10) / 10;
+        })(),
+        pinnedRows: rows.filter((r) => r.classList.contains('is-finalist')).length,
+        finalistMarked: rows.filter((r) => r.classList.contains('is-finalist'))
+          .every((r) => /Final Three/.test(r.querySelector('.saved-chips')?.textContent ?? '')),
+        smallTargets: [...document.querySelectorAll('#view-content button, #view-content select, #view-content a')]
+          .filter((el) => { const r = box(el); return r.height > 0 && r.height < 44 && !el.closest('details:not([open])'); })
+          .map((el) => `${el.textContent.trim().slice(0, 24)}|${Math.round(box(el).height)}px`),
+      };
+    }, viewport);
+    check(`${label} a saved home is one compact decision, not a discovery card again`,
+      desk.rowHeight !== null && desk.rowHeight < (opts.mobile ? 760 : 560), `${desk.rowHeight}px per home`);
+    check(`${label} it faces the reader with a handful of controls, not a wall`,
+      desk.facing !== null && desk.facing <= 6, `${desk.facing} controls`);
+    check(`${label} the unresolved list and the ruled-out homes start folded`,
+      desk.openLists > 0 && desk.foldedOpen && desk.ruledFolded, `${desk.openLists} lists`);
+    check(`${label} a ruled-out home is out of the contenders' reading order and quieter`,
+      !desk.ruledInFlow && desk.ruledOpacity !== null && desk.ruledOpacity < 1,
+      `opacity ${desk.ruledOpacity}`);
+    check(`${label} a ruled-out home stays readable while it is demoted`,
+      desk.ruledContrast !== null && desk.ruledContrast >= 4.5, `${desk.ruledContrast}:1 at ${desk.ruledOpacity} opacity`);
+    check(`${label} a pinned home says so on its own row`,
+      desk.pinnedRows > 0 && desk.finalistMarked, `${desk.pinnedRows} pinned rows`);
+    check(`${label} the desk does not push the page sideways`, !desk.sideways);
+    check(`${label} every control a reader faces is a 44px target`,
+      desk.smallTargets.length === 0, desk.smallTargets.join(' · '));
+    check(`${label} the first screen carries a decision fact, not just a masthead`,
+      desk.firstScreenHasMoney || desk.firstScreenHasDifference,
+      `money ${desk.firstScreenHasMoney}, difference ${desk.firstScreenHasDifference}`);
+    check(`${label} the desk raises no page error`, errors.length === 0, errors.slice(0, 2).join(' '));
+    await shot(page, `desk-${label.replace(/\s+/g, '-')}`);
+    // The unresolved list opened: every item is a control that opens a field.
+    const opened = await page.evaluate(async () => {
+      const row = document.querySelector('.saved-row');
+      if (!row) return { items: 0, allActionable: false, marked: 0, readable: false, sideways: false };
+      row.querySelector('.saved-open').open = true;
+      await new Promise((r) => setTimeout(r, 200));
+      const items = [...row.querySelectorAll('.saved-open li')];
+      return { items: items.length,
+        allActionable: items.every((li) => !!li.querySelector('button[data-task-target]')),
+        marked: row.querySelectorAll('.saved-open li.is-next').length,
+        readable: items.every((li) => li.getBoundingClientRect().height >= 24),
+        sideways: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1 };
+    });
+    check(`${label} every unresolved item is a control that opens the field that settles it`,
+      opened.items > 0 && opened.allActionable && opened.marked === 1 && opened.readable && !opened.sideways,
+      `${opened.items} items, ${opened.marked} marked next`);
+    await page.evaluate(() => document.querySelector('.saved-row .saved-open')?.scrollIntoView({ block: 'center' }));
+    await page.waitForTimeout(250);
+    await shot(page, `desk-open-${label.replace(/\s+/g, '-')}`);
+    const moved = await page.evaluate(async () => {
+      const row = [...document.querySelectorAll('.saved-row')].find((r) => (r.querySelector('[data-stage]')?.value ?? '') === 'researching');
+      if (!row) return { ran: false };
+      row.querySelector('.saved-more').open = true;
+      const select = row.querySelector('[data-stage]');
+      const id = select.dataset.stage;
+      select.focus();
+      select.value = 'ruled out';
+      select.dispatchEvent(new Event('change'));
+      await new Promise((r) => setTimeout(r, 300));
+      const active = document.activeElement;
+      let shut = 0;
+      for (let el = active?.parentElement; el; el = el.parentElement) if (el.tagName === 'DETAILS' && !el.open) shut++;
+      return { ran: true, id, onControl: active?.dataset?.stage === id, tag: active?.tagName ?? 'none', shut,
+        inRuled: !!active?.closest('.saved-ruled'),
+        visible: active ? active.getBoundingClientRect().height > 0 : false };
+    });
+    check(`${label} moving a home to ruled out keeps the reader on its own control`,
+      moved.ran && moved.onControl && moved.inRuled && moved.shut === 0 && moved.visible,
+      `focus on ${moved.tag}, ${moved.shut} closed disclosures around it`);
+    await page.evaluate(() => { const r = document.querySelector('.saved-ruled'); if (r) { r.open = true; r.scrollIntoView({ block: 'center' }); } });
+    await page.waitForTimeout(250);
+    await shot(page, `desk-ruled-${label.replace(/\s+/g, '-')}`);
     await context.close();
   }
 

@@ -1287,7 +1287,7 @@ input, select, textarea { font-size: 1rem; }
 .topbar { padding-block: 14px; gap: 20px; }
 .topbar nav { flex-wrap: wrap; }
 .topbar nav button { padding: 10px 12px; }
-.brand, .brand > span, main, .field, .home-card, .results-column, .board-column, .lab-controls, .lab-output { min-width: 0; }
+.brand, .brand > span, main, .field, .home-card, .results-column, .saved-row, .lab-controls, .lab-output { min-width: 0; }
 .intro { grid-template-columns: minmax(0,1fr) 240px; gap: 24px; padding: 24px 0; }
 .intro h1 { font-size: clamp(1.75rem,3.4vw,2.7rem); }
 .intro h1 br { display: none; }
@@ -1369,37 +1369,68 @@ input, select, textarea { font-size: 1rem; }
 .stage-tabs button { border: 1px solid var(--line); border-radius: 99px; background: var(--surface); color: var(--ink); padding: 8px 13px; font-size: .875rem; text-transform: capitalize; }
 .stage-tabs button[aria-pressed="true"] { border-color: var(--wine); color: var(--wine); background: var(--wine-wash); }
 .stage-tabs span { margin-left: .35rem; font-variant-numeric: tabular-nums; }
-.decision-board { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,310px),1fr)); gap: 20px; align-items: start; }
-.board-column { padding: 12px; background: var(--blue-wash); border-radius: 18px; }
-.board-title { display: flex; gap: 10px; align-items: center; padding: 2px 4px 14px; }
-.board-title h3 { margin: 0; font: 1rem "DM Sans",sans-serif; text-transform: capitalize; }
-.board-title > span:last-child { margin-left: auto; color: var(--muted); }
-.stage-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); }
-.board-home { margin-bottom: 14px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); overflow: hidden; }
-.board-home:last-child { margin-bottom: 0; }
-.board-home .home-card { border: 0; border-radius: 0; box-shadow: none; padding: 18px; }
-.board-home .card-evidence { display: none; }
-/* A saved home's own next step, between the card and its controls: the stage it
-   is at, the question that is still open, and the one action that opens the
-   exact field where the answer goes. It composes the design system's action bar
-   -- chip, sentence, one action, a follow-on row -- and takes the notebook's
-   palette through the component's token channel, not by overriding its rules. */
-.board-next { margin: 0 18px 14px; --sc-raised: var(--blue-wash); --sc-border: var(--line); --sc-text: var(--ink); }
-.board-next > p { flex: 1 1 240px; min-width: 0; }
-.board-next > p strong { color: var(--ink); }
-.board-next > .chip { flex: 0 0 auto; }
-.board-next > .button { flex: 0 0 auto; }
-.board-next .stage-chip { text-transform: capitalize; background: var(--surface); border-color: var(--line); }
-.board-next__field { border-top-color: var(--line); min-width: 0; }
-.board-next__field .meta { flex: 1 1 200px; min-width: 0; margin: 0; }
-/* The controls are one wrapping row under the next step, not a stack of
-   full-width buttons: the step is the hierarchy, these are the handles. */
-.board-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; padding: 0 18px 18px; }
-.board-controls label { font-size: .8125rem; font-weight: 600; color: var(--muted); }
-.board-controls select { flex: 1 1 150px; min-width: 0; }
-/* The stage is on the chip above; printing it again under the card is the
-   same fact twice. */
-.board-home .card-status { display: none; }
+/* The saved surface is a decision desk, not Discover again. A saved home is one
+   editorial row -- who it is, what it costs on which basis, the evidence that
+   qualifies it, one next step -- with everything else folded. The seven stages
+   stay authoritative and every row carries its own; a stage is a label on a
+   home, not the shape of the page. */
+.saved-section { margin: 4px 0 8px; }
+.saved-section__head { display: flex; align-items: baseline; gap: 12px; padding-bottom: 12px; }
+.saved-section__head h3 { margin: 0; font: 1.25rem "DM Serif Display",Georgia,serif; }
+.saved-section__head > span { color: var(--muted); font-size: .875rem; font-variant-numeric: tabular-nums; }
+.saved-list { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,420px),1fr)); gap: 14px; align-items: start; }
+.saved-row { border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 16px; background: var(--surface); padding: 18px 20px; min-width: 0; }
+/* A finalist is the decision core, so its row says so at a glance; a ruled-out
+   home stays readable and recoverable without competing for attention. */
+.saved-row.is-finalist { border-left-color: var(--wine); }
+.saved-row.is-ruled { background: transparent; border-style: dashed; opacity: .72; }
+.saved-row.is-ruled:hover, .saved-row.is-ruled:focus-within { opacity: 1; }
+.saved-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px 18px; flex-wrap: wrap; }
+.saved-identity { flex: 1 1 200px; min-width: 0; }
+.saved-identity h4 { margin: 0; font: 1.3rem "DM Serif Display",Georgia,serif; overflow-wrap: anywhere; }
+.saved-identity .plan-label { margin: 4px 0 0; font-size: .875rem; color: var(--muted); overflow-wrap: anywhere; }
+.saved-money { flex: 0 0 auto; text-align: right; max-width: 100%; }
+.saved-money .rent { display: block; font: 1.5rem "IBM Plex Mono",monospace; font-variant-numeric: tabular-nums; }
+.saved-money .price-kind { display: block; font-size: .75rem; color: var(--muted); overflow-wrap: anywhere; }
+.saved-facts { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,160px),1fr)); gap: 4px 18px; margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--line); }
+.saved-facts div { min-width: 0; }
+.saved-facts dt { font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.saved-facts dd { margin: 2px 0 0; font-weight: 600; overflow-wrap: anywhere; }
+.saved-cues { margin: 10px 0 0; font-size: .875rem; }
+.saved-chips { margin-top: 10px; }
+.saved-chips .stage-chip { text-transform: capitalize; }
+.saved-evidence { margin: 10px 0 0; font-size: .75rem; color: var(--muted); overflow-wrap: anywhere; }
+/* Unresolved evidence is folded by default -- the count is on the summary, so
+   folding never hides how much is open -- and each item opens the exact field
+   that settles it. */
+.saved-open { margin-top: 12px; border-top: 1px solid var(--line); }
+.saved-open > summary { padding: 10px 0; min-height: 44px; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: .875rem; font-weight: 600; }
+.saved-open > summary span { border-radius: 99px; background: var(--blue-wash); color: var(--blue); padding: 1px 9px; font-variant-numeric: tabular-nums; }
+.saved-open > p { margin: 0 0 8px; font-size: .75rem; }
+.saved-open ul { list-style: none; margin: 0; padding: 0 0 4px; display: grid; gap: 2px; }
+.saved-open li { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; }
+.saved-open li .meta { flex: 1 1 100%; margin: -4px 0 6px; font-size: .75rem; }
+.saved-open li .text-button { text-align: left; min-height: 44px; }
+.saved-open li.is-next .text-button { font-weight: 700; }
+.saved-chip { align-self: center; background: var(--wine-wash); border-color: var(--wine); color: var(--wine); }
+.saved-clear { margin: 12px 0 0; padding-top: 12px; border-top: 1px solid var(--line); font-size: .875rem; color: var(--muted); }
+/* One action row: the step, the record, the heart, and the rest behind More --
+   not a wall of ten controls under every home. */
+.saved-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.saved-actions .save-button { margin-left: auto; background: transparent; border: 1px solid var(--line); color: var(--muted); }
+.saved-actions .save-button svg { fill: currentColor; }
+.saved-actions .save-button:hover, .saved-actions .save-button:focus-visible { color: var(--wine); border-color: var(--wine); }
+.finalist-chip { background: var(--wine-wash); border-color: var(--wine); color: var(--wine); font-weight: 700; }
+.saved-more { flex: 1 1 100%; min-width: 0; }
+.saved-more > summary { min-height: 44px; display: flex; align-items: center; font-size: .8125rem; font-weight: 600; color: var(--muted); cursor: pointer; }
+.saved-more > div { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding-top: 8px; }
+.saved-more label { font-size: .8125rem; font-weight: 600; color: var(--muted); }
+.saved-more select { flex: 1 1 150px; min-width: 0; }
+/* Ruled out keeps every note and comes back in one press; it does not sit in
+   the reading order of the homes still in contention. */
+.saved-ruled { margin: 20px 0 0; border: 1px dashed var(--line); border-radius: 14px; padding: 4px 18px 18px; }
+.saved-ruled > summary { padding: 12px 0; min-height: 44px; display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; }
+.saved-ruled > summary span { border-radius: 99px; background: var(--blue-wash); color: var(--blue); padding: 1px 9px; font-weight: 400; font-variant-numeric: tabular-nums; }
 .tour-companion { border: 1px solid var(--blue); border-radius: 16px; padding: 16px; margin: 20px 0; background: var(--blue-wash); }
 .tour-companion > summary { font-size: 1.15rem; font-weight: 700; cursor: pointer; padding: 8px 0; }
 .tour-companion > summary span { display: block; margin-top: 5px; font-size: .875rem; font-weight: 400; color: var(--muted); }
@@ -1478,8 +1509,25 @@ input, select, textarea { font-size: 1rem; }
   .focus-card .home-card { padding: 22px; }
   .focus-actions { position: sticky; bottom: calc(78px + env(safe-area-inset-bottom)); padding: 10px 0; background: var(--bg); z-index: 400; }
   .board-heading { align-items: stretch; flex-direction: column; gap: 6px; }
-  .decision-board { grid-template-columns: 1fr; }
-  .board-column { padding: 10px; }
+  .saved-list { grid-template-columns: 1fr; }
+  /* On a phone a finalist is two lines: who and how much, then what is still
+     open and the two things you can do about it. The subtotal and the layout
+     are not dropped -- they are on the same home's own row below, which is
+     where the full decision summary lives. */
+  .finalist-grid { gap: 10px; }
+  .finalist-grid article { grid-template-columns: minmax(0,1fr) auto; align-items: baseline; padding: 12px 14px; gap: 6px 12px; }
+  .finalist-top { grid-column: 1; }
+  .finalist-rent { grid-column: 2; grid-row: 1; justify-items: end; text-align: right; }
+  .finalist-rent strong { font-size: 1.15rem; }
+  .finalist-facts { grid-column: 1; border-top: 0; padding-top: 0; }
+  .finalist-facts [data-fact="wide"] { display: none; }
+  .finalist-facts div { justify-content: flex-start; gap: 6px; }
+  .finalist-grid .actions { grid-column: 2; justify-content: flex-end; }
+  .finalist-shelf { padding: 18px; }
+  .finalist-heading h3 { font-size: 1.45rem; }
+  .saved-row { padding: 16px; }
+  .saved-money { text-align: left; flex: 1 1 100%; }
+  .saved-ruled { padding: 4px 14px 14px; }
   .tour-checklist { grid-template-columns: 1fr; }
   .cost-lab { gap: 16px; }
   .lab-controls, .lab-output { padding: 20px; }
@@ -1489,7 +1537,7 @@ input, select, textarea { font-size: 1rem; }
   .card-actions .button { padding: 9px 12px; }
 }
 @media (max-width: 360px) { .lab-inputs, .area-selects { grid-template-columns: 1fr; }.area-selects .field:last-child { grid-column: auto; }.intro { grid-template-columns: 1fr 60px; }.intro h1 { font-size: 1.5rem; } }
-@media print { .explore-deck, .search-controls, .stage-tabs, .board-controls, .focus-actions, #focus-undo { display: none; }.topbar nav { display: none; } body { padding-bottom: 0; } }
+@media print { .explore-deck, .search-controls, .stage-tabs, .saved-actions, .focus-actions, #focus-undo { display: none; }.topbar nav { display: none; } body { padding-bottom: 0; } }
 
 .source-status { margin-top: 12px; border-bottom: 1px solid var(--line); font-size: .875rem; }
 .source-status > summary { padding: 10px 0; cursor: pointer; color: var(--blue); }
@@ -1635,15 +1683,34 @@ input, select, textarea { font-size: 1rem; }
 .finalist-heading .eyebrow { color: #bdd1ed; }
 .finalist-heading h3 { font: 1.8rem "DM Serif Display",Georgia,serif; margin: 5px 0; }
 .finalist-heading > span { white-space: nowrap; color: #c4d6ed; }
-.finalist-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; margin: 18px 0; }
-.finalist-grid article { display: flex; align-items: start; gap: 10px; border: 1px solid #5c708a; border-radius: 12px; padding: 16px; min-width: 0; overflow-wrap: anywhere; }
-.finalist-grid article > div { min-width: 0; }
+/* Three finalists have to be tellable apart before the full comparison opens,
+   so each carries the same four facts and its own count of what is unresolved.
+   The line above them says what differs, using the comparison's own arithmetic.
+   Nothing here is ranked and no column is called the winner. */
+.finalist-difference { margin: 14px 0 0; font-size: .875rem; color: #cfdded; }
+.finalist-difference .sc-unreported { color: #f7c8bd; }
+.finalist-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,240px),1fr)); gap: 14px; margin: 14px 0; }
+.finalist-grid article { display: grid; align-content: start; gap: 10px; border: 1px solid #5c708a; border-radius: 12px; padding: 16px; min-width: 0; overflow-wrap: anywhere; }
+.finalist-top { display: flex; align-items: baseline; gap: 10px; }
+.finalist-top > div { min-width: 0; }
 .finalist-number { font: 1rem "IBM Plex Mono",monospace; color: #f7a391; }
 .finalist-grid h4 { font-size: 1.1rem; margin: 0; }
-.finalist-grid p { font-size: .875rem; margin: 8px 0; color: #cfdded; }
+.finalist-grid p { font-size: .875rem; margin: 4px 0 0; color: #cfdded; }
+.finalist-rent { display: grid; gap: 2px; margin: 0; }
+.finalist-rent strong { font: 1.35rem "IBM Plex Mono",monospace; font-variant-numeric: tabular-nums; color: #f0f5ff; }
+.finalist-rent span { font-size: .75rem; color: #cfdded; }
+.finalist-facts { display: grid; gap: 8px; margin: 0; padding-top: 10px; border-top: 1px solid #3c5170; }
+.finalist-facts div { display: flex; justify-content: space-between; gap: 10px; min-width: 0; }
+.finalist-facts dt { font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; color: #a9bfda; }
+.finalist-facts dd { margin: 0; font-size: .8125rem; font-weight: 600; text-align: right; min-width: 0; }
 .finalist-grid .actions { flex-wrap: wrap; }
 .finalist-grid .button.secondary { color: #fff; background: #233d5c; border-color: #8aa1bc; }
 .finalist-grid .text-button { color: #d9e7fa; }
+/* Empty capacity is a prompt with the contenders named in it, not an empty slot
+   drawn three times. */
+.finalist-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.finalist-foot .meta { flex: 1 1 220px; min-width: 0; margin: 0; color: #cfdded; }
+.finalist-foot .text-button, .finalist-shelf.is-empty .text-button { color: #f7d7cf; text-align: left; }
 .finalist-shelf > .button { background: #f0f5ff; border-color: #f0f5ff; color: #111f31; }
 .tour-agenda { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; margin-bottom: 20px; padding: 16px 20px; }
 .tour-agenda summary { padding: 8px 0; min-height: 44px; cursor: pointer; font-weight: 700; }
@@ -1653,6 +1720,7 @@ input, select, textarea { font-size: 1rem; }
 .agenda-row h4 { margin: 0; font-size: 1.1rem; overflow-wrap: anywhere; }
 .agenda-row p { margin: 6px 0; overflow-wrap: anywhere; }
 .agenda-row .actions { flex-wrap: wrap; }
+.agenda-row .actions .text-button { display: inline-flex; align-items: center; min-height: 44px; }
 .detail-dock { position: sticky; top: 0; z-index: 20; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; margin: 12px 0; background: var(--surface); border-block: 1px solid var(--line); }
 .detail-dock > div { display: flex; gap: 4px; flex-wrap: wrap; }
 .detail-dock button { min-height: 44px; }

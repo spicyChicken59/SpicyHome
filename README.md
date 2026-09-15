@@ -432,3 +432,56 @@ destination type beside the evidence kind and date.
 
 No new dashboard, tab, ranking system, crawler or tracker. No provider request,
 schema change, dependency, request budget, geographic rule or schedule change.
+
+## The saved-home decision desk — September 16, 2026
+
+Nothing new is tracked, fetched, ranked or persisted. What changed is the shape
+of the saved surface: a shortlist used to be the Discover card printed again,
+once per home, with ten controls under each one.
+
+1. **A saved home is one decision, not a discovery card.** Each row carries its
+   exact identity and plan, its money on the basis the record holds it
+   (base rent, an advertised total, or your own quote), the known monthly
+   subtotal, the layout evidence, the parking and resident-EV answers, and one
+   compact freshness-and-source cue. A saved home was 1,065 px tall on a desktop
+   and 1,247 px on a phone; it is 475 px and 648 px now, and the controls a
+   reader faces went from ten to four. The full provenance — the dated source
+   references and the city query behind them — is not reprinted here; it stays
+   one press away in the record, where it was built.
+2. **“What could change my mind?” is derived, never guessed.** Each unresolved
+   item comes from a fact the record already holds: an unquoted amount, a layout
+   nobody checked, parking or resident charging the source never established, a
+   quote past seven days or undated, a record absent from the latest area scan,
+   a missing exact listing URL, tour checks not reviewed. Every item opens the
+   exact notebook field or evidence section that settles it, and opening is
+   never answering — an item clears when an answer is saved. The list is folded
+   with its count on the summary, so folding never hides how much is open, and
+   the one item the next step performs is marked. A recorded $0 is an amount and
+   leaves the list; the source's silence about whether parking exists is a
+   separate question and stays.
+3. **Three groups, seven stages.** Finalists, homes in contention, and ruled-out
+   homes read as three different things. Every row still carries and can change
+   its own stage, and the stage filter is unchanged: a stage is a label on a
+   home, not the shape of the page. A ruled-out home leaves the contenders'
+   reading order for its own folded section, keeps every note, quote and check,
+   and comes back in one press — it is demoted, not hidden, and stays readable
+   (measured at 8.9:1 in dark and 6.3:1 in light).
+4. **The Final Three is the decision core.** Each finalist shows its money and
+   basis, the known subtotal, the layout evidence and how much is unresolved, so
+   three can be told apart before the full comparison opens. One line above them
+   says what actually differs, using the comparison's own arithmetic
+   (`figureSpread`, shared by both) and naming what is *not comparable* rather
+   than substituting anything for it. Nothing is ranked, scored or called best.
+   Empty capacity is a prompt that names a contender to pin, not three empty
+   slots. The full comparison remains the authoritative one.
+5. **The phone gets the decision first.** On a phone a finalist is two lines —
+   who and how much, then what is open and the two things to do about it — and
+   the subtotal and layout live on that home's own row below rather than being
+   printed twice. The first viewport now carries the difference line and a
+   finalist's money instead of a masthead and a prose line. The saved surface is
+   5,234 px for six homes where it was 9,199 px, with no sideways scroll at
+   390 px or 320 px and every control a reader faces a 44 px target.
+
+No new tab, dashboard, ranking system, tracker or notebook field. Saved status,
+finalist pins, snapshots, notes, quotes, tour checks and preferences remain the
+source of truth, and the notebook schema is unchanged.

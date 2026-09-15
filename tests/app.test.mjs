@@ -219,8 +219,8 @@ test("save retains a home snapshot and survives a later missing source", async (
   const next = await boot({ remote: newer, notebook: saved });
   assert.equal(next.doc.querySelector(`#results [data-home="${id}"]`), null);
   next.doc.querySelector('[data-view="shortlist"]').click();
-  assert.equal(next.doc.querySelectorAll(".home-card").length, 1);
-  assert.match(next.doc.querySelector(".home-card").textContent, /Archived notebook entry/);
+  assert.equal(next.doc.querySelectorAll(".saved-row").length, 1);
+  assert.match(next.doc.querySelector(".saved-row").textContent, /Archived notebook entry/);
   next.close();
 });
 test("failed startup refresh retains newer connected cache", async () => {
@@ -290,10 +290,10 @@ test("save preserves keyboard position and removing the last saved home focuses 
   assert.equal(d.doc.activeElement.dataset.save, homeId);
   assert.equal(d.doc.activeElement.getAttribute("aria-pressed"), "true");
   d.doc.querySelector('[data-view="shortlist"]').click();
-  const remove = d.doc.querySelector("[data-save]");
+  const remove = d.doc.querySelector(".saved-row [data-save]");
   remove.focus();
   remove.click();
-  assert.equal(d.doc.querySelectorAll(".home-card").length, 0);
+  assert.equal(d.doc.querySelectorAll(".saved-row").length, 0);
   assert.equal(d.doc.activeElement.id, "view-title");
   d.close();
 });
@@ -335,7 +335,7 @@ test("manual entry, shortlist and comparison preserve explicit no charging", asy
   const stored=JSON.parse(d.w.localStorage.getItem("spicyhome.workspace.v1"));
   assert.equal(stored.manual[0].bedrooms,null);
   assert.equal(stored.manual[0].bathrooms,null);
-  assert.match(d.doc.querySelector(".home-card").textContent,/Layout needs checking/);
+  assert.match(d.doc.querySelector(".saved-row").textContent,/Layout needs checking/);
   const box = d.doc.querySelector("[data-compare]");
   box.checked = true;
   box.dispatchEvent(new d.w.Event("change"));
@@ -870,14 +870,14 @@ test("quick scan keeps price basis and layout visible and preserves saving and c
 test("finalist pins cap at three, compare the pinned set and unpin on unsave without erasing notes", async () => {
   const homes=seed.homes.slice(0,4),records=Object.fromEntries(homes.map(h=>[h.id,{saved:true,snapshot:h,notes:'Personal quote',rentOverride:2300}]));
   const d=await boot({notebook:{version:1,manual:[],events:[],preferences:{},records}});d.doc.querySelector('[data-view="shortlist"]').click();
-  for(const home of homes.slice(0,3)) d.doc.querySelector(`.board-controls [data-finalist="${home.id}"]`).click();
-  d.doc.querySelector(`.board-controls [data-finalist="${homes[3].id}"]`).click();
+  for(const home of homes.slice(0,3)) d.doc.querySelector(`.saved-row [data-finalist="${home.id}"]`).click();
+  d.doc.querySelector(`.saved-row [data-finalist="${homes[3].id}"]`).click();
   assert.match(d.doc.querySelector('#toast').textContent,/Three finalists/);
   let notebook=JSON.parse(d.w.localStorage.getItem('spicyhome.workspace.v1'));
   assert.equal(Object.values(notebook.records).filter(r=>r.finalist).length,3);
   d.doc.querySelector('#compare-finalists').click();assert.equal(d.doc.querySelectorAll('.compare-identities article').length,3);
   d.doc.querySelector('#compare-content [data-close]').click();
-  d.doc.querySelector(`.board-home [data-save="${homes[0].id}"]`).click();
+  d.doc.querySelector(`.saved-row [data-save="${homes[0].id}"]`).click();
   notebook=JSON.parse(d.w.localStorage.getItem('spicyhome.workspace.v1'));
   assert.equal(notebook.records[homes[0].id].finalist,false);assert.equal(notebook.records[homes[0].id].notes,'Personal quote');
   assert.equal(d.doc.querySelectorAll('.finalist-grid article').length,2);
@@ -1145,12 +1145,18 @@ test("a saved home carries its stage, its open question and one action that open
   const d = await boot({ remote: snapshot, packaged: snapshot,
     notebook: { version: 1, manual: [], events: [], preferences: {}, records: { 'board-a': { saved: true, status: 'contacted', snapshot: home } } } });
   d.doc.querySelector('[data-view="shortlist"]').click();
-  const next = d.doc.querySelector('.board-home .board-next');
-  assert(next, 'a saved home carries its next step');
-  assert.match(next.querySelector('.stage-chip').textContent, /contacted/);
-  assert.match(next.textContent, /Check the exact layout/);
-  const action = next.querySelector('.button');
+  const row = d.doc.querySelector('.saved-row');
+  assert(row, 'a saved home carries its own decision row');
+  assert.match(row.querySelector('.stage-chip').textContent, /contacted/);
+  // The one step is the row's primary action, and the unresolved list marks
+  // that same step rather than naming a different one beside it.
+  const action = row.querySelector('.saved-actions .button');
   assert.equal(action.dataset.taskTarget, 'layoutReview');
+  assert.match(action.textContent, /Check the layout/);
+  const marked = row.querySelector('.saved-open li.is-next');
+  assert.match(marked.textContent, /Layout not checked by you/);
+  assert.equal(marked.querySelector('button').dataset.taskTarget, action.dataset.taskTarget);
+  assert.equal(row.querySelectorAll('.saved-open li.is-next').length, 1, 'exactly one item is the next step');
   action.click();
   assert.equal(d.doc.querySelector('#detail-dialog').open, true);
   assert.equal(d.doc.activeElement.id, 'layoutReview');
@@ -1158,9 +1164,12 @@ test("a saved home carries its stage, its open question and one action that open
   // is saved, and then it is the next real gap, not the same sentence again.
   d.doc.querySelector('#layoutReview').value = 'one_bed';
   d.doc.querySelector('#record-form').dispatchEvent(new d.w.Event('submit', { bubbles: true, cancelable: true }));
-  const moved = d.doc.querySelector('.board-home .board-next');
-  assert.doesNotMatch(moved.textContent, /Check the exact layout/);
-  assert.match(moved.textContent, /quote/i);
+  const movedRow = d.doc.querySelector('.saved-row');
+  const moved = movedRow.querySelector('.saved-actions .button');
+  assert.doesNotMatch(moved.textContent, /Check the layout/);
+  assert.match(movedRow.querySelector('.saved-open li.is-next').textContent, /quote/i);
+  assert.doesNotMatch(movedRow.querySelector('.saved-open').textContent, /Layout not checked by you/,
+    'the answered question leaves the list');
   d.close();
 });
 test("the comparison shows a spread only where every place has the figure on the same basis", async () => {
@@ -1726,7 +1735,10 @@ test("a saved home outlives a changed, stale, empty and absent feed with its dat
     const saved = d.doc.querySelector(`[data-home="${id}"]`);
     assert(saved, `the saved home is reachable with an ${name} feed`);
     assert.match(saved.textContent, /Archived notebook entry · absent from the current feed/);
-    assert.doesNotMatch(saved.textContent, /leased|no longer available|unavailable/i);
+    for (const stated of [saved.querySelector(".saved-evidence"), saved.querySelector(".saved-chips"), saved.querySelector(".saved-head")])
+      assert.doesNotMatch(stated.textContent, /leased|no longer available|unavailable/i);
+    assert.match(saved.querySelector(".saved-open").textContent,
+      /Absent from the latest area scan.*not proof it is leased/s);
     const detail = openRecord(d, id);
     assert.match(detail.querySelector(".detail-sub").textContent, /Unit 1/);
     assert.match(detail.querySelector(".source-dates").textContent, /Observed for this home: Sep 15, 2026/);
@@ -1803,5 +1815,276 @@ test("every card says what its source link actually reaches", async () => {
   const stamp = (id) => d.doc.querySelector(`[data-home="${id}"] .evidence-stamp`).textContent;
   assert.match(stamp("curated-plan"), /Building research · Sep 7, 2026 · Building \/ plan page · search available/);
   assert.match(stamp(feed.homes[1].id), /Listing snapshot · Sep 15, 2026 · Provider documentation only · search available/);
+  d.close();
+});
+
+// --- The saved-home decision desk --------------------------------------------
+// One curated plan and two provider rows, with the states a returning reader
+// actually has: a recorded $0, an unquoted fee, three layout evidences, three
+// charging answers, two observation dates and one record the feed has dropped.
+function deskFeed(at = "2026-09-15T13:28:27.690566Z") {
+  const curated = {
+    ...seed.homes[0], id: "desk-curated", kind: "building", title: "AMLI Lofts",
+    address: "850 S. Clark St., Chicago, IL 60605", city: "Chicago", neighborhood: "South Loop",
+    floor_plan: "A320", rent: 2663, sqft: 745, lat: 41.8713, lng: -87.6306, observed_at: "2026-09-07",
+    source_url: "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-lofts/floorplans",
+    sources: [{ url: "https://www.amli.com/apartments/chicago/south-loop-apartments/amli-lofts", supports: "A320", observed_at: "2026-09-07" }],
+    parking: { status: "yes", monthly: 0 }, fees: { monthly: 120, one_time: null },
+    charging: { status: "yes", note: "Building advertises electric car charging stations." },
+    layout_status: "source_listed",
+  };
+  const provider = {
+    id: "desk-provider", kind: "listing", title: "6700 S South Constance Ave",
+    address: "6700 S South Constance Ave, Unit 1, Chicago, IL 60649", city: "Chicago",
+    neighborhood: "Chicago · neighborhood unverified", unit_label: "Unit 1",
+    rent: 1750, sqft: null, lat: 41.7731, lng: -87.5808, observed_at: at,
+    bedrooms: 1, bathrooms: 1, layout_status: "provider_reported", layout_declaration: null,
+    parking: { status: "unknown", note: "Not reported by the listing provider; confirm with leasing.", monthly: null },
+    charging: { status: "unknown", note: "Not reported by the listing provider; confirm with leasing." },
+    access: { status: "unknown" }, fees: { monthly: null, one_time: null }, amenities: [],
+    source_url: null, seen_in_latest: true, history: [{ date: at, rent: 1750 }],
+    sources: [{ url: "https://developers.rentcast.io/reference/property-listings", supports: "RentCast listing ID" }],
+  };
+  const suburb = { ...provider, id: "desk-suburb", title: "1 Main St", address: "1 Main St, Unit 4, Evanston, IL 60201",
+    city: "Evanston", neighborhood: "Evanston", unit_label: "Unit 4", rent: 1900,
+    lat: 42.045, lng: -87.688, observed_at: "2026-09-08T13:29:28.215967Z",
+    charging: { status: "no", note: "Leasing confirmed no resident charging." },
+    history: [{ date: "2026-09-08T13:29:28.215967Z", rent: 1900 }] };
+  return { ...seed, mode: "connected", generated_at: at, charging_stations: [],
+    city_context: { afdc_status: "Key not configured; no public charging dataset fetched." },
+    homes: [curated, provider, suburb],
+    provider: { configured: true, status: "success", last_success: at, coverage: "Latest area: Chicago.",
+      returned: 500, total: 4484, truncated: true, query: { city: "Chicago" },
+      area_scans: { Chicago: { last_success: at, returned: 500, total: 4484, truncated: true, accepted: 500 },
+        Evanston: { last_success: "2026-09-08T13:29:28.215967Z", returned: 176, total: 176, truncated: false, accepted: 176 } } } };
+}
+const deskNotebook = (records) => ({ version: 1, manual: [], events: [], preferences: {}, savedSearches: [], records });
+const rowFor = (d, id) => [...d.doc.querySelectorAll(".saved-row")].find((r) => r.dataset.home === id);
+const openDesk = async (options) => { const d = await boot(options); d.doc.querySelector('[data-view="shortlist"]').click(); return d; };
+
+test("a saved provider home and a saved curated plan are both readable on the desk without reopening a discovery card", async () => {
+  const feed = deskFeed();
+  const d = await openDesk({ remote: feed, packaged: feed, notebook: deskNotebook({
+    "desk-curated": { saved: true, status: "shortlisted" },
+    "desk-provider": { saved: true, status: "researching" } }) });
+  const curated = rowFor(d, "desk-curated"), provider = rowFor(d, "desk-provider");
+  // Exact identity, on the row rather than behind a press.
+  assert.match(curated.querySelector(".saved-identity").textContent, /AMLI Lofts/);
+  assert.match(curated.querySelector(".saved-identity").textContent, /Plan A320/);
+  assert.match(provider.querySelector(".saved-identity").textContent, /Unit 1/);
+  // Money, on its recorded basis.
+  assert.match(curated.querySelector(".saved-money").textContent, /\$2,663/);
+  assert.match(curated.querySelector(".saved-money").textContent, /Base rent from/);
+  assert.match(provider.querySelector(".saved-money").textContent, /Provider asking rent/);
+  // A recorded $0 parking is an amount; the subtotal carries it and says it is
+  // still not an all-in cost.
+  assert.match(curated.querySelector(".saved-facts").textContent, /\$2,783\+/,
+    "base rent + a recorded $0 parking + $120 fees, still marked incomplete");
+  assert.match(curated.querySelector(".saved-cues").textContent, /^Unquoted: utilities$/,
+    "a recorded $0 is a known amount and is never listed as unquoted");
+  assert.match(provider.querySelector(".saved-cues").textContent, /Unquoted: parking · monthly fees · utilities/);
+  // Layout evidence, parking and resident EV each say which kind they are.
+  assert.match(curated.querySelector(".saved-facts").textContent, /Source lists 1 bed · 1 bath/);
+  assert.match(provider.querySelector(".saved-facts").textContent, /reported — not checked/);
+  assert.match(curated.querySelector(".saved-chips").textContent, /Parking advertised/);
+  assert.match(curated.querySelector(".saved-chips").textContent, /EV advertised/);
+  assert.match(provider.querySelector(".saved-chips").textContent, /Parking unverified/);
+  assert.match(provider.querySelector(".saved-chips").textContent, /EV unverified/);
+  // A compact freshness and source cue, not the record's whole provenance.
+  assert.match(curated.querySelector(".saved-evidence").textContent, /Building research · Sep 7, 2026 · Building \/ plan page/);
+  assert.doesNotMatch(curated.textContent, /Listing query for Chicago/);
+  assert.doesNotMatch(curated.textContent, /reported matches/);
+  // The full record is one press away and carries the provenance.
+  curated.querySelector("[data-detail]").click();
+  assert.match(d.doc.querySelector("#detail-sources").textContent, /Observed for this home/);
+  d.close();
+});
+
+test("the unresolved list is folded, counted, and each item opens the exact field that settles it", async () => {
+  const feed = deskFeed();
+  const d = await openDesk({ remote: feed, packaged: feed,
+    notebook: deskNotebook({ "desk-provider": { saved: true, status: "researching" } }) });
+  const row = rowFor(d, "desk-provider");
+  const disclosure = row.querySelector(".saved-open");
+  assert.equal(disclosure.open, false, "a shortlist reads as apartments, not as a task list");
+  const count = Number(disclosure.querySelector("summary span").textContent);
+  assert.equal(count, disclosure.querySelectorAll("li").length);
+  assert(count > 0);
+  assert.match(disclosure.querySelector("p").textContent, /Opening is not answering/);
+  // The marked item is the same step the row's primary button performs.
+  const marked = disclosure.querySelector("li.is-next button");
+  assert.equal(marked.dataset.taskTarget, row.querySelector(".saved-actions .button").dataset.taskTarget);
+  // Opening a cost gap lands on that exact notebook field, and saving an
+  // amount — a recorded $0 — clears that item and no other.
+  const fee = [...disclosure.querySelectorAll("li button")].find((b) => /Monthly fees not quoted/.test(b.textContent));
+  assert.equal(fee.dataset.taskTarget, "monthlyFees");
+  fee.click();
+  assert.equal(d.doc.querySelector("#detail-dialog").open, true);
+  assert.equal(d.doc.activeElement.id, "monthlyFees");
+  d.doc.querySelector("#monthlyFees").value = "0";
+  d.doc.querySelector("#record-form").dispatchEvent(new d.w.Event("submit", { bubbles: true, cancelable: true }));
+  d.doc.querySelector("#detail-dialog").close();
+  const after = rowFor(d, "desk-provider");
+  assert.doesNotMatch(after.querySelector(".saved-open").textContent, /Monthly fees not quoted/);
+  assert.match(after.querySelector(".saved-cues").textContent, /Unquoted: parking · utilities/);
+  assert.match(after.querySelector(".saved-open").textContent, /Parking not quoted/);
+  // Returning keeps the shortlist, not the discovery view.
+  assert.match(d.doc.querySelector("#view-title").textContent, /second look/);
+  d.close();
+});
+
+test("the Final Three says what separates the finalists, and empty capacity names a contender to pin", async () => {
+  const feed = deskFeed();
+  const d = await openDesk({ remote: feed, packaged: feed, notebook: deskNotebook({
+    "desk-curated": { saved: true, status: "shortlisted" },
+    "desk-provider": { saved: true, status: "contacted" },
+    "desk-suburb": { saved: true, status: "researching" } }) });
+  // Nothing pinned: a prompt that names a contender, not three empty slots.
+  assert(d.doc.querySelector(".finalist-shelf.is-empty"));
+  assert.equal(d.doc.querySelectorAll(".finalist-grid article").length, 0);
+  const invite = d.doc.querySelector(".finalist-shelf [data-finalist]");
+  assert(invite, "the empty shelf offers a contender to pin");
+  invite.click();
+  assert.equal(d.doc.querySelectorAll(".finalist-grid article").length, 1);
+  assert.match(d.doc.querySelector(".finalist-foot .meta").textContent, /Room for 2 more/);
+  for (const id of ["desk-curated", "desk-provider", "desk-suburb"]) {
+    const pin = rowFor(d, id).querySelector("[data-finalist]");
+    if (pin.getAttribute("aria-pressed") !== "true") pin.click();
+  }
+  assert.equal(d.doc.querySelectorAll(".finalist-grid article").length, 3);
+  assert.match(d.doc.querySelector(".finalist-foot .meta").textContent, /Three pinned/);
+  // Each finalist is tellable apart before the comparison opens.
+  const cards = [...d.doc.querySelectorAll(".finalist-grid article")];
+  for (const card of cards) {
+    assert.match(card.querySelector(".finalist-rent").textContent, /\$[\d,]+/);
+    assert.match(card.querySelector(".finalist-facts").textContent, /Known subtotal/);
+    assert.match(card.querySelector(".finalist-facts").textContent, /Unresolved/);
+  }
+  // The difference line uses the comparison's own arithmetic and names what is
+  // not comparable rather than substituting anything for it. Nothing is ranked.
+  const difference = d.doc.querySelector(".finalist-difference").textContent;
+  assert.match(difference, /Base rent: \$913 between the lowest and the highest/);
+  assert.match(difference, /Reported space: not comparable — 6700 S South Constance Ave, 1 Main St have no recorded figure/);
+  assert.match(difference, /Nothing here is ranked/);
+  assert.doesNotMatch(difference, /best|winner|score|recommend/i);
+  // A pinned home says so on its own row too, so the contenders list shows
+  // which three are the finalists without scrolling back to the shelf.
+  for (const id of ["desk-curated", "desk-provider", "desk-suburb"]) {
+    const row = rowFor(d, id);
+    assert(row.classList.contains("is-finalist"), id);
+    assert.match(row.querySelector(".saved-chips").textContent, /Final Three/, id);
+  }
+  rowFor(d, "desk-suburb").querySelector("[data-finalist]").click();
+  const unpinned = rowFor(d, "desk-suburb");
+  assert.equal(unpinned.classList.contains("is-finalist"), false);
+  assert.doesNotMatch(unpinned.querySelector(".saved-chips").textContent, /Final Three/);
+  unpinned.querySelector("[data-finalist]").click();
+  // The full comparison stays the authoritative one, over the pinned set.
+  d.doc.querySelector("#compare-finalists").click();
+  assert.equal(d.doc.querySelectorAll(".compare-identities article").length, 3);
+  d.close();
+});
+
+test("ruling a home out demotes it without losing it, and it comes back in one press", async () => {
+  const feed = deskFeed();
+  const d = await openDesk({ remote: feed, packaged: feed, notebook: deskNotebook({
+    "desk-curated": { saved: true, status: "shortlisted" },
+    "desk-provider": { saved: true, status: "researching", notes: "Too far from the train." } }) });
+  assert.equal(d.doc.querySelectorAll(".saved-section .saved-row").length, 2);
+  assert.equal(d.doc.querySelector(".saved-ruled"), null);
+  const stage = rowFor(d, "desk-provider").querySelector("[data-stage]");
+  stage.value = "ruled out";
+  stage.dispatchEvent(new d.w.Event("change"));
+  // It leaves the reading order of the contenders and sits behind its own
+  // folded disclosure, with every note kept.
+  assert.equal(d.doc.querySelectorAll(".saved-section .saved-row").length, 1);
+  const ruledOut = d.doc.querySelector(".saved-ruled");
+  assert.equal(ruledOut.open, true, "the reader sees where the home they just moved went");
+  d.doc.querySelector('[data-view="discover"]').click();
+  d.doc.querySelector('[data-view="shortlist"]').click();
+  assert.equal(d.doc.querySelector(".saved-ruled").open, false, "on a later visit it is folded away again");
+  assert.match(d.doc.querySelector(".saved-ruled summary").textContent, /Ruled out\s*1/);
+  const row = d.doc.querySelector(".saved-ruled .saved-row");
+  assert.equal(row.dataset.home, "desk-provider");
+  assert(row.classList.contains("is-ruled"));
+  assert.equal(JSON.parse(d.w.localStorage.getItem("spicyhome.workspace.v1")).records["desk-provider"].notes, "Too far from the train.");
+  // Back in one press, with the note still there.
+  const back = row.querySelector("[data-stage]");
+  back.value = "researching";
+  back.dispatchEvent(new d.w.Event("change"));
+  assert.equal(d.doc.querySelectorAll(".saved-section .saved-row").length, 2);
+  assert.equal(d.doc.querySelector(".saved-ruled"), null);
+  assert.equal(JSON.parse(d.w.localStorage.getItem("spicyhome.workspace.v1")).records["desk-provider"].notes, "Too far from the train.");
+  d.close();
+});
+
+test("a ruled-out home is never pinned into the Final Three and never counted as a contender", async () => {
+  const feed = deskFeed();
+  const d = await openDesk({ remote: feed, packaged: feed, notebook: deskNotebook({
+    "desk-curated": { saved: true, status: "shortlisted" },
+    "desk-provider": { saved: true, status: "ruled out", finalist: true } }) });
+  assert.equal(d.doc.querySelectorAll(".finalist-grid article").length, 0,
+    "a home the reader ruled out is not one of their strongest maybes");
+  assert.match(d.doc.querySelector(".saved-section__head").textContent, /In contention\s*1/);
+  assert.equal(d.doc.querySelector(".saved-ruled .saved-row").dataset.home, "desk-provider");
+  d.close();
+});
+
+test("a saved home the refreshed feed no longer carries keeps its row, its evidence and its notes", async () => {
+  const feed = deskFeed();
+  const first = await boot({ remote: feed, packaged: feed });
+  first.doc.querySelector('[data-save="desk-provider"]').click();
+  const notebook = JSON.parse(first.w.localStorage.getItem("spicyhome.workspace.v1"));
+  notebook.records["desk-provider"].notes = "Ask about the garage waitlist";
+  first.close();
+  const later = deskFeed("2026-09-22T13:00:00Z");
+  later.homes = later.homes.filter((h) => h.id !== "desk-provider");
+  const d = await openDesk({ remote: later, packaged: later, notebook });
+  const row = rowFor(d, "desk-provider");
+  assert(row, "the saved home is still on the desk");
+  assert.match(row.querySelector(".saved-identity").textContent, /Unit 1/);
+  assert.match(row.querySelector(".saved-evidence").textContent, /Archived notebook entry · absent from the current feed/);
+  for (const stated of [row.querySelector(".saved-evidence"), row.querySelector(".saved-chips"), row.querySelector(".saved-head")])
+    assert.doesNotMatch(stated.textContent, /leased|no longer available|unavailable/i);
+  assert.match(row.querySelector(".saved-open").textContent, /Absent from the latest area scan/);
+  // Its own dated evidence is still in the record it came from.
+  row.querySelector("[data-detail]").click();
+  assert.match(d.doc.querySelector(".source-dates").textContent, /returned 500 of 4,484 reported matches/);
+  assert.equal(d.doc.querySelector('[name="notes"]').value, "Ask about the garage waitlist");
+  d.close();
+});
+
+test("looking up a saved home's source from the desk changes no note, check or evidence", async () => {
+  const feed = deskFeed();
+  const notebook = deskNotebook({ "desk-curated": { saved: true, status: "toured", notes: "Loved the light",
+    rentOverride: 2600, quoteDate: "2026-09-14", layoutReview: "one_bed", tourChecks: { light: true } } });
+  const d = await openDesk({ remote: feed, packaged: feed, notebook });
+  const before = d.w.localStorage.getItem("spicyhome.workspace.v1");
+  rowFor(d, "desk-curated").querySelector("[data-detail]").click();
+  const box = d.doc.querySelector("#detail-content");
+  const notes = box.querySelector('[name="notes"]');
+  notes.value = "half-typed: ask about the garage";
+  for (const a of box.querySelectorAll(".detail-links a, .sourceline a")) a.click();
+  assert.equal(d.w.localStorage.getItem("spicyhome.workspace.v1"), before);
+  assert.equal(box.querySelector('[name="notes"]').value, "half-typed: ask about the garage");
+  d.close();
+});
+
+test("ruling a home out leaves the focus on its own stage control, not on the body", async () => {
+  const feed = deskFeed();
+  const d = await openDesk({ remote: feed, packaged: feed, notebook: deskNotebook({
+    "desk-curated": { saved: true, status: "shortlisted" },
+    "desk-provider": { saved: true, status: "researching" } }) });
+  const stage = rowFor(d, "desk-provider").querySelector("[data-stage]");
+  stage.focus();
+  stage.value = "ruled out";
+  stage.dispatchEvent(new d.w.Event("change"));
+  // The row moved into the ruled-out disclosure, which is closed, and the
+  // control sits inside the row's own More disclosure inside that: a control
+  // in a closed details is not focusable, so every ancestor has to open.
+  const moved = d.doc.querySelector(".saved-ruled [data-stage]");
+  assert.equal(d.doc.activeElement, moved, "focus follows the home the reader just moved");
+  for (let el = moved.parentElement; el; el = el.parentElement)
+    if (el.tagName === "DETAILS") assert.equal(el.open, true, "every disclosure around it is open");
   d.close();
 });

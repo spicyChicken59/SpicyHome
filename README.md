@@ -485,3 +485,47 @@ once per home, with ten controls under each one.
 No new tab, dashboard, ranking system, tracker or notebook field. Saved status,
 finalist pins, snapshots, notes, quotes, tour checks and preferences remain the
 source of truth, and the notebook schema is unchanged.
+
+## The tour-day walkthrough — September 16, 2026
+
+Nothing new is tracked, booked, fetched or persisted, and the notebook schema is
+unchanged. What changed is where the Tour Companion sits and what it carries.
+
+1. **It says which apartment you are standing in.** The walkthrough opens with
+   the building, the exact plan or unit, the full address, the tour date and
+   time when one is recorded, and a directions link built from that recorded
+   address and nothing else. On a phone that strip stays on screen while the
+   checks scroll past, resting below the record's own dock rather than behind
+   it. A tour nobody scheduled says *No tour date recorded*; no time is
+   invented, and a record without coordinates still gets directions from its
+   address rather than a fabricated position.
+2. **Each check carries what the record already knows about it.** The layout
+   check shows the layout evidence on record. The parking check says whether the
+   source established that there is parking — advertised, not offered, or never
+   established — and, separately, the monthly cost on record, where a recorded
+   $0 is an amount and an unquoted one says so. The charger check gives the
+   building's own answer, states that its cost is quoted by no one and is not in
+   the subtotal, and keeps nearby public stations apart from both. The quote
+   check shows the known monthly subtotal and what is still unquoted. The four
+   checks the record holds nothing about — light, noise, the everyday route, the
+   basics — carry no line at all rather than an invented one. Checking a box is
+   still the reader's own review; nothing is marked verified by being opened.
+3. **The checks run straight into the fields that record them.** The walkthrough
+   now sits directly above the notebook form, so the last check and the quote,
+   parking, fee, date and notes fields are 20 px apart. They were 1,657 px apart
+   on a phone and 1,940 px at 320 px — roughly four screens of costs, amenities
+   and price history in between. Nothing was duplicated to do it: the same
+   fields, the same form, the same save.
+4. **Progress says what is left.** The summary and the live count both read
+   *N/8 reviewed · M left*, and the count follows each check as it is ticked.
+   Saving carries the checks, the quote and the notes together, and the decision
+   desk's unresolved list drops exactly what the walk answered while the rest
+   persists.
+5. **A finger lands on the check.** The box is 24 px inside a target row of at
+   least 100 px. Nothing scrolls sideways at 390 px or 320 px, a field jumped to
+   clears both sticky bars, and opening directions or a source saves nothing,
+   marks nothing reviewed and leaves half-typed notes exactly as they were.
+
+No second tour record, checklist engine or activity log; no booking, calendar
+mutation, location tracking or photo system. Saved checks, quotes and notes
+survive a refresh and an absent or stale feed exactly as before.

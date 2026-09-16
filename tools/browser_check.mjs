@@ -855,6 +855,116 @@ try {
     await context.close();
   }
 
+  // --- 9. the tour-day walkthrough, on a phone -----------------------------
+  //         jsdom can say the identity and the evidence are in the markup.
+  //         Only a browser can say whether the reader standing in the
+  //         apartment can see which apartment it is, reach the checks with a
+  //         finger, and write down what they found without four screens of
+  //         scrolling in between.
+  const TOUR_HOME = DESK_HOMES.find((h) => h.kind === 'listing' && h.unit_label);
+  const tourNotebook = JSON.stringify({
+    version: 1, manual: [], events: [], preferences: {}, savedSearches: [],
+    records: { [TOUR_HOME.id]: { saved: true, status: 'tour scheduled', tourDate: '2026-09-20T10:00',
+      tourChecks: { layout: true, light: true }, notes: 'Ask about the garage waitlist.' } },
+  });
+  for (const [label, opts] of [['1280px dark', { theme: 'dark' }],
+                               ['1280px light', { theme: 'light' }],
+                               ['390px dark', { width: 390, height: 844, mobile: true, theme: 'dark' }],
+                               ['390px light', { width: 390, height: 844, mobile: true, theme: 'light' }],
+                               ['320px dark', { width: 320, height: 640, mobile: true, theme: 'dark' }]]) {
+    const { context, page, errors } = await open(browser, { ...opts, storage: { 'spicyhome.workspace.v1': tourNotebook } });
+    const fold = opts.height ?? 900;
+    const tour = await page.evaluate(async ({ id, fold }) => {
+      document.querySelector('[data-view="shortlist"]').click();
+      await new Promise((r) => setTimeout(r, 450));
+      const row = [...document.querySelectorAll('.saved-row')].find((r) => r.dataset.home === id);
+      if (!row) return { ran: false };
+      row.querySelector('.saved-more').open = true;
+      row.querySelector('[data-tour]').click();
+      await new Promise((r) => setTimeout(r, 500));
+      const box = (s) => document.querySelector(s)?.getBoundingClientRect() ?? null;
+      const companion = document.querySelector('#tour-companion');
+      const form = document.querySelector('#record-form');
+      const dock = box('.detail-dock');
+      const head = box('.tour-head');
+      const dialog = document.querySelector('#detail-dialog');
+      const onScreen = (r) => !!r && r.bottom > 0 && r.top < fold && r.height > 0;
+      return {
+        ran: true, open: companion?.open === true,
+        // Which apartment, where the reader is working.
+        identityOnScreen: onScreen(head),
+        identity: document.querySelector('.tour-head')?.textContent.replace(/\s+/g, ' ').trim() ?? '',
+        // The head comes to rest below the record's dock, not behind it.
+        headBehindDock: head && dock ? Math.max(0, Math.round(dock.bottom - head.top)) : null,
+        dockHeight: dock ? Math.round(dock.height) : null,
+        // From the last check to the fields that record what it found.
+        checksToFields: companion && form
+          ? Math.round(form.getBoundingClientRect().top - companion.getBoundingClientRect().bottom) : null,
+        adjacent: companion?.nextElementSibling === form,
+        // A finger has to land on the box, not only on the label around it.
+        smallestBox: Math.min(...[...document.querySelectorAll('.tour-check input')]
+          .map((c) => { const r = c.getBoundingClientRect(); return Math.round(Math.min(r.width, r.height)); })),
+        smallestRow: Math.min(...[...document.querySelectorAll('.tour-check')]
+          .map((l) => Math.round(l.getBoundingClientRect().height))),
+        evidenceLines: document.querySelectorAll('.tour-known').length,
+        progress: document.querySelector('#tour-draft-count')?.textContent.trim() ?? '',
+        sideways: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+        dialogSideways: dialog.scrollWidth > dialog.clientWidth + 1,
+      };
+    }, { id: TOUR_HOME.id, fold });
+    check(`${label} the walkthrough opens on the apartment it belongs to`,
+      tour.ran && tour.open && /Unit/.test(tour.identity), tour.identity.slice(0, 70));
+    check(`${label} the reader can see which apartment they are standing in`,
+      tour.identityOnScreen && /Sep 20, 2026/.test(tour.identity), `on screen: ${tour.identityOnScreen}`);
+    check(`${label} the identity rests below the record's dock, not behind it`,
+      tour.headBehindDock === 0, `dock ${tour.dockHeight}px, overlap ${tour.headBehindDock}px`);
+    check(`${label} the checks run straight into the fields that record them`,
+      tour.adjacent && tour.checksToFields !== null && tour.checksToFields < 80,
+      `${tour.checksToFields}px between them`);
+    check(`${label} a finger lands on the check, not only near it`,
+      tour.smallestBox >= 24 && tour.smallestRow >= 44, `box ${tour.smallestBox}px, row ${tour.smallestRow}px`);
+    check(`${label} the checks the record knows something about say what it knows`,
+      tour.evidenceLines === 4, `${tour.evidenceLines} evidence lines`);
+    check(`${label} the walkthrough says what is left, not only what is done`,
+      /reviewed · \d+ left/.test(tour.progress), tour.progress);
+    check(`${label} the walkthrough does not push anything sideways`,
+      !tour.sideways && !tour.dialogSideways);
+    check(`${label} the walkthrough raises no page error`, errors.length === 0, errors.slice(0, 2).join(' '));
+    await page.evaluate(() => document.querySelector('#tour-companion')?.scrollIntoView({ block: 'start' }));
+    await page.waitForTimeout(250);
+    await shot(page, `tour-${label.replace(/\s+/g, '-')}`);
+    // Walking a check and typing an answer: the identity stays put, the text
+    // survives a lookup, and the field a jump lands on clears both sticky bars.
+    const walked = await page.evaluate(async () => {
+      const tick = document.querySelector('[data-tour-check="noise"]');
+      tick.click();
+      const notes = document.querySelector('[name="notes"]');
+      notes.value = 'half-typed: ask about the bike room';
+      const before = localStorage.getItem('spicyhome.workspace.v1');
+      document.querySelector('.tour-head a')?.click();
+      await new Promise((r) => setTimeout(r, 200));
+      document.querySelector('[data-detail-jump="notes"]')?.click();
+      await new Promise((r) => setTimeout(r, 400));
+      const dock = document.querySelector('.detail-dock').getBoundingClientRect();
+      const field = document.activeElement?.getBoundingClientRect();
+      const head = document.querySelector('.tour-head')?.getBoundingClientRect();
+      return { saved: localStorage.getItem('spicyhome.workspace.v1') === before,
+        text: document.querySelector('[name="notes"]').value,
+        ticked: document.querySelector('[data-tour-check="noise"]').checked,
+        progress: document.querySelector('#tour-draft-count').textContent.trim(),
+        focused: document.activeElement?.name ?? document.activeElement?.tagName,
+        clearOfBars: !!field && field.top >= dock.bottom - 1 && (!head || field.top >= Math.min(head.bottom, dock.bottom) - 1) };
+    });
+    check(`${label} a lookup from the walkthrough saves nothing and keeps unsaved text`,
+      walked.saved && walked.text === 'half-typed: ask about the bike room' && walked.ticked,
+      `ticked ${walked.ticked}`);
+    check(`${label} the live count follows the walk`, /3\/8 reviewed · 5 left/.test(walked.progress), walked.progress);
+    check(`${label} a field jumped to is not left under the sticky bars`,
+      walked.focused === 'notes' && walked.clearOfBars, `focus ${walked.focused}, clear ${walked.clearOfBars}`);
+    await shot(page, `tour-fields-${label.replace(/\s+/g, '-')}`);
+    await context.close();
+  }
+
 } finally {
   await browser.close();
   server.close();

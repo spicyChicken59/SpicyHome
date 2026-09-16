@@ -2088,3 +2088,186 @@ test("ruling a home out leaves the focus on its own stage control, not on the bo
     if (el.tagName === "DETAILS") assert.equal(el.open, true, "every disclosure around it is open");
   d.close();
 });
+
+// --- The tour-day walkthrough ------------------------------------------------
+const openTour = (d, id) => {
+  const row = [...d.doc.querySelectorAll(".saved-row")].find((r) => r.dataset.home === id);
+  row.querySelector(".saved-more").open = true;
+  row.querySelector("[data-tour]").click();
+  return d.doc.querySelector("#tour-companion");
+};
+const checkNamed = (tour, pattern) => [...tour.querySelectorAll(".tour-check")].find((l) => pattern.test(l.textContent));
+
+test("the walkthrough names the exact unit, its tour date and what is left, at the point of use", async () => {
+  const feed = deskFeed();
+  const d = await openDesk({ remote: feed, packaged: feed, notebook: deskNotebook({
+    "desk-provider": { saved: true, status: "tour scheduled", tourDate: "2026-09-20T10:00",
+      tourChecks: { layout: true, light: true } } }) });
+  const tour = openTour(d, "desk-provider");
+  assert.equal(tour.open, true);
+  const head = tour.querySelector(".tour-head").textContent;
+  assert.match(head, /6700 S South Constance Ave/);
+  assert.match(head, /Unit 1/);
+  assert.match(head, /6700 S South Constance Ave, Unit 1, Chicago, IL 60649/);
+  assert.match(head, /Sep 20, 2026/);
+  assert.match(head, /10:00 · Chicago/);
+  assert.match(d.doc.querySelector("#tour-draft-count").textContent, /2\/8 reviewed · 6 left/);
+  // Directions are built from the recorded address and nothing else.
+  const directions = [...tour.querySelectorAll("a")].find((a) => /Directions/.test(a.textContent));
+  assert.equal(decodeURIComponent(directions.href),
+    "https://www.google.com/maps/dir/?api=1&destination=6700 S South Constance Ave, Unit 1, Chicago, IL 60649");
+  assert.equal(directions.target, "_blank");
+  assert.equal(directions.rel, "noopener noreferrer");
+  // The checks sit directly above the fields that record what they found.
+  const form = d.doc.querySelector("#record-form");
+  assert.equal(tour.nextElementSibling, form, "the walkthrough runs straight into the notebook fields");
+  assert.equal(tour.parentElement, form.parentElement);
+  d.close();
+});
+
+test("each check carries what the record already knows, and a $0 amount is not an unknown one", async () => {
+  const feed = deskFeed();
+  const d = await openDesk({ remote: feed, packaged: feed, notebook: deskNotebook({
+    "desk-curated": { saved: true, status: "tour scheduled" },
+    "desk-provider": { saved: true, status: "tour scheduled" },
+    "desk-suburb": { saved: true, status: "tour scheduled" } }) });
+  // Curated: parking advertised with a recorded $0, charging advertised,
+  // a source-listed layout, and fees on record.
+  const curated = openTour(d, "desk-curated");
+  assert.match(checkNamed(curated, /Walk the exact layout/).textContent, /On record: Source lists 1 bed · 1 bath\./);
+  const curatedParking = checkNamed(curated, /Walk the parking route/).textContent;
+  assert.match(curatedParking, /Parking is advertised here\./);
+  assert.match(curatedParking, /Monthly cost on record: \$0\./, "a recorded $0 is an amount, not an unknown");
+  assert.match(checkNamed(curated, /Inspect the charger/).textContent, /Building charging advertised\./);
+  assert.match(checkNamed(curated, /Review the full quote/).textContent, /Known monthly subtotal on record: \$2,783 — still unquoted: utilities\./);
+  d.doc.querySelector("#detail-dialog").close();
+  // Provider: parking never established and never quoted — two separate facts.
+  const provider = openTour(d, "desk-provider");
+  const providerParking = checkNamed(provider, /Walk the parking route/).textContent;
+  assert.match(providerParking, /The source never established whether there is parking\./);
+  assert.match(providerParking, /Monthly cost on record: not quoted\./);
+  assert.match(checkNamed(provider, /Walk the exact layout/).textContent, /On record: 1 bed · 1 bath reported — not checked\./);
+  const providerCharging = checkNamed(provider, /Inspect the charger/).textContent;
+  assert.match(providerCharging, /Building charging unknown\./);
+  assert.match(providerCharging, /cost is quoted by no one here and is not in the subtotal/);
+  assert.match(providerCharging, /No public charging dataset is loaded, which is not evidence that there are none nearby\./);
+  d.doc.querySelector("#detail-dialog").close();
+  // Suburb: the source says there is no resident charging. Still not a claim
+  // about public stations, and still not a cost.
+  const suburb = openTour(d, "desk-suburb");
+  assert.match(checkNamed(suburb, /Inspect the charger/).textContent, /No building charging\./);
+  assert.doesNotMatch(checkNamed(suburb, /Inspect the charger/).textContent, /free|included/i);
+  // A check the record holds nothing about says nothing rather than inventing.
+  for (const pattern of [/Check the light/, /Listen with windows closed/, /Try the everyday route/, /Test the basics/])
+    assert.equal(checkNamed(suburb, pattern).querySelector(".tour-known"), null, String(pattern));
+  d.close();
+});
+
+test("a walked tour records its answers and the decision desk shows them", async () => {
+  const feed = deskFeed();
+  const d = await openDesk({ remote: feed, packaged: feed,
+    notebook: deskNotebook({ "desk-provider": { saved: true, status: "tour scheduled", tourDate: "2026-09-20T10:00" } }) });
+  const before = [...rowFor(d, "desk-provider").querySelectorAll(".saved-open li")].map((li) => li.textContent);
+  assert(before.some((q) => /Layout not checked by you/.test(q)));
+  assert(before.some((q) => /Parking not quoted/.test(q)));
+  assert(before.some((q) => /8 of 8 tour checks not reviewed/.test(q)));
+  const tour = openTour(d, "desk-provider");
+  // Walk several checks; the count tracks what is left as they are ticked.
+  for (const key of ["layout", "light", "noise", "parking"]) {
+    const box = tour.querySelector(`[data-tour-check="${key}"]`);
+    box.checked = true;
+    box.dispatchEvent(new d.w.Event("change"));
+  }
+  assert.match(d.doc.querySelector("#tour-draft-count").textContent, /4\/8 reviewed · 4 left · save changes to keep/);
+  // Record what the walk found, in the fields directly below the checks.
+  const box = d.doc.querySelector("#detail-content");
+  box.querySelector("#layoutReview").value = "one_bed";
+  box.querySelector("#parkingCost").value = "0";
+  box.querySelector("#rentOverride").value = "1725";
+  box.querySelector("#quoteDate").value = "2026-09-20";
+  box.querySelector('[name="notes"]').value = "Garage is full; waitlist is about two months.";
+  box.querySelector("#record-form").dispatchEvent(new d.w.Event("submit", { bubbles: true, cancelable: true }));
+  d.doc.querySelector("#detail-dialog").close();
+  // Back on the desk, the answered questions are gone and the rest remain.
+  const after = [...rowFor(d, "desk-provider").querySelectorAll(".saved-open li")].map((li) => li.textContent);
+  assert(!after.some((q) => /Layout not checked by you/.test(q)), "the layout is checked now");
+  assert(!after.some((q) => /Parking not quoted/.test(q)), "a recorded $0 answers the parking cost");
+  assert(after.some((q) => /4 of 8 tour checks not reviewed/.test(q)), "the remaining checks persist");
+  assert(after.some((q) => /Monthly fees not quoted/.test(q)), "what the walk did not answer is still open");
+  assert.match(rowFor(d, "desk-provider").querySelector(".saved-money").textContent, /\$1,725/);
+  // And it survives a reload with an unchanged feed.
+  const notebook = JSON.parse(d.w.localStorage.getItem("spicyhome.workspace.v1"));
+  d.close();
+  const again = await openDesk({ remote: feed, packaged: feed, notebook });
+  const reopened = openTour(again, "desk-provider");
+  assert.equal(reopened.querySelectorAll("[data-tour-check]:checked").length, 4);
+  assert.match(again.doc.querySelector("#tour-draft-count").textContent, /4\/8 reviewed · 4 left/);
+  assert.equal(again.doc.querySelector('[name="notes"]').value, "Garage is full; waitlist is about two months.");
+  assert.equal(again.doc.querySelector("#parkingCost").value, "0");
+  again.close();
+});
+
+test("opening directions or a source from the walkthrough changes no check, note, quote or status", async () => {
+  const feed = deskFeed();
+  const notebook = deskNotebook({ "desk-provider": { saved: true, status: "toured", tourDate: "2026-09-20T10:00",
+    notes: "Garage is full", rentOverride: 1725, quoteDate: "2026-09-14", parkingCost: 0,
+    layoutReview: "one_bed", tourChecks: { layout: true, parking: true } } });
+  const d = await openDesk({ remote: feed, packaged: feed, notebook });
+  const tour = openTour(d, "desk-provider");
+  const box = d.doc.querySelector("#detail-content");
+  // Text typed at the apartment and not yet saved is part of this check.
+  box.querySelector('[name="notes"]').value = "half-typed: ask about the bike room";
+  box.querySelector("#monthlyFees").value = "45";
+  const noise = tour.querySelector('[data-tour-check="noise"]');
+  noise.checked = true;
+  noise.dispatchEvent(new d.w.Event("change"));
+  const stored = d.w.localStorage.getItem("spicyhome.workspace.v1");
+  for (const a of [...tour.querySelectorAll("a"), ...box.querySelectorAll(".detail-links a, .sourceline a")]) a.click();
+  assert.equal(d.w.localStorage.getItem("spicyhome.workspace.v1"), stored, "a lookup saves nothing");
+  assert.equal(box.querySelector('[name="notes"]').value, "half-typed: ask about the bike room");
+  assert.equal(box.querySelector("#monthlyFees").value, "45");
+  assert.equal(tour.querySelector('[data-tour-check="noise"]').checked, true);
+  assert.equal(tour.querySelectorAll("[data-tour-check]:checked").length, 3);
+  assert.match(d.doc.querySelector("#tour-draft-count").textContent, /3\/8 reviewed · 5 left/);
+  // The record it belongs to is still the one on screen.
+  assert.match(tour.querySelector(".tour-head").textContent, /Unit 1/);
+  d.close();
+});
+
+test("no tour date says so, and an archived home still walks with its own evidence", async () => {
+  const feed = deskFeed();
+  const undated = await openDesk({ remote: feed, packaged: feed,
+    notebook: deskNotebook({ "desk-provider": { saved: true, status: "shortlisted" } }) });
+  const head = openTour(undated, "desk-provider").querySelector(".tour-head").textContent;
+  assert.match(head, /No tour date recorded/);
+  assert.doesNotMatch(head, /\d{1,2}:\d{2}/, "no time is invented for a tour nobody scheduled");
+  undated.close();
+  // A home the feed has dropped keeps its walkthrough, its identity and the
+  // evidence its own snapshot carries.
+  const later = deskFeed("2026-09-22T13:00:00Z");
+  later.homes = later.homes.filter((h) => h.id !== "desk-provider");
+  const archived = await openDesk({ remote: later, packaged: later, notebook: deskNotebook({
+    "desk-provider": { saved: true, status: "toured", snapshot: feed.homes[1],
+      tourChecks: { layout: true }, notes: "Walked it on the 20th" } }) });
+  const tour = openTour(archived, "desk-provider");
+  assert.match(tour.querySelector(".tour-head").textContent, /6700 S South Constance Ave/);
+  assert.match(tour.querySelector(".tour-head").textContent, /Unit 1/);
+  assert.match(checkNamed(tour, /Walk the parking route/).textContent, /never established whether there is parking/);
+  assert.equal(archived.doc.querySelector('[name="notes"]').value, "Walked it on the 20th");
+  assert.match(archived.doc.querySelector(".saved-evidence").textContent, /Archived notebook entry/);
+  archived.close();
+});
+
+test("a home with no coordinates still walks, with directions from its recorded address", async () => {
+  const feed = deskFeed();
+  feed.homes[1] = { ...feed.homes[1], lat: null, lng: null };
+  const d = await openDesk({ remote: feed, packaged: feed,
+    notebook: deskNotebook({ "desk-provider": { saved: true, status: "tour scheduled" } }) });
+  const tour = openTour(d, "desk-provider");
+  const directions = [...tour.querySelectorAll("a")].find((a) => /Directions/.test(a.textContent));
+  assert.match(decodeURIComponent(directions.href), /destination=6700 S South Constance Ave, Unit 1, Chicago, IL 60649$/);
+  assert.equal(tour.querySelectorAll(".tour-check").length, 8);
+  // Nothing invents a position for a record that has none.
+  assert.doesNotMatch(directions.href, /-?\d+\.\d+,-?\d+\.\d+/);
+  d.close();
+});

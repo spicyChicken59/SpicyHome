@@ -30,6 +30,7 @@ import {
   sourceAccess, sourceReferences, searchIdentity, scanContext, chargingEvidence, isDocumentationUrl, publicChargingMiles,
   openQuestions, figureSpread, tourChecks, surfacedBecause, headlineUnknown, decisionPool,
   buildingForm, HIGH_RISE_STOREYS, urbanSetting, budgetBand, parkingStanding, focusUnknowns, doubleDownOn,
+  lensPresets, validatePreferences,
 } from "../dist/model.js";
 const seed = JSON.parse(
   fs.readFileSync(new URL("../data/seed.json", import.meta.url)),
@@ -1309,4 +1310,59 @@ test("a saved snapshot is read from its own words and its own date, never today'
   assert.equal(buildingForm(silent).status, "unknown");
   assert.equal(buildingForm(silent).observed_at, null, "nothing recorded carries no date at all");
   assert.equal(buildingForm(silent).quote, "");
+});
+test("a preset is a starting point that merges, never a mode that replaces", () => {
+  const preset = lensPresets.find((entry) => entry.key === "downtown-value");
+  assert(preset, "the downtown starting point exists");
+  // It sets only the four fields the lens is made of, and nothing else.
+  assert.deepEqual(Object.keys(preset.preferences).sort(),
+    ["highRise", "parkingPreferred", "targetRent", "urbanScope"]);
+  // Merged onto a reader's own settings, theirs survive.
+  const mine = { ...defaults, bedrooms: "2", layoutScope: "source", max: 2800, utilityEstimate: 90 };
+  const after = validatePreferences({ ...mine, ...preset.preferences });
+  assert.equal(after.bedrooms, "2");
+  assert.equal(after.layoutScope, "source");
+  assert.equal(after.max, 2800);
+  assert.equal(after.utilityEstimate, 90);
+  assert.equal(after.urbanScope, "near");
+  assert.equal(after.targetRent, 2700);
+  // Every value it sets is an ordinary preference the reader can change back.
+  for (const [key, value] of Object.entries(preset.preferences)) {
+    assert.notEqual(value, defaults[key], `${key} would be a no-op`);
+    assert.doesNotThrow(() => validatePreferences({ ...after, [key]: defaults[key] }));
+  }
+  // The name describes a way of looking, not a person.
+  assert(!/tahir/i.test(JSON.stringify(lensPresets)), "no preset is named after a reader");
+});
+test("asking for parking changes what is said about it, and never what it says", () => {
+  const near = { ...home, id: "near", lat: 41.882, lng: -87.632 };
+  const on = { ...defaults, parkingPreferred: true };
+  const reasons = (h, prefs) => surfacedBecause(h, emptyWorkspace(), prefs, {}, deskNow).map((r) => r.text).join(" | ");
+  const advertised = { ...near, parking: { status: "yes", monthly: null } };
+  assert.match(reasons(advertised, on), /Resident parking is advertised, which you asked to prioritise/);
+  assert.match(reasons({ ...near, parking: { status: "yes", monthly: 175 } }, on), /\$175\/mo on record, the kind of answer you asked to see/);
+  // An unknown or a refusal is never turned into a reason to look closer.
+  for (const parking of [{ status: "unknown" }, { status: "no" }, undefined])
+    assert(!/parking/i.test(reasons({ ...near, parking }, on)), JSON.stringify(parking));
+  // And with the preference off, not even the advertised one is claimed.
+  assert(!/asked to prioritise/.test(reasons(advertised, defaults)));
+  // It is a preference, never a gate: an unrecorded answer hides nobody.
+  const pool = [advertised, { ...near, id: "quiet", parking: { status: "unknown" } }];
+  assert.equal(visibleHomes(pool, emptyWorkspace(), on, {}).length, 2);
+});
+test("the parking question the lens raises matches the answer the record gives", () => {
+  const near = { ...home, id: "near", lat: 41.882, lng: -87.632, charging: { status: "yes" } };
+  const on = { ...defaults, parkingPreferred: true };
+  const first = (parking, rec = {}) => focusUnknowns({ ...near, parking }, rec, on, deskNow, 1)[0];
+  assert.equal(first({ status: "unknown" }).label, "Parking not recorded");
+  assert.match(first({ status: "unknown" }).detail, /Unknown is not a no/);
+  assert.equal(first({ status: "yes", monthly: null }).label, "Parking price not quoted");
+  assert.equal(first({ status: "no" }).label, "The source reports no resident parking");
+  // A priced space leaves no parking question, so the record's own next one wins.
+  assert.notEqual(first({ status: "yes", monthly: 150 }, { parkingCost: 150 }).key, "parking");
+  // With the preference off the record's own order is untouched.
+  assert.notEqual(focusUnknowns({ ...near, parking: { status: "unknown" } }, {}, defaults, deskNow, 1)[0].key, "parking");
+  // The three answers are never merged into one sentence.
+  const said = [{ status: "unknown" }, { status: "yes", monthly: null }, { status: "no" }].map((p) => first(p).label);
+  assert.equal(new Set(said).size, 3, said.join(" / "));
 });

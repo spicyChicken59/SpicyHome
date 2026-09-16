@@ -17,6 +17,7 @@ export const defaults = {
   targetRent: null,
   urbanScope: "all",
   highRise: false,
+  parkingPreferred: false,
   surface: "split",
   density: "cards",
 };
@@ -718,7 +719,7 @@ export function validatePreferences(preferences) {
     !textOk(p.search, 500) ||
     !textOk(p.neighborhood, 500) ||
     !["all", "core", "near"].includes(p.urbanScope) ||
-    !["parking", "charging", "unknown", "highRise"].every(
+    !["parking", "charging", "unknown", "highRise", "parkingPreferred"].every(
       (k) => typeof p[k] === "boolean",
     ) ||
     !nullableAmount(p.utilityEstimate) ||
@@ -1216,8 +1217,24 @@ export function parkingStanding(home = {}, record = {}) {
 // three controls are ordinary preferences, so every surface asks this rather
 // than each keeping its own idea of when the lens is on.
 export function doubleDownOn(prefs = defaults) {
-  return prefs.urbanScope !== defaults.urbanScope || amount(prefs.targetRent) !== null || prefs.highRise === true;
+  return prefs.urbanScope !== defaults.urbanScope || amount(prefs.targetRent) !== null
+    || prefs.highRise === true || prefs.parkingPreferred === true;
 }
+// A named starting point, offered beside the reader’s own saved searches and
+// applied the same way: it MERGES onto whatever they already have, so a bedroom
+// choice or an evidence filter they set survives being handed a lens. Every
+// value it sets stays visible in the control it came from and can be changed
+// one at a time afterwards, so this is a starting point and not a mode. It
+// describes a way of looking rather than a person: a later reader wanting a
+// quiet two-bedroom in Evanston changes these four fields and keeps the rest.
+export const lensPresets = [
+  {
+    key: "downtown-value",
+    name: "Downtown value",
+    note: "Near downtown, around a target you can change, with recorded high-rises and advertised parking called out.",
+    preferences: { urbanScope: "near", targetRent: 2700, highRise: true, parkingPreferred: true },
+  },
+];
 // The unresolved facts worth carrying onto an attention surface: the record's
 // own open questions, in the order openQuestions already ranks them by decision
 // weight, with the one the ACTIVE lens makes consequential first. A reader who
@@ -1236,6 +1253,22 @@ export function focusUnknowns(home = {}, record = {}, prefs = defaults, now = ne
     else if (form.status === "low_mid_rise")
       lens.push({ key: "form", kind: "form", label: "Recorded as low or mid-rise",
         detail: "You asked for high-rises; this record’s own description says otherwise.", target: "detail-sources" });
+  }
+  // Asking for parking makes its absence from the record the thing worth
+  // knowing first. An unrecorded answer stays unrecorded, an advertised space
+  // with no price is a cost question, and a building reporting none is a third
+  // fact -- the preference changes which is raised, never what any of them say.
+  if (prefs.parkingPreferred) {
+    const standing = parkingStanding(home, record);
+    if (standing.status === "unknown")
+      lens.push({ key: "parking", kind: "amenity", label: "Parking not recorded",
+        detail: standing.detail, target: "leasing-draft" });
+    else if (standing.status === "advertised")
+      lens.push({ key: "cost:parking", kind: "cost", label: "Parking price not quoted",
+        detail: standing.detail, target: "parkingCost", field: "parkingCost" });
+    else if (standing.status === "none")
+      lens.push({ key: "parking", kind: "amenity", label: "The source reports no resident parking",
+        detail: standing.detail, target: "leasing-draft" });
   }
   const out = [], seen = new Set();
   for (const item of [...lens, ...openQuestions(home, record, prefs, now).filter((item) => item.kind !== "tour")]) {
@@ -1328,6 +1361,13 @@ export function surfacedBecause(home, workspace = emptyWorkspace(), prefs = defa
     const band = budgetBand(home, rec, prefs);
     if (["under", "near", "stretch"].includes(band.status))
       add("target", "filter", `${band.label}, on ${band.basis}`);
+  }
+  if (prefs.parkingPreferred) {
+    const standing = parkingStanding(home, rec);
+    if (standing.status === "priced")
+      add("parkingPreferred", "filter", `${standing.label}, the kind of answer you asked to see`);
+    else if (standing.status === "advertised")
+      add("parkingPreferred", "filter", "Resident parking is advertised, which you asked to prioritise");
   }
   if (prefs.parking && home.parking?.status === "yes")
     add("parking", "filter", "Resident parking is advertised, which your filter requires");

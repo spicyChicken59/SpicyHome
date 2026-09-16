@@ -936,6 +936,96 @@ with 403 CONNECT. **No external navigation fixture proves an apartment fact:**
 a directions link opening is not evidence that the building, the unit, the
 parking or the charger is as the record describes.
 
+### Release acceptance, 16 September 2026 — the Final Three on a phone
+
+**Revision.** `main` at `75007e4` (the merge of #22), whose post-merge runs were
+both green on that commit: *Checks* 35041190857, and *Publish website*
+35041190850, whose steps ran in order — `check_site.py` passed before the
+upload, then `deploy-pages`. The committed feed is untouched: `generated_at`
+**2026-09-15T13:28:27Z**, **1,000 records** (978 provider listings, 22 curated
+building plans), **8 city scans** — Chicago capped at 500 of 4,484 and
+`truncated`, the other seven complete, Evanston's the oldest at 8 Sep. The
+vendored design system is **v2.13.0 / `14a752d`, 22 files, drift 0 both ways**
+and was not touched. No provider request was made and no schedule was changed.
+
+**One release blocker, found by looking at a screenshot rather than by any
+gate.** On the Decision Desk at 390 px and 320 px, a pinned home whose name is
+long — a provider listing, which is 978 of the 1,000 records — rendered its
+Final Three card unreadable. Measured in Chromium at `75007e4`, over the three
+homes the acceptance walk saved (the gate's own fixture saves a different three
+and reads different numbers for the same defect):
+
+| 390 px | name | rank badge | money |
+|---|---|---|---|
+| AMLI Lofts | 104 px | 19x19 | 117 px |
+| 6700 S South Constance Ave | **42 px, 8 lines** | **10x38, "0" over "2"** | 221 px |
+
+At 320 px the name box measured **0 px wide and 503 px tall** and **overlapped
+the price**; `UNRESOLVED` read as `UNR / ESOL / VED`. The cause is one track:
+the card is `grid-template-columns: minmax(0,1fr) auto` on a phone, and the
+money column holds a price *and* its basis sentence ("Provider asking rent ·
+verify the exact unit"). An `auto` track takes that sentence at max-content
+before the `1fr` identity column gets anything, so the apartment's name is left
+with whatever remains. `AMLI Lofts` looked right only because its caption
+("Base rent from · A320") is short.
+
+**Repaired, smallest change that holds.** The money column is
+`fit-content(40%)`, so a short caption still sizes to its content and a long one
+cannot take the identity's half; `.finalist-number` is `flex: 0 0 auto`, because
+the card sets `overflow-wrap: anywhere` for long addresses and a rank badge is
+not an address; and `.finalist-grid .actions` is `overflow-wrap: normal`, so
+*Open* is a button rather than "Op / en". **Three declarations and two comments
+in `dist/style.css`, no logic, no markup, no model change.** Measured after:
+name 136 px at 390 and 94 px at 320, rank 19x19 at every width, no overlap, the
+price on one line. **1280 px is byte-identical** — the number, name and money
+boxes measure exactly as they did before.
+
+**The class, swept and closed.** Every heading that names an apartment, on all
+ten surfaces, at 390 px and 320 px: **0 squeezed**. The desk row, the cards, the
+quick scan, the picks, the comparison, the Atlas and the tour all size their
+identity independently of a caption.
+
+**Gates, all run here at the repaired tip.** `npm ci --ignore-scripts`;
+**`npm test` 187/187**; **`npm run check`** — JS syntax plus **43** Python;
+**`python tools/check_site.py`** — 22 immutable design assets and 1,000 records;
+**`npm run browser-check --shots` 315/315** (5 added, one per
+viewport/theme the desk suite already walked); `git diff --check` clean. **The
+new check fails at `75007e4`** on 390 px dark, 390 px light and 320 px dark, and
+passes at 1280 px in both themes, which is exactly where the defect lives; it
+prints each card's own before-numbers.
+
+**That check over-asserted on its first writing, and the gate caught it.** It
+said the name must always be at least as wide as the money beside it, which is
+false for a short name: `AMLI Lofts` asks for 104 px and gets exactly 104 px
+next to a 117 px money column, and nothing is wrong with that. It measures what
+the name ASKED for now — one unwrapped line of its own text — and requires the
+name to get either that or, when the card cannot give it, at least the money
+column's width. Same three labels red at `75007e4`, and the 320 px line now
+names the squeeze directly: `AMLI Lofts: name 72px of the 104px it wants`.
+
+**Acceptance, walked from a fresh browser profile** against the committed feed:
+open → freshness and coverage → filter → list and map → a provider record → what
+is provider-reported versus unknown → the labelled search fallback → save → save
+a curated plan → the desk → subtotal and missing costs → pin three → compare →
+the Tour Companion → record a layout, a $0 parking quote, a date and notes →
+back to the desk with the answered questions gone → rule out and recover →
+reload → reopen the saved evidence → and again with a home the feed no longer
+carries. **All twenty steps pass.** Also challenged: an empty feed, no filter
+matches, a stale status, a dead feed, Chicago's capped query beside Evanston's
+complete one, a record with no coordinates, a feed serving `javascript:` and
+`data:` source URLs, an explicit `$0` against an unquoted item, charging
+yes/no/unknown with the public dataset unavailable, one finalist rather than
+three, export, an unreadable notebook, a notebook pinning four finalists, and
+keyboard-only operation including focus returning to the control that opened a
+record. Nothing else was repaired.
+
+**Not claimed.** No live provider request, no new listing data, no physical
+phone. **Public-origin verification is BLOCKED:** this sandbox's proxy refuses
+`github.io:443` with 403 CONNECT, so nobody has read the served page back. The
+publish workflow succeeding proves the deployment ran, not that the origin
+renders. No fixture proves a lease, availability, amenity, price or source
+validity.
+
 ### NEXT BUILDER PROMPT — live, and level except SpicyStock
 
 Verify the tips before trusting any of them; the SpicyHome and design-system

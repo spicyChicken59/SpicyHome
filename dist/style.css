@@ -1529,7 +1529,12 @@ input, select, textarea { font-size: 1rem; }
      are not dropped -- they are on the same home's own row below, which is
      where the full decision summary lives. */
   .finalist-grid { gap: 10px; }
-  .finalist-grid article { grid-template-columns: minmax(0,1fr) auto; align-items: baseline; padding: 12px 14px; gap: 6px 12px; }
+  /* The money column holds a price AND its basis sentence. An `auto` track
+     takes that sentence at max-content before the identity column gets
+     anything, and a provider listing's address column then collapses to a
+     few characters wide -- to nothing at 320px. Cap the money column so
+     the name of the apartment always has the larger half. */
+  .finalist-grid article { grid-template-columns: minmax(0,1fr) fit-content(40%); align-items: baseline; padding: 12px 14px; gap: 6px 12px; }
   .finalist-top { grid-column: 1; }
   .finalist-rent { grid-column: 2; grid-row: 1; justify-items: end; text-align: right; }
   .finalist-rent strong { font-size: 1.15rem; }
@@ -1708,7 +1713,9 @@ input, select, textarea { font-size: 1rem; }
 .finalist-grid article { display: grid; align-content: start; gap: 10px; border: 1px solid #5c708a; border-radius: 12px; padding: 16px; min-width: 0; overflow-wrap: anywhere; }
 .finalist-top { display: flex; align-items: baseline; gap: 10px; }
 .finalist-top > div { min-width: 0; }
-.finalist-number { font: 1rem "IBM Plex Mono",monospace; color: #f7a391; }
+/* The rank badge is one token. The card sets `overflow-wrap: anywhere` for
+   long addresses, so a shrinkable badge breaks "02" across two lines. */
+.finalist-number { font: 1rem "IBM Plex Mono",monospace; color: #f7a391; flex: 0 0 auto; }
 .finalist-grid h4 { font-size: 1.1rem; margin: 0; }
 .finalist-grid p { font-size: .875rem; margin: 4px 0 0; color: #cfdded; }
 .finalist-rent { display: grid; gap: 2px; margin: 0; }
@@ -1718,7 +1725,9 @@ input, select, textarea { font-size: 1rem; }
 .finalist-facts div { display: flex; justify-content: space-between; gap: 10px; min-width: 0; }
 .finalist-facts dt { font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; color: #a9bfda; }
 .finalist-facts dd { margin: 0; font-size: .8125rem; font-weight: 600; text-align: right; min-width: 0; }
-.finalist-grid .actions { flex-wrap: wrap; }
+/* The card breaks anywhere so a long address can wrap; a control label is not
+   an address, and "Open" split across two lines is not a button. */
+.finalist-grid .actions { flex-wrap: wrap; overflow-wrap: normal; }
 .finalist-grid .button.secondary { color: #fff; background: #233d5c; border-color: #8aa1bc; }
 .finalist-grid .text-button { color: #d9e7fa; }
 /* Empty capacity is a prompt with the contenders named in it, not an empty slot

@@ -31,8 +31,9 @@ npm run dev
 
 `npm run browser-check` serves the committed `dist/` and answers the remote feed
 with the committed records, then judges what jsdom cannot: where things land on a
-screen, whether every map mark sits where its coordinates put it, and which
-place a press on the map actually selects. Pass
+screen, whether every map mark sits where its coordinates put it, which
+place a press on the map actually selects, and whether a saved home's name still
+gets the wider half of its card when its rent caption is long. Pass
 `--shots <directory>` to save what it saw.
 
 Open the local URL printed by Vite. The app reads the committed public feed, with

@@ -1814,6 +1814,26 @@ input, select, textarea { font-size: 1rem; }
 .pick-card h5 { margin: 0 0 10px; font-size: 1rem; }
 .pick-card ul { padding-left: 20px; margin: 8px 0; }
 .pick-card li { margin-bottom: 10px; font-size: .95rem; }
+/* Why a candidate is in front of the reader, and the one thing still open.
+   Compact by construction: the reasons wrap as short phrases rather than
+   stacking as a second apartment card, and the open question is one line with
+   its own caveat. Both surfaces use the same block. */
+.why-block { margin: 14px 0 4px; padding-top: 12px; border-top: 1px solid var(--line); }
+.why-label { margin: 0 0 6px; font: .6875rem/1.4 "IBM Plex Mono",monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.why-list { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; }
+/* A reason that wraps is a short block, not a stretched lozenge: the radius
+   stays small so two lines still read as one phrase. */
+.why-item { font-size: .75rem; line-height: 1.35; padding: 4px 8px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line); color: var(--ink); overflow-wrap: anywhere; }
+/* A gate the reader themselves set reads as theirs; the ranking signal and the
+   recorded evidence stay quieter. No new hue: the app's own wine and blue. */
+.why-item--filter { border-color: var(--wine); color: var(--wine); background: var(--wine-wash); }
+.why-item--priority, .why-item--recipe { border-color: var(--blue); color: var(--blue); background: var(--blue-wash); }
+.why-open { margin: 10px 0 0; font-size: .8125rem; line-height: 1.45; }
+.why-open__label { display: inline-block; font: .6875rem/1.4 "IBM Plex Mono",monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--warm); margin-right: 6px; }
+.why-open strong { overflow-wrap: anywhere; }
+.why-open .meta { display: block; margin-top: 2px; }
+.focus-card .why-block { margin: 0; padding: 14px 18px 4px; border-top: 0; }
+@media (max-width: 420px) { .why-item { font-size: .6875rem; padding: 3px 7px; } .focus-card .why-block { padding-inline: 14px; } }
 .pick-catch { border-left: 3px solid var(--warm); padding: 12px; background: var(--surface); margin-top: 18px; border-radius: 0 8px 8px 0; }
 .pick-catch p, .pick-catch li { font-size: .875rem; }
 .pick-catch summary, .picks-method summary, .pick-leads summary { cursor: pointer; min-height: 44px; padding: 10px 0; font-size: .875rem; font-weight: 600; }

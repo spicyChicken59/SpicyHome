@@ -1256,6 +1256,147 @@ claims current lease availability, live pricing, parking, charging or source
 validity: every figure on a mark is a recorded figure from the committed feed,
 rounded, with its basis beside it.
 
+### Milestone, 16 September 2026 — why this one is in front of you
+
+**Revision.** Branch restarted from `main` at **`040c3ba`** (the merge of #24,
+green on both post-merge runs: *Checks* 35057402747 and *Publish website*
+35057402770, whose `check_site.py` step ran before the upload and `deploy-pages`
+after it). The committed feed is untouched: `generated_at`
+**2026-09-15T13:28:27Z**, **1,000 records** (978 provider listings, 22 curated
+building plans), Chicago capped at 500 of 4,484, Evanston's scan the oldest at
+8 Sep. The vendored design system is **v2.13.0 / `14a752d`, 22 files, drift 0
+both ways** and was not touched. No open pull request, no newer scheduled data
+commit, no provider request, no schedule change, no sibling repository written.
+**#24's map treatment is preserved and re-verified**, not re-done.
+
+**The eight "clock-dependent" discovery tests were not clock-dependent, and
+proving that came first.** The previous milestone's sweep shifted `Date` with an
+`--import` module and reported eight failures at +7 days. The app is evaluated
+*inside* the jsdom window (`w.eval(model + app)`) and reads **that window's**
+`Date`; the shim only patched the Node process's. Measured directly: process
+`2026-09-23T05:02:58Z`, window `2026-09-16T05:02:58Z`, `w.Date !== globalThis.Date`.
+So every fixture — `picksSnapshot()` and `studioSnapshot()` already stamp from
+`Date.now()` — was dated seven days into the page's **future**, and `pickAge()`
+refuses a future observation by design. The instrument, not the suite.
+
+**Fixed where the fault was: the test clock boundary, not a production rule.**
+`SPICYHOME_TEST_CLOCK_SKEW_DAYS` now moves **both** clocks together —
+`shiftWindowClock(w)` carries the window forward and `testNow()` stamps the
+fixtures from the same instant. Unset, as in CI, it is zero and nothing changes:
+the clock is carried, never frozen, so a rule that reads the calendar still
+reads a real one. No freshness window was widened and no assertion was weakened.
+The explicit aging tests stay where they were, in `tests/model.test.mjs` against
+a pinned `deskNow` (`Quote is 46 days old`, the undated quote, the absent
+record), untouched by any skew. **`npm test` is 206/206 at +0, +7, +30 and +400
+days.** A new check asserts the invariant and its consequence together — the
+page's clock equals the fixture's, and three picks render — and it dies under
+the exact mutant that caused the false alarm: at +7 days with
+`shiftWindowClock` removed it fails, at +0 it passes because no divergence is
+possible.
+
+**What actually surfaces a candidate, traced before anything was drawn.** Under
+defaults, `visibleHomes` keeps 999 of 1,000 and `spicyPicks` ranks 766 eligible.
+Every *balanced*, *budget* and *space* pick is a provider listing with a
+`provider_reported` layout, `[parking, monthly fees, utilities]` unquoted and
+penalty 9; the dominant contribution is exactly the chosen weight — `budget`
+32.1 balanced, 62.4 budget; `space` 52.3; `amenities` 45.0 for the curated
+`amli-900` under *EV + parking*, whose `value` signal is 0 because its quote is
+older than seven days. `openQuestions` returns the same order for all of them:
+`layout > cost:parking > cost:monthly fees > cost:utilities > amenity:parking >
+amenity:charging > tour > source`.
+
+**What the surfaces say now.** `surfacedBecause()` returns the rules that
+actually ran for that record, and `whyBlock()` draws at most three of them on
+the card itself rather than behind the existing disclosure — which keeps its job
+of holding the full evidence. Three sources, in that priority:
+
+1. **A gate the reader moved off its default.** A filter still at its default
+   narrowed nothing, so it explains nothing and is not offered. Each sentence
+   **re-checks the record against the gate it names** rather than trusting the
+   caller: asked about a Chicago listing under an Evanston filter, or a
+   provider-reported layout under the source-evidence filter, it stays silent.
+2. **The signal the chosen priority weighted most**, read back off the weights
+   the ranking already used — `(signals[key] × weights[key])`, largest first,
+   zero-weight entries excluded. A recipe says so in its own kind, so the studio
+   can mark it as the reader's own mix.
+3. **Recorded facts those rules read**: room under the cap on the chosen basis,
+   the layout's evidence status, a recent observation, a recorded price move.
+
+Because it is derived from the current preferences on every render, a reason
+whose rule stops applying stops being drawn. Measured on the page: choosing an
+area adds *"In Oak Park, the area you chose"* to every pick that matched it and
+returning the filter to `all` leaves **zero** `.why-item--filter` chips behind;
+narrowing the cap to $1,600 renames the figure *and* the cap in the same
+sentence; switching the basis renames the basis, not just the number.
+
+**The one unresolved fact** is `headlineUnknown()`: the record's own first open
+question in `openQuestions`' existing decision-weight order — the order
+`nextMove()` already takes the shortlist's single step from — declining only the
+`tour` kind, because a visit the reader has not arranged is not a property of
+the apartment or of its evidence. Nothing outstanding returns `null` and the
+surface says nothing rather than inventing a slot-filler. A layout question's
+detail is suppressed because it *is* the evidence label the card already prints
+beside the plan; every other kind keeps its caveat, which appears nowhere else.
+
+**One defect of mine, found by the edge sweep and fixed.** A record with no
+quoted base rent read *"$3,000 under your $3,000 base-rent cap"* — its known
+subtotal is zero, so the arithmetic offered the whole cap as headroom and it
+would have read as the cheapest thing on the page, against this repository's own
+rule that unknown base rents never become cheap picks. An unquoted rent is not a
+budget reason now, and a test pins it.
+
+**Measured offline.** `npm test` **206/206** (11 new) — and 206/206 at +7, +30
+and +400 days; `npm run check` 43 Python; `python tools/check_site.py` 22
+immutable design assets and 1,000 records; **`npm run browser-check --shots`
+353/353** (16 new, eight per width); `git diff --check` clean. **Every new test
+fails at `040c3ba`**: the four surface tests run there and go red, the model
+suite cannot even import two functions that do not exist, and the same gate run
+against that tree is **339/353** — 14 of the 16 red, the two that survive being
+the page-error checks, which are of that kind by nature. **Eight mutants over the new
+rules, on a copy of the tree: all eight die, each only in the tests that name its
+rule, and a comment-only control stays green.** Two instrument faults were found
+and fixed on the way: a copy missing `src/` made the control "die", and a stale
+copy of `tests/` judged one mutant against a suite nobody had.
+
+**A check that could not fail, and one that read nine reasons as one card's.**
+`the attention surfaces never print a verdict, a score or a confidence` was
+green on a tree with no explanation at all — it now asks for the block before
+checking it, and fails at `040c3ba`. And `'.pick-card .why-item'` over the
+document matches every card at once, which is how a three-reason cap first read
+as nine; the reads are scoped to one element.
+
+**The journey and the edges.** The acceptance walk is **32/32** at 1280 and 390:
+freshness before anything, a provider pick and a curated plan each explained by
+the rule that ranked it, one open question each, budget → basis → layout-evidence
+→ area changes each re-writing the explanation, Focus holding the same
+vocabulary, the pick opening its own exact record with full provenance, and the
+same pick still there on return. A page-edge pass is **7/7**: an empty
+qualifying set leaves no explanation standing, a capped city still names its
+area filter, the one unlocated record stays in the list, no reason escapes its
+card at 320px, and a pick is still reachable on the map by its own identity —
+#24's selection intact. A model-level sweep over fifteen states — curated and
+provider, all three layout-evidence kinds, parking/charging yes/no/unknown, a
+recorded `$0` against a missing cost, current against stale, history and none,
+a missing exact URL, absence from a capped scan, no coordinates, the longest
+provider identity, and an unquoted rent — reports **0 semantic violations**
+against the four rules that matter: no verdict language, nothing implying an
+all-in cost, no `$0` read as unknown, no public station read as a resident
+amenity.
+
+**Composition.** No new tab, dashboard, score, confidence, ranking schema,
+generated prose or persistent preference model. The card grows from 429 to 620px
+at 390 and 503 to 734 at 320 — still well under the full apartment card — and
+nothing scrolls sideways at any width. The sticky Focus action bar covers **0px**
+of the block at 390 and 320, measured at the scroll position that would hide it.
+
+**Limitations.** Public-origin verification remains **BLOCKED** from this
+sandbox: the proxy refuses `github.io:443` with a 403 CONNECT, so a green
+*Publish website* run proves the workflow succeeded and not that the served page
+renders. Google Fonts is blocked here too, so every screenshot shows fallback
+faces. No figure in any explanation is anything but a recorded figure from the
+committed feed with its basis beside it — nothing here claims current
+availability, live pricing, parking, charging or source validity.
+
 ### NEXT BUILDER PROMPT — live, and level except SpicyStock
 
 Verify the tips before trusting any of them; the SpicyHome and design-system
@@ -1266,10 +1407,10 @@ repositories commit to `main` on a schedule.
   still the newest tag `origin` carries.
 - **SpicyCar** `main` was `62db117` on 14 Sep, a `snapshot 2026-09-14` tracker
   commit over `aea4fa3` (#79). It vendors **v2.13.0**. Not re-read since.
-- **SpicyHome** `main` is `55a853a` (the merge of #23), vendoring **v2.13.0**
+- **SpicyHome** `main` is `040c3ba` (the merge of #24), vendoring **v2.13.0**
   with zero hash drift, **and served** at
   https://spicychicken59.github.io/SpicyHome/ — the publish job validated and
-  deployed that commit (Checks 35050232849, Publish website 35050232850, whose
+  deployed that commit (Checks 35057402747, Publish website 35057402770, whose
   `check_site.py` step ran before the upload and `deploy-pages` after it).
 - **SpicyStock** `main` was `ce2c6c1` (#61) on 14 Sep and still vendored
   **v2.11.0** (`6f10309`). Not re-read since.
@@ -1311,10 +1452,11 @@ cost-basis marks, the shortlist's next step, the Atlas, or this adoption.
      against a blank tile, which is precisely the gap.
 
 Offline gates, all of which must pass before a pull request: `npm ci
---ignore-scripts`, `npm test` (**194**), `npm run check` (**43** Python),
-`python tools/check_site.py` (22 assets; it prints whatever the committed feed
-holds — **1,000 records** on `55a853a`), `npm run browser-check --shots <dir>`
-(**337** Chromium scenarios; it needs a Playwright whose bundled Chromium
+--ignore-scripts`, `npm test` (**206**, and the same 206 under
+`SPICYHOME_TEST_CLOCK_SKEW_DAYS` at 7, 30 and 400), `npm run check` (**43**
+Python), `python tools/check_site.py` (22 assets; it prints whatever the
+committed feed holds — **1,000 records** on `040c3ba`), `npm run browser-check
+--shots <dir>` (**353** Chromium scenarios; it needs a Playwright whose bundled Chromium
 revision matches the one installed — 1194 here, which is playwright 1.56.x, and
 `npm install --no-save --ignore-scripts playwright@1.56.1` gets it without
 touching `package.json` — and it reports SKIP and exits 1 without it). Also
@@ -1327,15 +1469,22 @@ Standing hazards, still true:
 - A stylesheet rule naming a Leaflet or design-system class at equal specificity
   wins by load order and can silently undo the library's own layout. The map
   case is covered; the general one is not.
-- **Nine tests in `tests/app.test.mjs` depend on the hour they run**, because
-  `data/seed.json` and the picks fixtures carry fixed dates and the app measures
-  them against `new Date()`. One (`source details stay compact when healthy`) is
-  repaired; **eight remain and go red within seven days of any run** — the
-  SpicyPicks and Decision Studio suites. Find them with a `Date`-shifting
-  `--import` module (see the milestone entry): `SHIFT_DAYS=7 node --import
-  ./shift.mjs --test tests/app.test.mjs`. Dating those fixtures relative to the
-  clock is the fix, and it is a change of its own. Until it is made, a green
-  `main` says nothing about tomorrow.
+- **CORRECTED 16 Sep 2026.** The note here previously said eight SpicyPicks and
+  Decision Studio tests would go red within seven days of any run. They do not,
+  and the sweep that said so was measuring its own instrument: the app is
+  evaluated INSIDE the jsdom window and reads that window's `Date`, while the
+  `--import` shim patched only the Node process's, dating every fixture into the
+  page's future. `picksSnapshot()` and `studioSnapshot()` were already relative
+  to the clock. One clock moves both now — `SPICYHOME_TEST_CLOCK_SKEW_DAYS=7 npm
+  test` — and the suite is 206/206 at +0, +7, +30 and +400 days. **The standing
+  hazard that remains is the shape, not those tests:** a fixture dated from one
+  clock and read by another says nothing about either. `the fixture clock and the
+  page's own clock are one clock` pins it, and any new jsdom harness must carry
+  `shiftWindowClock(w)` or that check fails at every non-zero offset.
+- `data/seed.json` still carries a FIXED `generated_at` (2026-09-08), so a test
+  that boots it and asserts a *fresh* feed ages out. One did, on 16 Sep, eight
+  days later to the minute. Supply a fixture dated from `testNow()` when what is
+  under test is not the aging itself.
 - Every map marker's icon box is **28x28 and must stay so**, whatever it draws.
   Leaflet places each one by a transform off a single pane origin, and `every
   mark sits where its coordinates put it` reads that origin back by subtracting

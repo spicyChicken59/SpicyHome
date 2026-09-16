@@ -514,6 +514,72 @@ try {
     check(`${label}: every lens control takes keyboard focus`, keys.reach.every(Boolean), JSON.stringify(keys.reach));
     check(`${label}: a lens sentence leaves with the preference that produced it`,
       keys.off && keys.back, `off ${keys.off} back ${keys.back}`);
+    // The lens has a named starting point, and it must not be a mode: it merges
+    // onto what the reader already set, and each value stays in its own control.
+    const preset = await page.evaluate(() => {
+      document.querySelector('#saved-searches').open = true;
+      const bedrooms = document.querySelector('#search-bedrooms');
+      bedrooms.value = '2'; bedrooms.onchange();
+      const button = document.querySelector('[data-preset="downtown-value"]');
+      if (!button) return { offered: false };
+      const name = button.textContent.trim();
+      button.click();
+      const p = JSON.parse(localStorage.getItem('spicyhome.workspace.v1')).preferences;
+      return { offered: true, name,
+        set: [p.urbanScope, p.targetRent, p.highRise, p.parkingPreferred].join('|'),
+        kept: p.bedrooms,
+        shown: [document.querySelector('#urban-scope').value, document.querySelector('#target').value,
+          document.querySelector('#filter-highRise').checked, document.querySelector('#filter-parkingPreferred').checked].join('|'),
+        focused: document.activeElement?.dataset?.preset ?? '' };
+    });
+    check(`${label}: one press starts the lens and says what it will do`,
+      preset.offered && preset.set === 'near|2700|true|true' && /Downtown value/.test(preset.name), preset.name);
+    check(`${label}: the preset merges onto what the reader already chose`,
+      preset.kept === '2', `bedrooms ${preset.kept}`);
+    check(`${label}: every value it set is visible in the control it came from`,
+      preset.shown === 'near|2700|true|true', preset.shown);
+    check(`${label}: the press keeps focus where the reader put it`, preset.focused === 'downtown-value', preset.focused);
+    // Parking importance raises what is said, and never hides an unknown.
+    // Measured on the whole lens, not on the two-bedroom slice the merge check
+    // left behind: a reason nobody can reach proves nothing either way.
+    const parking = await page.evaluate(() => {
+      const bedrooms = document.querySelector('#search-bedrooms');
+      bedrooms.value = 'all'; bedrooms.onchange();
+      // On the priority this lens is for, where a place that advertises parking
+      // can actually reach a card.
+      document.querySelector('[data-pick-lens="downtown"]')?.click();
+      const before = document.querySelectorAll('.home-card').length;
+      const reasons = () => [...document.querySelectorAll('.why-item')].filter((i) => /asked to prioritise|asked to see/.test(i.textContent)).length;
+      const on = reasons();
+      const box = document.querySelector('#filter-parkingPreferred');
+      box.checked = false; box.dispatchEvent(new Event('change'));
+      return { before, on, off: reasons(), after: document.querySelectorAll('.home-card').length };
+    });
+    check(`${label}: asking for parking adds reasons rather than removing places`,
+      parking.on > 0 && parking.before === parking.after, `${parking.on} reasons, ${parking.before} of ${parking.after} places`);
+    check(`${label}: turning parking importance off takes its reasons with it`, parking.off === 0, `${parking.on} -> ${parking.off}`);
+    // An absence in this snapshot is never reported as an absence in the area.
+    const empty = await page.evaluate(async () => {
+      document.querySelector('#target').value = '1300';
+      document.querySelector('#min').value = '2400';
+      document.querySelector('#filters').dispatchEvent(new Event('change', { bubbles: true }));
+      const band = document.querySelector('#downtown-lens').textContent;
+      document.querySelector('#min').value = '1200';
+      document.querySelector('#filters').dispatchEvent(new Event('change', { bubbles: true }));
+      const search = document.querySelector('#search');
+      search.value = 'zzzz-nothing-here'; search.dispatchEvent(new Event('input'));
+      await new Promise((r) => setTimeout(r, 300));
+      const results = document.querySelector('#results').textContent;
+      const widen = document.querySelector('#widen-lens');
+      if (widen) widen.click();
+      return { band, results, widened: document.querySelector('#urban-scope')?.value };
+    });
+    check(`${label}: a target nothing reaches is said about the snapshot, not the area`,
+      /holds nothing at or under your \$1,300 target in this area/.test(empty.band)
+      && !/no apartments (exist|are available)/i.test(empty.band), empty.band.slice(-90));
+    check(`${label}: an empty lens explains itself and offers one way out`,
+      /Nothing in this retained snapshot sits inside the downtown lens/.test(empty.results)
+      && /not that the area is empty/.test(empty.results) && empty.widened === 'all', empty.widened);
     check(`${label}: no page errors while the lens is driven`, errors.length === 0, errors.slice(0, 2).join(' '));
     if (shots) {
       await mkdir(shots, { recursive: true });

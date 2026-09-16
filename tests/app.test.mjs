@@ -2690,3 +2690,54 @@ test("nothing the lens prints is a verdict, a score or a confidence", async () =
   }
   d.close();
 });
+test("one press starts the downtown lens, keeps what the reader already set, and can be undone one control at a time", async () => {
+  const d = await bootLens();
+  d.doc.querySelector("#search-bedrooms").value = "2";
+  d.doc.querySelector("#search-bedrooms").onchange();
+  const preset = d.doc.querySelector('[data-preset="downtown-value"]');
+  assert(preset, "the starting point is offered beside the reader's own saved searches");
+  preset.click();
+  const now = () => JSON.parse(d.w.localStorage.getItem("spicyhome.workspace.v1")).preferences;
+  assert.deepEqual([now().urbanScope, now().targetRent, now().highRise, now().parkingPreferred],
+    ["near", 2700, true, true]);
+  assert.equal(now().bedrooms, "2", "a choice the reader already made survives being handed a lens");
+  assert.equal(d.doc.querySelector("#downtown-lens").hidden, false);
+  // Every value it set is visible in the control it came from.
+  assert.equal(d.doc.querySelector("#urban-scope").value, "near");
+  assert.equal(d.doc.querySelector("#target").value, "2700");
+  assert.equal(d.doc.querySelector("#filter-highRise").checked, true);
+  assert.equal(d.doc.querySelector("#filter-parkingPreferred").checked, true);
+  // And each one turns off by itself, taking only its own sentence.
+  const box = d.doc.querySelector("#filter-highRise");
+  box.checked = false; box.dispatchEvent(new d.w.Event("change"));
+  const panel = () => d.doc.querySelector("#downtown-lens").textContent;
+  assert(!/A height nobody wrote down/.test(panel()));
+  assert.match(panel(), /within 3 straight-line miles/);
+  assert.equal(now().highRise, false);
+  assert.equal(now().urbanScope, "near", "turning one off leaves the others alone");
+  d.close();
+});
+test("the lens says what it holds rather than what the area has, when it holds nothing", async () => {
+  const d = await bootLens();
+  d.doc.querySelector('[data-preset="downtown-value"]').click();
+  // A target no retained record can reach.
+  d.doc.querySelector("#target").value = "1300";
+  d.doc.querySelector("#min").value = "2400";
+  d.doc.querySelector("#filters").dispatchEvent(new d.w.Event("change", { bubbles: true }));
+  const panel = d.doc.querySelector("#downtown-lens").textContent;
+  assert.match(panel, /This retained snapshot holds nothing at or under your \$1,300 target in this area/);
+  assert(!/no apartments (exist|are available)/i.test(panel), panel);
+  // A lens that matches nothing at all says so about the records, with a way out.
+  d.doc.querySelector("#min").value = "1200";
+  d.doc.querySelector("#filters").dispatchEvent(new d.w.Event("change", { bubbles: true }));
+  d.doc.querySelector("#search").value = "zzzz-nothing-here";
+  d.doc.querySelector("#search").dispatchEvent(new d.w.Event("input"));
+  await new Promise((r) => setTimeout(r, 260));
+  const results = d.doc.querySelector("#results").textContent;
+  assert.match(results, /Nothing in this retained snapshot sits inside the downtown lens/);
+  assert.match(results, /This says what these records hold, not that the area is empty/);
+  assert(!/no apartments (exist|are available)/i.test(results), results);
+  d.doc.querySelector("#widen-lens").click();
+  assert.equal(JSON.parse(d.w.localStorage.getItem("spicyhome.workspace.v1")).preferences.urbanScope, "all");
+  d.close();
+});

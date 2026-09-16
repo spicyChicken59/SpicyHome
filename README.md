@@ -559,10 +559,11 @@ survive a refresh and an absent or stale feed exactly as before.
 
 ## The downtown lens — September 16, 2026
 
-Three optional preferences, on the same filter panel as everything else: a
+Four optional preferences, on the same filter panel as everything else: a
 **downtown lens** (the core within one straight-line mile of the centre the
 search itself recorded, or near-downtown within three), a **target monthly
-figure**, and **prefer recorded high-rises**. Turn any of them on and a short
+figure**, **prefer recorded high-rises**, and **parking matters to me**. Turn
+any of them on and a short
 panel says what the lens can and cannot see over the records actually retained:
 how many sit in the band, how many have a building height in their own sources,
 how the rest fall around your target, and how many advertise resident parking.
@@ -604,6 +605,30 @@ because the cheapest downtown apartment is not the one this priority is looking
 for. Every reason on its cards is a rule that ran for that record, and one or two
 unresolved facts ride beside them — for a reader asking for high-rises, an
 unrecorded height is the first of those.
+
+**A named starting point sits beside your own saved searches.** *Downtown value*
+sets all four in one press, with the count it would produce shown before you
+press it. It **merges** onto what you already chose, so a bedroom size or an
+evidence filter survives being handed a lens; every value it sets stays in the
+control it came from, and each one can be turned off by itself. It is a way of
+looking rather than a person: change the four fields and it becomes a quiet
+two-bedroom search in Evanston.
+
+**Parking importance raises what is said, never what is shown.** With it on, an
+advertised space — or a price on record — becomes one of the reasons a place
+surfaced, and the parking question becomes the first unresolved fact: *parking
+not recorded*, *parking price not quoted*, or *the source reports no resident
+parking*, each kept apart. It is not a filter, so a place whose parking nobody
+wrote down is never removed from the page for it. Ranking is unchanged: every
+priority already weighs advertised parking through the amenities signal, and
+this preference does not weigh it twice.
+
+**An absence here is an absence of evidence.** When nothing in the band sits at
+or under the target, the panel says *this retained snapshot holds nothing at or
+under your $X target in this area* — not that the area has none. When the lens
+matches nothing at all, the page says what the lens keeps, notes that a place
+with no recorded coordinates is outside any distance, and offers one control to
+look anywhere in the search again.
 
 The lens narrows the same visible set the cards, the map and the counts already
 share, so the map shows exactly the places the cards do. It adds no marker colour

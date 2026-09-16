@@ -1570,6 +1570,98 @@ own building, and the rest are unrecorded rather than short; live rent; that a
 parking space is available; or that any place here is objectively good value.
 Nothing was deployed, and no leasing or provider contact was made.
 
+### Closing pass, 16 September 2026 — the lens gets a starting point, and an absence gets a name
+
+**Revision.** Branch restarted from `main` at **`d5bdf4b`** (the merge of #26,
+green on both post-merge runs: *Checks* 35067651580 and *Publish website*
+35067651606). No open pull request existed at that tip. The committed feed is
+untouched — `generated_at` 2026-09-15T13:28:27Z, 1,000 records — the vendored
+design system is **v2.13.0 / `14a752d`, 22 files, drift 0**, and #24's map marks
+are unchanged.
+
+**This is not a second milestone: it closes three things the brief asked for
+that #26 did not deliver.** Re-reading the brief against what actually shipped:
+
+1. **Part G asked for a preset**, and for *parking importance* to be
+   expressible. #26 shipped three separate preferences and no way to say parking
+   mattered except a hard filter that would have hidden all 979 records whose
+   parking nobody recorded — the exact "unknown is not no" trap the same brief
+   forbids.
+2. **Part N asked for more empty states** than the one #26 wrote. Nothing said
+   anything when the band held nothing at or under the target, or when the lens
+   matched nothing at all.
+3. **The acceptance journey runs 35 steps.** #26's walk stopped at the Double
+   Down surface and never reached save, the Decision Desk, Final Three, the
+   comparison, the Tour Companion, a reload, or a saved record the feed no
+   longer carries.
+
+**The preset reuses the mechanism that already existed.** `state.savedSearches`
+is already a named-preference store with a one-press load and a live match
+count, so *Downtown value* is offered beside the reader's own saved searches and
+loaded the same way. It **merges** rather than replaces — a bedroom size or a
+layout-evidence setting survives being handed a lens — every value it sets stays
+in the control it came from, and each turns off by itself. `lensPresets` is a
+data table; nothing is named after a reader, and changing its four fields turns
+it into a quiet two-bedroom search in Evanston.
+
+**`parkingPreferred` raises what is said, not what is shown.** With it on, an
+advertised space (or a price on record) becomes a reason the place surfaced, and
+the parking question becomes the first unresolved fact — *not recorded*, *price
+not quoted*, or *the source reports no resident parking*, three answers kept
+apart. It is **never a gate**: a mutant that makes it one dies. Ranking is
+deliberately unchanged — every priority already weighs advertised parking
+through the amenities signal, and weighing it twice would be a scoring engine.
+
+**Two more empty states, both about the snapshot rather than the world.** *This
+retained snapshot holds nothing at or under your $1,300 target in this area*
+(and a separate sentence when nothing sits *around* the target, and another when
+nothing in the area carries a quoted base rent at all); and, when the lens
+matches nothing, *Nothing in this retained snapshot sits inside the downtown
+lens and your other filters* — naming what the lens keeps, noting that a place
+with no recorded coordinates is outside any distance, and offering one control
+back out.
+
+**The 35-step journey, walked end to end: 76/76** (38 steps at 1280 and at 390)
+over the committed record, from a fresh profile through the preset, the target
+and basis, a supported high-rise and an unrecorded one, parking support apart
+from parking cost, the reasons and the unresolved facts, three preference
+changes each taking only its own copy, the map by name, the record and its
+source, save, the Decision Desk, Final Three, the comparison carrying building
+form and parking, the Tour Companion, a reload, **a saved record absent from the
+feed that still reads and claims no building form**, the empty lens and its way
+out, the capped-scan statement, and a keyboard pass. One step failed first time
+and it was the check, not the page: the preset sits inside the saved-search
+disclosure, and a control inside a closed `<details>` is not focusable — this
+file's own recorded hazard. The check opens the disclosure the way a reader does
+and asserts focus and an accessible name once open.
+
+**Measured.** `npm test` **233/233**, and 233/233 at +0/+7/+30/+400 days.
+`npm run check` 43 Python tests. `python tools/check_site.py` 22 design assets,
+1,000 records. `git diff --check` clean. `npm run browser-check --shots`
+**393/393**, with 16 new lens checks (eight at each width).
+**31 mutants** behave as expected with a live control — six new ones covering
+the preset replacing instead of merging, an unrecorded parking answer becoming a
+reason, the parking preference becoming a gate, an advertised space asked about
+as if it had none, an empty lens reported as an empty area, and a target nothing
+reaches passed over in silence. Screenshots were read at 1280 light and dark,
+390 light and dark, and 320: the preset card carries its name, its live count
+("125 places now") and its note; the four checkboxes wrap without collision; the
+panel is 258px wide at 320 with zero overflow and no page scrolls sideways.
+
+**A pre-existing map defect, fixed properly on the third attempt.** The 35-step
+walk surfaced the Leaflet `_leaflet_pos` error this file had recorded as open,
+and the new lens interactions made it red a previously-green gate check — so
+looking past it was not available. The stack named the cause the earlier guesses
+had missed: the fit a RE-RENDER performs started a zoom animation whose
+`transitionend` outlived the map the next re-render destroyed. A re-render's fit
+is `animate: false` now (it has nothing to animate from), the reader's own *Fit
+all homes* stays animated, and the reproduction goes from two errors on the base
+to zero here. The mutant that puts the animation back brings the errors back.
+
+**Not claimed**, unchanged: current availability, complete downtown coverage,
+that every high-rise has been found, live rent, parking availability, or value
+as an objective fact.
+
 ### NEXT BUILDER PROMPT — live, and level except SpicyStock
 
 Verify the tips before trusting any of them; the SpicyHome and design-system
@@ -1697,15 +1789,19 @@ Standing hazards, still true:
   earlier green. Since publication they do reach the public site, through
   `publish.yml`'s `workflow_run` trigger — an unchecked record is now a served
   record, held back only by `check_site.py`.
-- **Open, pre-existing, unfixed:** opening the filter panel and re-rendering in
-  the same frame leaves a Leaflet zoom `transitionend` reading panes its map no
-  longer has — `TypeError: ... reading '_leaflet_pos'` from
-  `_onZoomTransitionEnd` → `_move` → `_getMapPanePos`. It reproduces identically
-  on `f310e2f` with the bedroom select and no lens involved. Two candidate
-  fixes were tried and neither moved it: guarding the `ResizeObserver` on the
-  observed pane's `isConnected`, and `map.stop()` before `map.remove()`. It is
-  one console error with no visible effect; whoever fixes it should reproduce it
-  first and prove the fix by execution, not by argument.
+- **Closed, and worth keeping for the shape of it:** opening the filter panel
+  and re-rendering in the same frame left a Leaflet zoom `transitionend` reading
+  panes its map no longer had — `TypeError: ... reading '_leaflet_pos'` from
+  `_onZoomTransitionEnd` → `_move` → `_getMapPanePos`. It reproduced identically
+  on `f310e2f` with the bedroom select and no lens involved. **Two fixes were
+  tried and reverted before the right one**: guarding the `ResizeObserver` on
+  the observed pane's `isConnected`, and `map.stop()` before `map.remove()`.
+  Neither moved it, and neither was left in, because a guard that changes
+  nothing measurable is speculation. The stack named the real cause: the fit a
+  RE-RENDER performs started a zoom animation that outlived its map. A
+  re-render's fit is `animate: false` now — it has nothing to animate from —
+  while the reader's own *Fit all homes* stays animated. Zero errors on this
+  tree, two on the base.
 - **`npm ci` removes Playwright from this sandbox.** It is deliberately not a
   `package.json` dependency — `browser-check` reports SKIP without it — so a
   clean install wipes it, and reinstalling the newest version then fails to

@@ -1082,7 +1082,8 @@ test('the fixture clock and the page\'s own clock are one clock', async () => {
 });
 test('SpicyPicks shows priorities, exact plans, caveats and review links and follows bedroom filters', async () => {
   const snapshot=picksSnapshot(),d=await boot({remote:snapshot,packaged:snapshot});
-  assert.equal(d.doc.querySelectorAll('#spicy-picks [data-pick-lens]').length,5);
+  assert.equal(d.doc.querySelectorAll('#spicy-picks [data-pick-lens]').length,6);
+  assert.deepEqual([...d.doc.querySelectorAll('#spicy-picks [data-pick-lens]')].map(b=>b.dataset.pickLens),['balanced','budget','space','ev','rail','downtown']);
   assert.equal(d.doc.querySelectorAll('.pick-card').length,3);
   const card=d.doc.querySelector('.pick-card');
   assert(card.querySelector('.plan-label').textContent);assert.match(card.textContent,/Why this one.*The catch/s);
@@ -1865,7 +1866,11 @@ test("building charging, no charging and unknown charging stay separate from an 
   // The provider writes one unknown note for parking, charging and access, so
   // each fact has to say which one it is about.
   assert.equal(new Set(unknown).size, unknown.length, "no two facts read as the same sentence");
-  assert(unknown.some((f) => /^Parking: Not reported by the listing provider/.test(f)));
+  // Four parking answers mean four different things, and the one nobody
+  // recorded has to read as unrecorded rather than as a refusal.
+  assert(unknown.some((f) => /^Parking not recorded\. Not reported by the listing provider; confirm with leasing\. Unknown is not a no, and it is not free\./.test(f)));
+  assert(!unknown.some((f) => /^Parking/.test(f) && /no resident parking|not offered|none/i.test(f)),
+    "an unrecorded parking answer is never printed as a building that has none");
   assert(unknown.some((f) => /^Step-free access: Not reported by the listing provider/.test(f)));
   d.doc.querySelector("#detail-dialog").close();
   const refused = facts("rentcast:evanston-1");
@@ -2517,5 +2522,171 @@ test("a home with no coordinates still walks, with directions from its recorded 
   assert.equal(tour.querySelectorAll(".tour-check").length, 8);
   // Nothing invents a position for a record that has none.
   assert.doesNotMatch(directions.href, /-?\d+\.\d+,-?\d+\.\d+/);
+  d.close();
+});
+
+// --- The downtown lens on the page -----------------------------------------
+// The lens's three controls are ordinary preferences, so these drive the real
+// filter panel rather than reaching into state.
+async function bootLens(patch = {}, notebook = null) {
+  const now = testNow().toISOString();
+  const homes = seed.homes.map((h) => ({ ...h, observed_at: now, ...(patch[h.id] ?? {}) }));
+  const snapshot = { ...seed, generated_at: now, homes, city_context: { cta: { updated_at: now } } };
+  return boot({ remote: snapshot, packaged: snapshot, notebook });
+}
+const setLens = (d, { scope = null, target = null, highRise = false, max = null }) => {
+  if (scope) { d.doc.querySelector("#urban-scope").value = scope; d.doc.querySelector("#urban-scope").onchange(); }
+  if (max !== null) { d.doc.querySelector("#max").value = String(max); d.doc.querySelector("#filters").dispatchEvent(new d.w.Event("change", { bubbles: true })); }
+  if (target !== null) {
+    d.doc.querySelector("#target").value = String(target);
+    d.doc.querySelector("#filters").dispatchEvent(new d.w.Event("change", { bubbles: true }));
+  }
+  if (highRise) { d.doc.querySelector("#filter-highRise").checked = true; d.doc.querySelector("#filter-highRise").dispatchEvent(new d.w.Event("change")); }
+};
+test("the downtown lens says what it can see, and never that there is nothing there", async () => {
+  const d = await bootLens();
+  const panel = () => d.doc.querySelector("#downtown-lens");
+  assert.equal(panel().hidden, true, "a lens nobody turned on says nothing at all");
+  setLens(d, { scope: "near", target: 2700, highRise: true });
+  assert.equal(panel().hidden, false);
+  const text = panel().textContent;
+  // One of the ten sourced buildings describes itself as a high-rise.
+  assert.match(text, /1 of them has a building height in its own sources/);
+  assert.match(text, /A height nobody wrote down is not a low building/);
+  assert.match(text, /Against your \$2,700 target/);
+  assert.match(text, /None of these is an all-in monthly cost/);
+  assert.match(text, /Advertised is not a reserved space/);
+  // Never a claim about the world.
+  assert(!/there are no high-rises|no high-rises (here|in)/i.test(text), text);
+  assert(!/\b(best|winner|perfect|ideal|recommended for you|guaranteed)\b/i.test(text), text);
+  d.close();
+});
+test("an area with no recorded height says the evidence is missing, not that no tall buildings exist", async () => {
+  // Strip every structural word from the one record that has one. The lens must
+  // now report an absence of EVIDENCE.
+  const d = await bootLens({ "73-east-lake": { atmosphere: "Spacious homes with built-in shelving and a rooftop terrace." } });
+  setLens(d, { scope: "core", highRise: true });
+  const text = d.doc.querySelector("#downtown-lens").textContent;
+  assert.match(text, /no record here carries enough evidence to call its building a high-rise/);
+  assert.match(text, /not a finding that there are none/);
+  assert(!/there are no high-rises/i.test(text));
+  d.close();
+});
+test("a recorded building form reaches the card, the record and the comparison, and an unrecorded one is never drawn as short", async () => {
+  // The one described building keeps its OWN observation date, so the line
+  // under it can be read against the clock rather than following it.
+  const d = await bootLens({ "73-east-lake": { observed_at: "2026-03-04" } });
+  // 73 East Lake asks $3,104, so the cap has to allow it onto the page at all.
+  setLens(d, { max: 3200 });
+  const card = (id) => d.doc.querySelector(`.home-card[data-home="${id}"]`);
+  assert.equal(card("73-east-lake").querySelectorAll(".chip.form").length, 1);
+  assert.match(card("73-east-lake").querySelector(".chip.form").textContent, /High-rise recorded/);
+  // Every other place carries no form chip at all -- no chip is not a claim.
+  assert.equal(d.doc.querySelectorAll(".chip.form").length, 1);
+  assert.equal(card("amli-900").querySelectorAll(".chip.form").length, 0);
+  assert(!/low[- ]rise|not a high-rise/i.test(card("amli-900").textContent));
+  // The record says it in full, with the words and the source's own date.
+  const detail = openRecord(d, "73-east-lake").querySelector(".detail-form").textContent;
+  assert.match(detail, /High-rise recorded/);
+  assert.match(detail, /Taken from the building description, which says .high-rise./);
+  assert.match(detail, /Spacious high-rise homes/);
+  assert.match(detail, /Recorded Mar 4, 2026/, "the source's own date, never the day the page was opened");
+  d.doc.querySelector("#detail-dialog").close();
+  // And a record with nothing recorded says exactly that.
+  const quiet = openRecord(d, "amli-900").querySelector(".detail-form").textContent;
+  assert.match(quiet, /Height not recorded/);
+  assert.match(quiet, /Unknown is not a low-rise/);
+  d.doc.querySelector("#detail-dialog").close();
+  // The comparison carries both, beside the distance it already showed, so two
+  // places are weighed on the same two facts.
+  for (const id of ["73-east-lake", "amli-900"]) {
+    const box = d.doc.querySelector(`.home-card[data-home="${id}"] [data-compare]`);
+    box.checked = true; box.dispatchEvent(new d.w.Event("change"));
+  }
+  d.doc.querySelector("#open-compare").click();
+  const rows = [...d.doc.querySelectorAll(".sc-compare-pair__measure")].map((n) => n.textContent);
+  assert(rows.some((r) => /Building form on record/.test(r)), rows.join(" | "));
+  assert(rows.some((r) => /Resident parking/.test(r)), rows.join(" | "));
+  const values = [...d.doc.querySelectorAll(".sc-compare-pair__value")].map((n) => n.textContent);
+  assert(values.some((v) => /High-rise recorded/.test(v)));
+  assert(values.some((v) => /Height not recorded/.test(v)));
+  assert(!values.some((v) => /Low\/mid-rise/.test(v)), "nothing here establishes a low or mid-rise");
+  d.close();
+});
+test("a target band rides the card with the basis it was measured on", async () => {
+  const d = await bootLens();
+  assert.equal(d.doc.querySelectorAll(".band-line").length, 0, "no target set, no band");
+  setLens(d, { target: 2700 });
+  const band = d.doc.querySelector('.home-card[data-home="amli-900"] .band-line');
+  assert.match(band.textContent, /\$193 under your \$2,700 target/);
+  assert.match(band.textContent, /Base rent only/);
+  assert.match(band.textContent, /parking/);
+  assert(!/all[- ]in/i.test(band.textContent));
+  // A place above the target is labelled as above it and still on the page.
+  setLens(d, { target: 2400 });
+  const over = d.doc.querySelector('.home-card[data-home="amli-west-loop"] .band-line');
+  assert.match(over.textContent, /\$365 above your \$2,400 target/);
+  assert.equal(over.classList.contains("band-line--stretch"), true);
+  d.close();
+});
+test("a place past the cap is counted and named rather than quietly dropped", async () => {
+  const d = await bootLens();
+  setLens(d, { scope: "near", target: 2700 });
+  // 73 East Lake asks $3,104 against a $3,000 cap: outside the filter, and the
+  // lens says so with the figure it would take to see it.
+  assert.equal(d.doc.querySelector('.home-card[data-home="73-east-lake"]'), null);
+  assert.match(d.doc.querySelector("#downtown-lens").textContent,
+    /1 more sits past your \$3,000 cap, the nearest at \$3,104/);
+  assert.match(d.doc.querySelector("#downtown-lens").textContent, /not hidden because they are worse/);
+  d.close();
+});
+test("the lens preferences survive a reload and refuse a value they cannot mean", async () => {
+  const d = await bootLens();
+  setLens(d, { scope: "core", target: 2700, highRise: true });
+  const stored = JSON.parse(d.w.localStorage.getItem("spicyhome.workspace.v1")).preferences;
+  assert.deepEqual([stored.urbanScope, stored.targetRent, stored.highRise], ["core", 2700, true]);
+  d.close();
+  // A reload reads them back through validatePreferences and the controls show
+  // them -- a stored preference nothing renders is not a preference.
+  const again = await bootLens({}, { version: 1, records: {}, manual: [], events: [], preferences: { ...stored } });
+  assert.equal(again.doc.querySelector("#urban-scope").value, "core");
+  assert.equal(again.doc.querySelector("#target").value, "2700");
+  assert.equal(again.doc.querySelector("#filter-highRise").checked, true);
+  assert.equal(again.doc.querySelector("#downtown-lens").hidden, false);
+  again.close();
+  // A target the field cannot mean is refused without changing the search.
+  const d3 = await bootLens();
+  setLens(d3, { target: 2700 });
+  d3.doc.querySelector("#target").value = "-5";
+  d3.doc.querySelector("#filters").dispatchEvent(new d3.w.Event("change", { bubbles: true }));
+  assert.equal(JSON.parse(d3.w.localStorage.getItem("spicyhome.workspace.v1")).preferences.targetRent, 2700);
+  assert.match(d3.doc.querySelector("#toast").textContent, /target between/);
+  d3.close();
+});
+test("the lens narrows the map to the same places as the cards, and changes no marker", async () => {
+  const d = await bootLens();
+  const markerText = () => [...d.doc.querySelectorAll(".home-map-marker")].map((m) => m.className).sort();
+  const before = markerText();
+  setLens(d, { scope: "core" });
+  const cards = [...d.doc.querySelectorAll(".home-card")].map((c) => c.dataset.home).sort();
+  const listed = [...d.doc.querySelectorAll("#map-list [data-map-home]")].map((b) => b.dataset.mapHome).sort();
+  assert.deepEqual(listed, cards, "one visible set behind the cards and the map");
+  assert(cards.length && cards.length < seed.homes.length);
+  // #24's marker vocabulary is untouched: the same class names, fewer marks.
+  assert.deepEqual([...new Set(markerText())], [...new Set(before)].filter((c) => markerText().includes(c)));
+  d.close();
+});
+test("nothing the lens prints is a verdict, a score or a confidence", async () => {
+  const d = await bootLens();
+  setLens(d, { scope: "near", target: 2700, highRise: true });
+  d.doc.querySelector('[data-pick-lens="downtown"]')?.click();
+  const surfaces = [...d.doc.querySelectorAll("#downtown-lens, .band-line, .detail-form, .why-block, .chip.form")];
+  assert(surfaces.length >= 4, "the lens surfaces are on the page to be judged");
+  for (const el of surfaces) {
+    const text = el.textContent;
+    assert(!/\b(best|winner|perfect|ideal|recommended for you|guaranteed fit|you should)\b/i.test(text), text);
+    assert(!/\b\d{1,3}\s*(%|points?|\/\s*100)\s*(match|fit|confiden)/i.test(text), text);
+    assert(!/\bscore\b/i.test(text), text);
+  }
   d.close();
 });

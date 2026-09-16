@@ -1834,6 +1834,26 @@ input, select, textarea { font-size: 1rem; }
 .why-open .meta { display: block; margin-top: 2px; }
 .focus-card .why-block { margin: 0; padding: 14px 18px 4px; border-top: 0; }
 @media (max-width: 420px) { .why-item { font-size: .6875rem; padding: 3px 7px; } .focus-card .why-block { padding-inline: 14px; } }
+/* The downtown lens. Building form, a target band and a parking standing each
+   say a different thing, so none of them borrows the chip colours that already
+   mean advertised / not offered / unverified: a RECORDED low-rise is a fact,
+   not an absence, and must not be drawn like one. */
+.chip.form { border-color: var(--blue); color: var(--blue); background: var(--blue-wash); }
+.band-line { display: flex; flex-direction: column; gap: 2px; margin: 10px 0 0; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); font-size: .8125rem; line-height: 1.35; }
+.band-line > span:first-child { font-weight: 600; overflow-wrap: anywhere; }
+.band-line .meta { font-size: .6875rem; }
+.band-line--under, .band-line--near { border-color: var(--blue); color: var(--blue); background: var(--blue-wash); }
+/* Above the target is shown, named and never celebrated. */
+.band-line--stretch { border-color: var(--warm); color: var(--warm); background: var(--surface); }
+.detail-form { margin: 10px 0 0; line-height: 1.5; }
+.form-mark { display: inline-block; font: .6875rem/1.4 "IBM Plex Mono",monospace; letter-spacing: .08em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line); margin-right: 6px; }
+.form-mark--high_rise, .form-mark--low_mid_rise { border-color: var(--blue); color: var(--blue); background: var(--blue-wash); }
+.form-quote { display: block; margin-top: 4px; font-style: italic; overflow-wrap: anywhere; }
+.downtown-lens { margin: 12px 0 0; padding: 12px 14px; border: 1px solid var(--line); border-left: 3px solid var(--wine); border-radius: 0 10px 10px 0; background: var(--surface); }
+.downtown-lens p { margin: 0 0 6px; font-size: .8125rem; line-height: 1.5; max-width: 80ch; }
+.downtown-lens p:last-child { margin-bottom: 0; }
+.downtown-lens .why-label { color: var(--wine); }
+@media (max-width: 420px) { .band-line { padding: 7px 9px; font-size: .75rem; } .downtown-lens { padding: 10px 12px; } }
 .pick-catch { border-left: 3px solid var(--warm); padding: 12px; background: var(--surface); margin-top: 18px; border-radius: 0 8px 8px 0; }
 .pick-catch p, .pick-catch li { font-size: .875rem; }
 .pick-catch summary, .picks-method summary, .pick-leads summary { cursor: pointer; min-height: 44px; padding: 10px 0; font-size: .875rem; font-weight: 600; }

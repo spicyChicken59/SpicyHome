@@ -28,7 +28,8 @@ import {
   spicyPicks,
   recipeDefaults, recipeWeights, remixPicks, apartmentTradeoffs, areaMatch, pricePulse, nextMoves, nextMove, costField,
   sourceAccess, sourceReferences, searchIdentity, scanContext, chargingEvidence, isDocumentationUrl, publicChargingMiles,
-  openQuestions, figureSpread, tourChecks, surfacedBecause, headlineUnknown,
+  openQuestions, figureSpread, tourChecks, surfacedBecause, headlineUnknown, decisionPool,
+  buildingForm, HIGH_RISE_STOREYS, urbanSetting, budgetBand, parkingStanding, focusUnknowns, doubleDownOn,
 } from "../dist/model.js";
 const seed = JSON.parse(
   fs.readFileSync(new URL("../data/seed.json", import.meta.url)),
@@ -476,8 +477,8 @@ test('SpicyPicks separates advertised-only leads from bargains and reduces rank 
 });
 
 test('Decision Studio recipe normalizes priorities without mutating the input or suppressing evidence penalties', () => {
-  const recipe={budget:5,value:0,space:0,amenities:0,rail:0,evidence:0};
-  assert.deepEqual(recipeWeights(recipe),{budget:100,value:0,space:0,amenities:0,rail:0,evidence:0});
+  const recipe={budget:5,value:0,space:0,amenities:0,rail:0,evidence:0,form:0};
+  assert.deepEqual(recipeWeights(recipe),{budget:100,value:0,space:0,amenities:0,rail:0,evidence:0,form:0});
   assert.equal(recipe.budget,5);
   const zero=Object.fromEntries(Object.keys(recipeDefaults).map(key=>[key,0]));
   assert.deepEqual(recipeWeights(zero),recipeWeights(recipeDefaults));
@@ -1084,4 +1085,228 @@ test("nothing outstanding means nothing is said, rather than an unknown invented
   // and the tour checklist, which is genuinely outstanding, is still recorded
   // by the engine this reads from -- it is declined here, not deleted there.
   assert(openQuestions(settled, rec, defaults, deskNow).some((q) => q.kind === "tour"));
+});
+
+// --- The downtown lens ------------------------------------------------------
+// A fixed instant, so what these assert cannot depend on the hour they run.
+// (deskNow is already declared above, for the explanation tests.)
+const formHome = (patch = {}) => ({ ...home, id: "form", title: "Elm Place", atmosphere: undefined,
+  amenities: [], sources: [], observed_at: "2026-09-07", ...patch });
+test("a building is a high-rise only where a source actually described one", () => {
+  // The whole retained record, read the way the page reads it. One building in
+  // 1,000 carries the words; the claim is not made anywhere else.
+  const record = JSON.parse(fs.readFileSync(new URL("../dist/data.json", import.meta.url)));
+  const called = record.homes.filter((h) => buildingForm(h).status === "high_rise");
+  assert.deepEqual(called.map((h) => h.id), ["73-east-lake"]);
+  const only = buildingForm(called[0]);
+  assert.equal(only.phrase.toLowerCase(), "high-rise");
+  assert.match(only.quote, /Spacious high-rise homes/);
+  assert.equal(only.observed_at, "2026-09-07", "the source's own date, never today's");
+  assert.equal(record.homes.filter((h) => buildingForm(h).status === "low_mid_rise").length, 0,
+    "nothing in this record affirmatively establishes a low or mid-rise, so nothing claims one");
+  // Of the 978 provider listings, NONE can be classified: the provider's
+  // schema has no structural field at all.
+  const listings = record.homes.filter((h) => h.kind === "listing");
+  assert.equal(listings.length, 978);
+  assert.equal(listings.filter((h) => buildingForm(h).status !== "unknown").length, 0);
+  assert.equal(buildingForm(listings[0]).reason, "no_recorded_description");
+});
+test("the words that look structural and are not never classify a building", () => {
+  // Each of these is real text from the retained record. Reading any of them as
+  // a height would call ten buildings tall for owning a roof, and all 22 of
+  // them the same thing for carrying the same accessibility question.
+  const traps = [
+    ["Confirm step-free entrances, elevators and the route from parking to the apartment.", "access checklist"],
+    ["Rooftop terrace", "a roof is not a height"],
+    ["Floor-to-ceiling windows", "a window is not a storey"],
+    ["Light cabinetry and chestnut flooring, with a library and rooftop fire pits.", "flooring"],
+    ["A320 floor-plan details and advertised availability", "a plan number is not a floor count"],
+    ["Official floor-plan page says available now; recheck for the move-in date.", "a floor plan"],
+    ["See all 34 floor-plans online.", "a count of PLANS is not a count of floors"],
+  ];
+  for (const [text, why] of traps) {
+    assert.equal(buildingForm(formHome({ atmosphere: text })).status, "unknown", why);
+    assert.equal(buildingForm(formHome({ amenities: [text] })).status, "unknown", why);
+    assert.equal(buildingForm(formHome({ sources: [{ url: "https://example.com/a", supports: text, observed_at: "2026-01-01" }] })).status, "unknown", why);
+  }
+  // `access.note` is not read at all -- not because nothing in it ever matches,
+  // but because a question to go and ask is not a description of a building.
+  // This note would classify if that field were ever a source.
+  assert.equal(buildingForm({ ...formHome(),
+    access: { status: "unknown", note: "Confirm the high-rise elevator bank and the route from parking." } }).status,
+    "unknown", "a tour question is never read as evidence, whatever words it contains");
+});
+test("a building named after a tower has not been described as one", () => {
+  const named = formHome({ title: "Willis Tower Apartments", atmosphere: "Homes at Willis Tower Apartments." });
+  assert.equal(buildingForm(named).status, "unknown");
+  assert.equal(buildingForm(named).reason, "name_only");
+  // The same word in a source's own description, on a building of another name,
+  // is a description and is read.
+  const described = formHome({ title: "Elm Place", atmosphere: "A slender tower above the river." });
+  assert.equal(buildingForm(described).status, "high_rise");
+  assert.equal(described.title.toLowerCase().includes("tower"), false);
+});
+test("a storey count decides which side of the line a building falls, and the line is one number", () => {
+  const at = (n) => buildingForm(formHome({ atmosphere: `A ${n}-story building on the corner.` })).status;
+  assert.equal(HIGH_RISE_STOREYS, 12);
+  assert.equal(at(HIGH_RISE_STOREYS - 1), "low_mid_rise");
+  assert.equal(at(HIGH_RISE_STOREYS), "high_rise");
+  assert.equal(at(HIGH_RISE_STOREYS + 1), "high_rise");
+  assert.equal(buildingForm(formHome({ atmosphere: "A 4-storey walk-up." })).status, "low_mid_rise");
+  assert.equal(buildingForm(formHome({ amenities: ["Mid-rise building with a courtyard"] })).status, "low_mid_rise");
+});
+test("two sources describing one building differently is not a reading either way", () => {
+  const split = formHome({ atmosphere: "A high-rise home.", amenities: ["Low-rise courtyard building"] });
+  assert.equal(buildingForm(split).status, "unknown");
+  assert.equal(buildingForm(split).reason, "conflicting_text");
+  assert.match(buildingForm(split).because, /two different ways/);
+});
+test("an unrecorded height is never counted against a place, and never scores", () => {
+  const tall = pickHome("tall", { atmosphere: "A 30-story tower.", search: undefined });
+  const quiet = pickHome("quiet");
+  const ranked = spicyPicks([tall, quiet, ...pickPeers()], emptyWorkspace(), defaults, {}, "downtown", pickNow);
+  const signals = Object.fromEntries(ranked.candidates.map((c) => [c.home.id, c.signals.form]));
+  assert.equal(signals.tall, 1);
+  assert.equal(signals.quiet, 0, "unknown scores nothing -- it is never a deduction");
+  assert(ranked.candidates.every((c) => c.signals.form >= 0));
+  // And the unknown one is still a candidate: an unrecorded height hides nobody.
+  assert(ranked.candidates.some((c) => c.home.id === "quiet"));
+});
+test("the downtown bands are measured from the centre the record itself recorded", () => {
+  const near = pickHome("near", { lat: 41.882, lng: -87.632 });
+  const far = pickHome("far", { lat: 42.05, lng: -87.69 });
+  const homes = [near, far];
+  const moved = { search_area: { center: { lat: 42.05, lng: -87.69, label: "somewhere else" } } };
+  assert.equal(urbanSetting(near, {}).status, "core");
+  assert.equal(urbanSetting(far, {}).status, "outside");
+  // Move the recorded centre and BOTH the gate and the printed distance move
+  // with it, because they are one anchor.
+  assert.equal(urbanSetting(far, moved).status, "core");
+  assert.equal(urbanSetting(far, moved).anchor, "somewhere else");
+  assert.deepEqual(visibleHomes(homes, emptyWorkspace(), { ...defaults, urbanScope: "core" }, {}).map((h) => h.id), ["near"]);
+  assert.deepEqual(visibleHomes(homes, emptyWorkspace(), { ...defaults, urbanScope: "core" }, moved).map((h) => h.id), ["far"]);
+  // Every surface that narrows by distance reads the same anchor, so the
+  // Decision Studio cannot answer from a different centre than the cards.
+  const lens = { ...defaults, urbanScope: "core", bedrooms: "all" };
+  assert.deepEqual(decisionPool(homes, emptyWorkspace(), lens, pickNow, {}).map((h) => h.id), ["near"]);
+  assert.deepEqual(decisionPool(homes, emptyWorkspace(), lens, pickNow, moved).map((h) => h.id), ["far"]);
+  assert.deepEqual(pricePulse(homes, emptyWorkspace(), lens, false, pickNow, moved).changes.map((c) => c.home.id).filter((id) => id === "near"), []);
+});
+test("a place with no coordinates is never given a position, and never called far away", () => {
+  const lost = pickHome("lost", { lat: null, lng: null });
+  const setting = urbanSetting(lost, {});
+  assert.equal(setting.status, "unlocated");
+  assert.equal(setting.miles, null);
+  assert.notEqual(setting.status, "outside");
+  // It stays in an unfiltered list and leaves only when a distance gate is set.
+  assert(visibleHomes([lost], emptyWorkspace(), defaults, {}).length === 1);
+  assert(visibleHomes([lost], emptyWorkspace(), { ...defaults, urbanScope: "near" }, {}).length === 0);
+});
+test("a target names the basis it was measured on and never claims an all-in cost", () => {
+  const prefs = { ...defaults, targetRent: 2700 };
+  const priced = pickHome("priced", { rent: 2650, parking: { status: "yes", monthly: null } });
+  const band = budgetBand(priced, {}, prefs);
+  assert.equal(band.basis, "base rent");
+  assert.match(band.caveat, /Base rent only/);
+  assert.match(band.caveat, /parking/);
+  // $2,650 with parking unquoted is NOT "under $2,700 all in", and the band
+  // never says it is.
+  assert(!/all[- ]in/i.test(band.label + band.detail.replace(/not an all-in/i, "")));
+  const onTotal = budgetBand(priced, {}, { ...prefs, basis: "total" });
+  assert.equal(onTotal.basis, "known monthly subtotal");
+  assert.match(onTotal.caveat, /Known subtotal only/);
+  assert.equal(budgetBand(pickHome("none", { rent: null }), {}, prefs).status, "unpriced");
+  assert.equal(budgetBand(priced, {}, defaults).status, "off", "no target set says nothing at all");
+});
+test("a place above the target is shown and named, never hidden and never urged", () => {
+  const prefs = { ...defaults, targetRent: 2700 };
+  const band = (rent) => budgetBand(pickHome("x", { rent }), {}, prefs);
+  assert.equal(band(2500).status, "under");
+  assert.equal(band(2700).status, "near");
+  assert.equal(band(2835).status, "near", "the band's own edge is inside it");
+  assert.equal(band(2836).status, "stretch");
+  assert.equal(band(3000).status, "stretch");
+  assert.equal(band(3001).status, "outside");
+  assert.match(band(2900).label, /\$200 above your \$2,700 target/);
+  const words = band(2900).label + " " + band(2900).detail;
+  assert(!/\b(best|winner|perfect|ideal|recommend|guaranteed|worth it)\b/i.test(words), words);
+  assert.match(band(2900).detail, /not because it is worth more/);
+  // A stretch is still visible: the band is a label, not a filter.
+  assert.equal(visibleHomes([pickHome("x", { rent: 2900 })], emptyWorkspace(), prefs, {}).length, 1);
+});
+test("parking keeps four answers that mean four different things", () => {
+  const of = (parking, rec = {}) => parkingStanding({ ...home, parking }, rec);
+  assert.equal(of({ status: "yes", monthly: 300 }).status, "priced");
+  assert.equal(of({ status: "yes", monthly: 0 }).status, "priced", "a recorded $0 is an amount, not a missing one");
+  assert.match(of({ status: "yes", monthly: 0 }).label, /\$0\/mo/);
+  assert.equal(of({ status: "yes", monthly: null }).status, "advertised");
+  assert.match(of({ status: "yes", monthly: null }).label, /price not quoted/);
+  assert.equal(of({ status: "no" }).status, "none");
+  assert.equal(of({ status: "unknown" }).status, "unknown");
+  assert.equal(of(undefined).status, "unknown");
+  // Unknown is never worded as a refusal, and a refusal is never worded as
+  // unknown.
+  const unknown = of({ status: "unknown" });
+  assert(!/no resident parking|not offered/i.test(unknown.label + unknown.detail));
+  assert.match(unknown.detail, /Unknown is not a no/);
+  assert(!/unknown|not recorded/i.test(of({ status: "no" }).label));
+  // The reader's own quote is marked as theirs rather than as the source's.
+  assert.equal(of({ status: "yes", monthly: null }, { parkingCost: 220 }).quotedBy, "you");
+  assert.match(of({ status: "yes", monthly: null }, { parkingCost: 220 }).label, /in your own quote/);
+});
+test("the lens explains nothing while it is off, and stops explaining when it is turned off", () => {
+  const tall = { ...home, id: "tall", atmosphere: "A high-rise home downtown.", lat: 41.882, lng: -87.632, rent: 2650 };
+  const on = { ...defaults, urbanScope: "near", targetRent: 2700, highRise: true };
+  const text = (prefs) => surfacedBecause(tall, emptyWorkspace(), prefs, {}, deskNow).map((r) => r.text).join(" | ");
+  const lit = text(on);
+  assert.match(lit, /inside the near-downtown area you chose/);
+  assert.match(lit, /calls it a high-rise/);
+  assert.match(lit, /Within \$135 of your \$2,700 target/);
+  const dark = text(defaults);
+  for (const gone of [/downtown/i, /high-rise/i, /target/i]) assert(!gone.test(dark), `${gone} survived the preference being off: ${dark}`);
+  // Turning ONE of them off takes only its own sentence.
+  const noHeight = text({ ...on, highRise: false });
+  assert(!/high-rise/i.test(noHeight));
+  assert.match(noHeight, /inside the near-downtown area you chose/);
+});
+test("a high-rise reason is never offered for a building nobody described", () => {
+  const quiet = { ...home, id: "quiet", atmosphere: undefined, amenities: [], sources: [], lat: 41.882, lng: -87.632 };
+  const on = { ...defaults, urbanScope: "near", targetRent: 2700, highRise: true };
+  const reasons = surfacedBecause(quiet, emptyWorkspace(), on, {}, deskNow).map((r) => r.text).join(" | ");
+  assert(!/high-rise/i.test(reasons), reasons);
+  // The priority readback is a second door into the same sentence, so it is
+  // asked here too: a weight that rewards a recorded form must still produce
+  // nothing for a record that has none.
+  const readback = surfacedBecause(quiet, emptyWorkspace(), on,
+    { pick: { signals: { form: 0, budget: 0, value: 0, space: 0, amenities: 0, evidence: 0, rail: 0 } },
+      weights: { form: 100 }, priority: "downtown" }, deskNow).map((r) => r.text).join(" | ");
+  assert(!/high-rise/i.test(readback), readback);
+  // ... and the same door DOES produce it for a record that has one.
+  const tallReadback = surfacedBecause({ ...quiet, atmosphere: "A high-rise home downtown." }, emptyWorkspace(),
+    { ...on, highRise: false }, { pick: { signals: { form: 1 } }, weights: { form: 100 }, priority: "downtown" }, deskNow)
+    .map((r) => r.text).join(" | ");
+  assert.match(tallReadback, /calls it a high-rise/);
+  // What it gets instead is the open fact -- first, because the lens is what
+  // makes it consequential.
+  const opens = focusUnknowns(quiet, {}, on, deskNow, 2);
+  assert.equal(opens[0].kind, "form");
+  assert.match(opens[0].detail, /Unknown is not a low-rise/);
+  assert.equal(opens.length, 2, "the lens carries a second open fact, not one repeated");
+  assert.notEqual(opens[1].key, opens[0].key);
+  // With the lens off there is no form question at all, and one fact is the cap.
+  assert(!focusUnknowns(quiet, {}, defaults, deskNow, 2).some((i) => i.kind === "form"));
+  assert.equal(focusUnknowns(quiet, {}, defaults, deskNow, 1).length, 1);
+  // And a record with a RECORDED height is not asked about it.
+  const tall = { ...quiet, atmosphere: "A high-rise home downtown." };
+  assert(!focusUnknowns(tall, {}, on, deskNow, 2).some((i) => i.kind === "form"));
+});
+test("a saved snapshot is read from its own words and its own date, never today's", () => {
+  // Part of the record's honesty: nothing is backfilled onto an old snapshot.
+  const older = { ...home, id: "older", observed_at: "2026-03-01",
+    atmosphere: "A 20-story building by the park.", sources: [] };
+  assert.equal(buildingForm(older).observed_at, "2026-03-01");
+  const silent = { ...older, atmosphere: undefined, amenities: [] };
+  assert.equal(buildingForm(silent).status, "unknown");
+  assert.equal(buildingForm(silent).observed_at, null, "nothing recorded carries no date at all");
+  assert.equal(buildingForm(silent).quote, "");
 });

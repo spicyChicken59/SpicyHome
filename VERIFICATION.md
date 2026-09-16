@@ -1397,6 +1397,179 @@ faces. No figure in any explanation is anything but a recorded figure from the
 committed feed with its basis beside it — nothing here claims current
 availability, live pricing, parking, charging or source validity.
 
+### Milestone, 16 September 2026 — the downtown lens, and what it cannot see
+
+**Revision.** Branch restarted from `main` at **`f310e2f`** (the merge of #25,
+the explainable-discovery milestone, merged at the start of this pass after a
+scoped audit: head `1fe24dc`, both `verify` runs `success`, `mergeable_state`
+clean, nine files, no review thread). The committed feed is untouched:
+`generated_at` **2026-09-15T13:28:27Z**, **1,000 records** (978 provider
+listings, 22 curated building plans). The vendored design system is **v2.13.0 /
+`14a752d`, 22 files, drift 0**, re-verified and not touched — no upstream change
+was needed and none was made. **#24's price-forward map marks are preserved**:
+the lens adds no marker class, colour or category, and the map simply plots the
+same narrowed set the cards do. No provider request, no schedule change, no
+sibling repository written.
+
+**The evidence was traced before any feature was designed, and it is thin.**
+Measured over the committed record rather than assumed:
+
+- **No provider listing can be classified at all.** `API-SOURCES.md` documents
+  RentCast's listing schema and it carries no storey count, floor count,
+  building class or subtype; `src/tracker.py` reads every documented field plus
+  two undocumented layout probes (`unitLayout`, `floorPlanType`). So this is the
+  provider's schema, not an artefact of normalising it. `property_type` is a
+  DWELLING type — Apartment 866, Condo 61, Single Family 41, Multi-Family 5,
+  Townhouse 5 — and the repository's own rules refuse reading a structure off
+  it. A regex sweep for every structural word over every string in all 1,000
+  records returns **zero hits on all 978 listings**.
+- **All 22 curated buildings match, and every one of them is the same trap.**
+  The hit is `access.note` — "Confirm step-free entrances, elevators and the
+  route from parking to the apartment" — two spellings, 22 of 22. It is a
+  question to go and ask on a tour, not a description of a building. Ten more
+  match on "rooftop", which is not a height: a four-storey building can have a
+  roof terrace.
+- **Exactly one record in the whole snapshot describes its own building.**
+  `73-east-lake.atmosphere`: *"Spacious high-rise homes with built-in shelving
+  and a rooftop terrace."* From `https://www.experience73.com/`, observed
+  2026-09-07. **Nothing affirmatively establishes a low or mid-rise anywhere.**
+- Geography, by contrast, is solid. `search_area.center` is recorded
+  (41.882, −87.632, "central Chicago") and every record but one carries
+  coordinates. Neighborhood NAMES are not: 295 of the 305 Chicago records read
+  "Chicago · neighborhood unverified", so a name-based downtown test would be
+  silent for almost every listing. The lens is built on the coordinates.
+
+**So the feature is a reading, not a filter, and it says so.** `buildingForm()`
+reads three named source-backed fields — the building description, the
+advertised amenities, and what each cited source is recorded as supporting — and
+returns `high_rise`, `low_mid_rise` or `unknown` with the phrase it matched, the
+field, the source link and **that source's own observation date**. `access.note`
+is not among the fields it reads. Price, neighborhood, address, unit number,
+property type, luxury branding, map density and the building's own NAME are
+never read: a record titled "Willis Tower Apartments" whose only "tower" is its
+own name returns `unknown` with reason `name_only`. Two sources describing one
+building two ways returns `unknown` with reason `conflicting_text`. Over the
+committed record: **1 high-rise, 0 low/mid-rise, 999 unknown** — and the page
+draws a form mark only where there is one, because no mark is not a claim, while
+the panel says in words that *a height nobody wrote down is not a low building*.
+
+**Three preferences, on the filter panel that already exists.** A downtown lens
+(`urbanScope`: core ≤ 1 straight-line mile, near ≤ 3), a `targetRent`, and
+`highRise`. All three default to off, none of them is anyone's universal truth,
+and no helper is named after a person. `visibleHomes()` now takes the feed and
+resolves ONE anchor (`urbanAnchor`) for both the existing radius gate and the
+new lens, so the mileage that filtered a card and the mileage the card prints
+cannot come from two different points — pinned by a test that moves the recorded
+centre and watches both follow. A record with no coordinates is `unlocated`,
+never `outside`: it stays in every unfiltered list and is never given a position.
+`highRise` never filters anything; it is a ranking signal worth 1 for a recorded
+high-rise and **0, never −1, for an unknown**, plus a sixth SpicyPicks priority
+(*Downtown value*) that gates on geography and weighs parking, evidence and
+recorded form above budget. `recipeDefaults` gains `form: 0`, so no stored
+recipe shifts.
+
+**A target is the reader's own number and never a cap.** Each card carries its
+distance from the target on the basis the budget filter is set to, beside the
+line naming what is still unquoted: $2,650 with parking unquoted is not $2,700
+all in, and the band never says it is. `under` / `near` (±5%) / `stretch` (above
+target, inside the cap) / `outside` — a stretch is labelled as above target and
+**stays on the page**. Over the committed record with a $2,700 target and the
+near-downtown lens: 125 records in the band, 42 under, 44 around, 32 stretch,
+6 with no quoted figure, and **1 past the $3,000 cap — 73 East Lake at $3,104,
+the one building the record can honestly call a high-rise**. The panel counts it
+and names the figure it would take to see it rather than dropping it in silence.
+
+**Parking keeps four answers.** A price on record (a recorded $0 is an amount,
+not a gap), advertised with no price quoted, a source reporting none, and
+nothing recorded. Over the record: 2 priced, 19 advertised-unpriced, 0 none,
+979 unrecorded. The detail line leads with the standing, then the source's own
+note, then the caveat, so an unknown reads as unrecorded and never as a refusal.
+
+**Measured.** `npm test` **228/228** (22 new: 97 model, 131 page) and 228/228 at
+**+0, +7, +30 and +400 days** with both clocks carried together — no freshness
+window widened, no assertion weakened, the explicit aging tests untouched.
+`npm run check` 43 Python tests. `python tools/check_site.py` — 22 immutable
+design assets, 1,000 records. `git diff --check` clean. `npm run browser-check --shots` **377/377**, with a
+new 24-check lens section (twelve checks at 390px and at 1280px).
+
+**A performance defect of my own, found by measuring rather than by a gate.**
+`budgetBand()` built all four of its label sentences to use one, and `money()`
+constructed a fresh `Intl.NumberFormat` on every call: over the 1,000-record
+feed that cost **358ms per render**, on every keystroke in the search. One
+formatter, built once, and only the band's own sentences: **4.3ms**, an 83×
+improvement, and `money()` is now cheap for every surface that already used it.
+`buildingForm()` over the same 1,000 records is 13.8ms.
+
+**Twenty-five mutants, all behaving as expected, with a live control.** Every
+trap has one: reading `access.note` as a source, "rooftop" in the phrase list,
+dropping the `floor-plan` guard, accepting the building's own name, moving the
+storey line by one, taking the first of two conflicting sources, scoring an
+unknown height as −1, giving the distance gate its own anchor, calling an
+unlocated record far away, a band that forgets its basis, a stretch that stops
+at the cap, an unknown parking answer worded as a refusal, `$0` read as no
+quote, a lens reason that outlives its preference, today's date stamped on an
+old snapshot, and seven page mutants (a form chip on an undescribed building,
+a panel that talks while the lens is off, missing evidence reported as an
+absence of buildings, a cap overflow dropped in silence, a band without its
+caveat, a map population the cards do not have, a verdict word on a lens
+surface). A comment reworded stays green.
+
+**Three holes the mutants found, each closed with the check it was missing.**
+The `floor-plan` guard was dead against my trap corpus — no trap string had a
+digit before "floor" — so "See all 34 floor-plans online" is a trap now and the
+mutant dies. The access-note mutant was equivalent, because no phrase in the
+list matches "elevators": the assertion now uses a note that WOULD classify if
+the field were ever read, which is the actual contract. And
+"a high-rise reason is never offered" passed because a different rule rejected:
+the ranking readback filters a zero-weighted signal out before `signalReason` is
+asked, so breaking either guard alone changes nothing observable. Either guard
+alone is genuinely equivalent; the mutant that matters breaks **both**, and the
+test now drives the priority readback directly — once for an undescribed record
+(no sentence) and once for a described one (the sentence), so it cannot pass by
+producing nothing.
+
+**Looked at, not only exit codes.** Screenshots at **1280 light and dark, 390
+light and dark, and 320** were opened and read, not just counted. At 320px the
+panel is 258px wide with zero overflow and all five of its sentences fit; the
+page does not scroll sideways at any width. The band costs a card 49–64px of
+510–680, under a fifth of its height everywhere. On 73 East Lake's card the
+three chips — *Parking advertised*, *EV unverified*, *High-rise recorded* —
+wrap without collision, and the band reads *"$404 above your $2,700 target /
+Base rent only · parking, monthly fees, utilities not quoted"* in the caution
+colour rather than the positive one. Desktop puts the lens select on the area
+row and the target beside the minimum and maximum.
+
+**The acceptance journey, walked in Chromium over the committed record: 76/76
+steps** at 1280 and 390 — open with the lens silent, no band and no form mark
+before anything is asked; narrow to near-downtown and watch the map list hold
+exactly the cards; set the target and read the counts; turn on the height
+preference and read the honest absence; raise the cap and watch the one
+described building arrive with its chip, its band naming it as above target,
+its record quoting the words and the source's own date; open an undescribed
+building and read *unknown is not a low-rise*; run the Downtown value priority
+and check every pick for two to four concrete reasons and one or two unresolved
+facts; then turn each preference off in turn and watch only its own sentence
+leave.
+
+**One page error, reproduced and proved pre-existing, not fixed.** The journey
+surfaced a Leaflet `TypeError: Cannot read properties of undefined (reading
+'_leaflet_pos')`. It reproduces **identically on `f310e2f`**, this milestone's
+base, with no lens involved: open the filter
+panel and change the bedroom select in the same frame, and the resize starts a
+zoom whose `transitionend` lands after `removeMap()` has taken the panes away
+(`_onZoomTransitionEnd` → `_move` → `_getMapPanePos`). Two candidate fixes were
+tried and **neither moved it** — guarding the `ResizeObserver` on the observed
+pane's `isConnected`, and `map.stop()` before `map.remove()` — so both were
+reverted rather than left in as speculative code. It is recorded here, the
+journey names it explicitly and fails on any other error, and the map system
+#24 delivered is left alone.
+
+**Not claimed.** Current availability; complete downtown coverage; that every
+high-rise in the area has been found — one record in a thousand describes its
+own building, and the rest are unrecorded rather than short; live rent; that a
+parking space is available; or that any place here is objectively good value.
+Nothing was deployed, and no leasing or provider contact was made.
+
 ### NEXT BUILDER PROMPT — live, and level except SpicyStock
 
 Verify the tips before trusting any of them; the SpicyHome and design-system
@@ -1407,16 +1580,23 @@ repositories commit to `main` on a schedule.
   still the newest tag `origin` carries.
 - **SpicyCar** `main` was `62db117` on 14 Sep, a `snapshot 2026-09-14` tracker
   commit over `aea4fa3` (#79). It vendors **v2.13.0**. Not re-read since.
-- **SpicyHome** `main` is `040c3ba` (the merge of #24), vendoring **v2.13.0**
+- **SpicyHome** `main` is `f310e2f` (the merge of #25), vendoring **v2.13.0**
   with zero hash drift, **and served** at
   https://spicychicken59.github.io/SpicyHome/ — the publish job validated and
-  deployed that commit (Checks 35057402747, Publish website 35057402770, whose
-  `check_site.py` step ran before the upload and `deploy-pages` after it).
+  deployed it (Checks 35062162017, Publish website 35062162004, whose
+  `check_site.py` step runs before the upload and `deploy-pages` after it).
 - **SpicyStock** `main` was `ce2c6c1` (#61) on 14 Sep and still vendored
   **v2.11.0** (`6f10309`). Not re-read since.
 
 Do these; do not redo the discovery hierarchy, the comparison tray, the
-cost-basis marks, the shortlist's next step, the Atlas, or this adoption.
+cost-basis marks, the shortlist's next step, the Atlas, this adoption, #24's
+map marks, or the downtown lens. In particular, do NOT widen `buildingForm()`
+to infer a building's height from price, neighborhood, a downtown address, a
+unit number, a building name, luxury branding or map density, and do not
+hand-enrich records one by one to make the feature look fuller: one record in
+a thousand describes its own building, and saying so is the product. If a
+future provider or a new curated source ever supplies a real structural field,
+add it as another named source field and let the counts move on their own.
 
 1. **SpicyStock is the last consumer behind, by two minors.** It is also the
    other consumer v2.13.0 names: the upstream commit cites its marking of the
@@ -1517,6 +1697,21 @@ Standing hazards, still true:
   earlier green. Since publication they do reach the public site, through
   `publish.yml`'s `workflow_run` trigger — an unchecked record is now a served
   record, held back only by `check_site.py`.
+- **Open, pre-existing, unfixed:** opening the filter panel and re-rendering in
+  the same frame leaves a Leaflet zoom `transitionend` reading panes its map no
+  longer has — `TypeError: ... reading '_leaflet_pos'` from
+  `_onZoomTransitionEnd` → `_move` → `_getMapPanePos`. It reproduces identically
+  on `f310e2f` with the bedroom select and no lens involved. Two candidate
+  fixes were tried and neither moved it: guarding the `ResizeObserver` on the
+  observed pane's `isConnected`, and `map.stop()` before `map.remove()`. It is
+  one console error with no visible effect; whoever fixes it should reproduce it
+  first and prove the fix by execution, not by argument.
+- A helper that builds every branch of a sentence map to use one branch is free
+  in a test and expensive on a thousand cards. `money()` made a fresh
+  `Intl.NumberFormat` per call, and `budgetBand()` built four labels per record:
+  358ms per render over this feed, on every keystroke in the search. Measure a
+  new per-card helper over the whole record before shipping it — no gate here
+  watches render time.
 
 Preserve without exception: base rent versus advertised total versus known
 subtotal, zero versus unknown, exact layout evidence, source dates (the home's

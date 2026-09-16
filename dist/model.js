@@ -14,6 +14,9 @@ export const defaults = {
   region: "all",
   radiusMiles: 0,
   bedrooms: "all",
+  targetRent: null,
+  urbanScope: "all",
+  highRise: false,
   surface: "split",
   density: "cards",
 };
@@ -163,14 +166,14 @@ export const statuses = [
   "applied",
   "ruled out",
 ];
-export const money = (n) =>
-  Number.isFinite(n)
-    ? new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-        maximumFractionDigits: 0,
-      }).format(n)
-    : "Not quoted";
+// One formatter, built once: constructing an Intl.NumberFormat per call cost
+// a third of a second over a thousand cards, on every keystroke in the search.
+const dollars = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+});
+export const money = (n) => (Number.isFinite(n) ? dollars.format(n) : "Not quoted");
 export const esc = (s) =>
   String(s ?? "").replace(
     /[&<>"']/g,
@@ -427,15 +430,25 @@ export function costs(home, record = {}, prefs = defaults) {
     chargingIncluded: false,
   };
 }
-export function visibleHomes(homes, workspace, prefs) {
+export function visibleHomes(homes, workspace, prefs, feed = {}) {
+  // One anchor for every distance this function gates on, taken from the feed
+  // the reader is looking at, so the mileage a card prints and the mileage that
+  // filtered it cannot come from two different points. With no feed in hand it
+  // is searchCenter, which is what the radius gate has always used.
+  const anchor = urbanAnchor(feed);
   return homes
     .filter((h) => {
       const city = homeCity(h);
       if (prefs.region === "chicago" && city !== "Chicago") return false;
       if (prefs.region === "suburbs" && !suburbCities.includes(city)) return false;
       if (prefs.radiusMiles) {
-        const distance = distanceMiles(h, searchCenter);
+        const distance = distanceMiles(h, anchor);
         if (distance === null || distance > prefs.radiusMiles) return false;
+      }
+      if (prefs.urbanScope !== "all") {
+        const setting = urbanSetting(h, feed);
+        if (prefs.urbanScope === "core" && setting.status !== "core") return false;
+        if (prefs.urbanScope === "near" && !["core", "near"].includes(setting.status)) return false;
       }
       const rec = workspace.records[h.id] ?? {};
       const layout = layoutEvidence(h, rec);
@@ -704,10 +717,13 @@ export function validatePreferences(preferences) {
     ![0, 10, 20, 35].includes(p.radiusMiles) ||
     !textOk(p.search, 500) ||
     !textOk(p.neighborhood, 500) ||
-    !["parking", "charging", "unknown"].every(
+    !["all", "core", "near"].includes(p.urbanScope) ||
+    !["parking", "charging", "unknown", "highRise"].every(
       (k) => typeof p[k] === "boolean",
     ) ||
-    !nullableAmount(p.utilityEstimate)
+    !nullableAmount(p.utilityEstimate) ||
+    !nullableAmount(p.targetRent) ||
+    (p.targetRent !== null && p.targetRent > 20000)
   )
     throw Error("The backup contains invalid search preferences.");
   return Object.fromEntries(Object.keys(defaults).map((key) => [key, p[key]]));
@@ -737,7 +753,7 @@ export function changeFor(h) {
 // SpicyPicks is a transparent shortlist heuristic, not a market valuation.
 export const pickLenses = [
   ["balanced","Best fit"], ["budget","Budget wins"], ["space","More space"],
-  ["ev","EV + parking"], ["rail","Near CTA"],
+  ["ev","EV + parking"], ["rail","Near CTA"], ["downtown","Downtown value"],
 ];
 const pickWeights = {
   balanced:{budget:35,value:20,space:10,amenities:25,evidence:10},
@@ -745,6 +761,11 @@ const pickWeights = {
   space:{budget:15,value:20,space:55,amenities:0,evidence:10},
   ev:{budget:30,value:10,space:5,amenities:45,evidence:10},
   rail:{budget:25,value:10,space:5,amenities:5,evidence:10,rail:45},
+  // Downtown is a place, so it is a gate below rather than a weight. What is
+  // left to weigh is what the reader said matters there: a recorded building
+  // form, advertised parking, and evidence -- with budget lowered, because the
+  // cheapest downtown apartment is not the one this priority is looking for.
+  downtown:{budget:20,value:15,space:5,amenities:30,evidence:10,form:20},
 };
 const clampPick = (value) => Math.max(0,Math.min(1,value));
 const medianPick = (values) => { const sorted=[...values].sort((a,b)=>a-b), middle=Math.floor(sorted.length/2);return sorted.length%2 ? sorted[middle] : (sorted[middle-1]+sorted[middle])/2; };
@@ -770,7 +791,7 @@ export function spicyPicks(homes, workspace, prefs=defaults, context={}, lens="b
   const records=workspace.records ?? {}, weight=recipe ? recipeWeights(recipe) : pickWeights[lens] ?? pickWeights.balanced;
   const observed=observedPickHomes(homes,workspace,now);
   const current=observed.filter((home)=>(records[home.id] ?? {}).status!=="ruled out");
-  const scoped=visibleHomes(current,workspace,prefs);
+  const scoped=visibleHomes(current,workspace,prefs,context);
   const priced=observed.filter((home)=>costs(home,records[home.id],prefs).rent>0);
   const matches=scoped.filter((home)=>costs(home,records[home.id],prefs).rent>0 && (["source_listed","confirmed"].includes(layoutEvidence(home,records[home.id]).status) || home.sqft>0));
   const parents=priced.map((_,index)=>index);
@@ -811,6 +832,9 @@ export function spicyPicks(homes, workspace, prefs=defaults, context={}, lens="b
       amenities:(parking ? .4 : 0)+(charging ? .6 : 0),
       evidence:(["source_listed","confirmed"].includes(layout.status) ? .55 : 0)+(fresh ? .25 : 0)+(.2*(4-cost.unknown.length)/4),
       rail:nearby ? clampPick(1-nearby.distance/.75) : 0,
+      // A recorded high-rise scores; everything else scores nothing. An
+      // unrecorded height is never a deduction, because unknown is not a no.
+      form:buildingForm(home).status==="high_rise" ? 1 : 0,
     };
     // Missing quotes reduce confidence; they never become assumed free services.
     const penalty=cost.unknown.length*3+(!fresh ? 12 : 0)+(sourceAge>7 ? 6 : 0);
@@ -836,22 +860,23 @@ export function spicyPicks(homes, workspace, prefs=defaults, context={}, lens="b
     if(sourceAge>7)catches.push("The listing observation is older than seven days; confirm current availability.");
     if(!home.sqft)catches.push("Square footage is unverified.");
     return {home,cost,layout,score,penalty,group:groupsById.get(home.id),reasons,catches,nearby,rate,peerCount,peerMedian,saving,fresh,quoted,quoteDate:quoted ? rec.quoteDate : home.observed_at,signals};
-  }).filter((pick)=>lens!=="ev" || pick.home.parking?.status==="yes" && pick.home.charging?.status==="yes")
+  }).filter((pick)=>lens!=="downtown" || ["core","near"].includes(urbanSetting(pick.home,context).status))
+    .filter((pick)=>lens!=="ev" || pick.home.parking?.status==="yes" && pick.home.charging?.status==="yes")
     .filter((pick)=>lens!=="rail" || pick.nearby)
     .filter((pick)=>lens!=="space" || pick.home.sqft>0)
     .sort((a,b)=>b.score-a.score || a.cost.known-b.cost.known || a.home.id.localeCompare(b.home.id));
   const picks=[];
   for(const pick of ranked){if(picks.some((selected)=>groupsById.get(selected.home.id)===groupsById.get(pick.home.id)))continue;picks.push(pick);if(picks.length===3)break;}
   const leads=[];
-  for(const home of scoped.filter((home)=>(lens!=="ev" || home.parking?.status==="yes" && home.charging?.status==="yes") && (lens!=="space" || home.sqft>0) && (lens!=="rail" || stations.some((station)=>{const d=distanceMiles(home,station);return d!==null && d<=.5;}))).filter((home)=>costs(home,records[home.id],prefs).rent===null && amount(home.advertised_price)>0 && home.advertised_price<=prefs.max && (home.parking?.status==="yes" || home.charging?.status==="yes")).sort((a,b)=>Number(b.charging?.status==="yes")-Number(a.charging?.status==="yes") || a.id.localeCompare(b.id))){
+  for(const home of scoped.filter((home)=>(lens!=="downtown" || ["core","near"].includes(urbanSetting(home,context).status)) && (lens!=="ev" || home.parking?.status==="yes" && home.charging?.status==="yes") && (lens!=="space" || home.sqft>0) && (lens!=="rail" || stations.some((station)=>{const d=distanceMiles(home,station);return d!==null && d<=.5;}))).filter((home)=>costs(home,records[home.id],prefs).rent===null && amount(home.advertised_price)>0 && home.advertised_price<=prefs.max && (home.parking?.status==="yes" || home.charging?.status==="yes")).sort((a,b)=>Number(b.charging?.status==="yes")-Number(a.charging?.status==="yes") || a.id.localeCompare(b.id))){
     if(leads.some((other)=>samePickPlace(other,home)) || picks.some((pick)=>samePickPlace(pick.home,home)))continue;leads.push(home);if(leads.length===2)break;
   }
   return {picks,leads,candidates:ranked,eligible:ranked.length,visible:scoped.length,excluded:homes.length-current.length,lens:pickWeights[lens] ? lens : "balanced",weights:weight,ctaAvailable:stations.length>0};
 }
 
 // Decision Studio experiments never mutate the user's notebook or source feed.
-export const recipeDefaults={budget:3,value:3,space:2,amenities:4,rail:1,evidence:3};
-export const recipeLabels={budget:'Lower monthly costs',value:'Local price value',space:'More room',amenities:'Parking + EV',rail:'Near CTA',evidence:'Stronger evidence'};
+export const recipeDefaults={budget:3,value:3,space:2,amenities:4,rail:1,evidence:3,form:0};
+export const recipeLabels={budget:'Lower monthly costs',value:'Local price value',space:'More room',amenities:'Parking + EV',rail:'Near CTA',evidence:'Stronger evidence',form:'Recorded high-rise'};
 export function recipeWeights(recipe={}) {
   const entries=Object.keys(recipeDefaults).map(key=>[key,Number.isFinite(recipe[key]) ? Math.max(0,Math.min(5,recipe[key])) : recipeDefaults[key]]);
   const sum=entries.reduce((total,[,value])=>total+value,0);
@@ -863,17 +888,17 @@ export function remixPicks(result, recipe) {
   for(const pick of candidates){if(used.has(pick.group))continue;used.add(pick.group);picks.push(pick);if(picks.length===3)break;}
   return {...result,picks,candidates,weights};
 }
-export function decisionPool(homes, workspace, prefs=defaults, now=new Date()) {
-  return visibleHomes(observedPickHomes(homes,workspace,now).filter(h=>workspace.records[h.id]?.status!=='ruled out'),workspace,prefs);
+export function decisionPool(homes, workspace, prefs=defaults, now=new Date(), feed={}) {
+  return visibleHomes(observedPickHomes(homes,workspace,now).filter(h=>workspace.records[h.id]?.status!=='ruled out'),workspace,prefs,feed);
 }
 function distinctPlaces(homes) {
   const parents=homes.map((_,i)=>i),root=i=>{while(parents[i]!==i){parents[i]=parents[parents[i]];i=parents[i];}return i;};
   for(let i=0;i<homes.length;i++)for(let j=0;j<i;j++)if(samePickPlace(homes[i],homes[j]))parents[root(i)]=root(j);
   const groups=new Map();homes.forEach((h,i)=>{const id=root(i);if(!groups.has(id))groups.set(id,[]);groups.get(id).push(h);});return [...groups.values()];
 }
-export function apartmentTradeoffs(anchor, homes, workspace, prefs=defaults, extra=150, now=new Date()) {
+export function apartmentTradeoffs(anchor, homes, workspace, prefs=defaults, extra=150, now=new Date(), feed={}) {
   if(!anchor)return [];
-  const eligible=decisionPool(homes,workspace,prefs,now), rec=workspace.records[anchor.id] ?? {}, ac=costs(anchor,rec,prefs), al=layoutEvidence(anchor,rec);
+  const eligible=decisionPool(homes,workspace,prefs,now,feed), rec=workspace.records[anchor.id] ?? {}, ac=costs(anchor,rec,prefs), al=layoutEvidence(anchor,rec);
   if(!eligible.some(h=>h.id===anchor.id) || !(ac.rent>0))return [];
   const cap=Number.isFinite(extra) ? Math.max(0,Math.min(500,extra)) : 150;
   const places=distinctPlaces(eligible),groupIds=new Map(places.flatMap((group,i)=>group.map(h=>[h.id,i])));
@@ -904,8 +929,8 @@ export function apartmentTradeoffs(anchor, homes, workspace, prefs=defaults, ext
   for(const [key,label,items] of lanes){const option=items.find(o=>!used.has(groupIds.get(o.home.id)));if(option){chosen.push({...option,key,label});used.add(groupIds.get(option.home.id));}}
   return chosen;
 }
-export function areaMatch(homes, workspace, prefs=defaults, bedrooms='1', scope='cities', now=new Date()) {
-  const pool=decisionPool(homes,workspace,{...prefs,bedrooms},now),groups=new Map();
+export function areaMatch(homes, workspace, prefs=defaults, bedrooms='1', scope='cities', now=new Date(), feed={}) {
+  const pool=decisionPool(homes,workspace,{...prefs,bedrooms},now,feed),groups=new Map();
   for(const h of pool){const city=homeCity(h);if(!city)continue;
     const knownNeighborhood=h.neighborhood && !/search area|unknown|unverified/i.test(h.neighborhood);
     const label=scope==='neighborhoods' && city==='Chicago' ? knownNeighborhood ? `Chicago · ${h.neighborhood}` : 'Chicago · neighborhood not supplied' : city;
@@ -931,8 +956,8 @@ function datedRentPoints(history, now) {
   }
   return [...dates.entries()].filter(([,rents])=>rents.size===1).sort(([a],[b])=>a-b).map(([time,rents])=>({date:new Date(time).toISOString(),rent:[...rents][0]}));
 }
-export function pricePulse(homes, workspace, prefs=defaults, savedOnly=false, now=new Date()) {
-  const pool=visibleHomes(homes,workspace,prefs).filter(h=>!savedOnly || workspace.records[h.id]?.saved);
+export function pricePulse(homes, workspace, prefs=defaults, savedOnly=false, now=new Date(), feed={}) {
+  const pool=visibleHomes(homes,workspace,prefs,feed).filter(h=>!savedOnly || workspace.records[h.id]?.saved);
   const changes=[],stale=[];let baseline=0;
   for(const h of pool){const rec=workspace.records[h.id] ?? {};if(rec.status==='ruled out')continue;
     const quoteAge=pickAge(amount(rec.rentOverride)!==null ? rec.quoteDate : h.observed_at,now);
@@ -1011,6 +1036,216 @@ export function openQuestions(home = {}, record = {}, prefs = defaults, now = ne
       target: "detail-sources" });
   return items;
 }
+// ---------------------------------------------------------------------------
+// Building form, read off a record's own retained text and nothing else.
+//
+// What the snapshot holds was measured before this was written. Of 1,000
+// retained records, 978 are provider listings and not one carries a word about
+// how tall its building is. RentCast's documented listing schema (API-SOURCES
+// .md) has no storey count, floor count, building class or subtype, and
+// tracker.py reads every documented field plus two undocumented layout probes
+// -- so the absence is the provider's schema, not an artefact of normalising
+// it. `property_type` is a DWELLING type (Apartment, Condo, Single Family) and
+// this repository's rules refuse reading a structure or an amenity off it.
+//
+// That leaves descriptive text a source actually supplied: the operator's own
+// `atmosphere` line, the advertised `amenities`, and what each cited source is
+// recorded as supporting. Those three are read. These are NOT:
+//   * `access.note` -- the tour checklist ("Confirm step-free entrances,
+//     elevators and the route from parking to the apartment"). It is a
+//     question to go and ask, identical on all 22 buildings, and reading it as
+//     evidence would call every one of them the same thing;
+//   * title, address, neighborhood, unit label, property type, price, or how
+//     crowded the map looks, each of which is an inference this build refuses;
+//   * "rooftop", which is not a height -- a four-storey building can have a
+//     rooftop terrace, and ten of these records advertise one.
+//
+// A record whose sources never described its building is `unknown`, and the
+// page is required never to draw unknown as "not a high-rise".
+export const HIGH_RISE_STOREYS = 12;
+const formPhrases = [
+  { status: "high_rise", re: /\b(?:high[- ]?rise|hi-rise|skyscraper)\b/i },
+  // A building NAMED "... Tower" has been named, not described. The word is
+  // evidence only where it is not the record's own title.
+  { status: "high_rise", re: /\btowers?\b/i, refuseIfNamed: true },
+  { status: "low_mid_rise", re: /\b(?:low[- ]?rise|mid[- ]?rise|walk[- ]?ups?)\b/i },
+];
+// "A320 floor-plan" must not read as 320 floors: \b cannot fall inside A320,
+// and a plan is excluded by name.
+const storeyPhrase = /\b(\d{1,3})[- ]?(?:stor(?:y|ey|ies|eys)|floors?)\b(?![- ]*plan)/i;
+const formLabels = {
+  high_rise: "High-rise, in the building’s own description",
+  low_mid_rise: "Low or mid-rise, in the building’s own description",
+  unknown: "Building height not recorded",
+};
+const formShort = { high_rise: "High-rise recorded", low_mid_rise: "Low/mid-rise recorded", unknown: "Height not recorded" };
+function formSources(home) {
+  const url = safeUrl(home.source_url), at = home.observed_at;
+  const out = [];
+  if (typeof home.atmosphere === "string" && home.atmosphere.trim())
+    out.push({ field: "the building description", text: home.atmosphere.trim(), url, observed_at: at });
+  for (const item of Array.isArray(home.amenities) ? home.amenities : [])
+    if (typeof item === "string" && item.trim())
+      out.push({ field: "the advertised amenities", text: item.trim(), url, observed_at: at });
+  for (const source of Array.isArray(home.sources) ? home.sources : [])
+    if (source && typeof source.supports === "string" && source.supports.trim())
+      out.push({ field: "a cited source note", text: source.supports.trim(), url: safeUrl(source?.url) || url,
+        observed_at: dateOk(source?.observed_at) ? source.observed_at : at });
+  return out;
+}
+export function buildingForm(home = {}) {
+  const title = String(home.title ?? "").toLowerCase();
+  const hits = [];
+  let named = false;
+  for (const entry of formSources(home)) {
+    for (const rule of formPhrases) {
+      const found = rule.re.exec(entry.text);
+      if (!found) continue;
+      if (rule.refuseIfNamed && title.includes(found[0].toLowerCase())) { named = true; continue; }
+      hits.push({ ...entry, status: rule.status, phrase: found[0] });
+    }
+    const storeys = storeyPhrase.exec(entry.text);
+    if (storeys)
+      hits.push({ ...entry, phrase: storeys[0],
+        status: Number(storeys[1]) >= HIGH_RISE_STOREYS ? "high_rise" : "low_mid_rise" });
+  }
+  const statuses = new Set(hits.map((hit) => hit.status));
+  // Two sources describing one building two ways is not a reading either way.
+  if (statuses.size > 1)
+    return { status: "unknown", label: formLabels.unknown, short: formShort.unknown, reason: "conflicting_text",
+      because: "This record’s own sources describe the building two different ways.",
+      phrase: null, field: null, quote: "", url: "", observed_at: null };
+  const [hit] = hits;
+  if (hit)
+    return { status: hit.status, label: formLabels[hit.status], short: formShort[hit.status], reason: null,
+      because: `Taken from ${hit.field}, which says “${hit.phrase}”.`,
+      phrase: hit.phrase, field: hit.field, quote: hit.text.slice(0, 240), url: hit.url,
+      observed_at: dateOk(hit.observed_at) ? hit.observed_at : null };
+  return { status: "unknown", label: formLabels.unknown, short: formShort.unknown,
+    reason: named ? "name_only" : "no_recorded_description",
+    because: named
+      ? "The only mention of a tower here is the building’s own name, which describes nothing."
+      : "Nothing in this record’s retained sources describes the building’s height. Unknown is not a low-rise.",
+    phrase: null, field: null, quote: "", url: "", observed_at: null };
+}
+// How central a place is, measured from the centre the search itself recorded
+// -- a straight line on the map, never a commute, a walk or a judgement about
+// what a neighborhood is like. Provider listings in Chicago carry
+// "neighborhood unverified" (295 of the 305 retained), so a lens built on
+// neighborhood NAMES would be silent for almost every listing; this is built on
+// the coordinates the record actually holds. A record without coordinates is
+// `unlocated` -- present in every list, absent from a distance answer, and
+// never given a position it does not have.
+export const urbanBands = { core: 1, near: 3 };
+export function urbanAnchor(feed = {}) {
+  const centre = feed?.search_area?.center;
+  return Number.isFinite(centre?.lat) && Number.isFinite(centre?.lng)
+    ? { lat: centre.lat, lng: centre.lng,
+        label: typeof centre.label === "string" && centre.label.trim() ? centre.label.trim() : "central Chicago" }
+    : { ...searchCenter, label: "central Chicago" };
+}
+export function urbanSetting(home = {}, feed = {}) {
+  const anchor = urbanAnchor(feed);
+  const miles = distanceMiles(home, anchor);
+  if (miles === null)
+    return { status: "unlocated", miles: null, anchor: anchor.label, label: "Distance not measurable",
+      detail: "This record has no coordinates, so it cannot be placed on the map or measured. It stays in the list." };
+  const status = miles <= urbanBands.core ? "core" : miles <= urbanBands.near ? "near" : "outside";
+  return { status, miles, anchor: anchor.label,
+    label: { core: "Downtown core", near: "Near downtown", outside: "Outside the downtown bands" }[status],
+    detail: `${miles.toFixed(1)} straight-line miles from ${anchor.label}. Straight-line only: not a walk, a drive or a commute.` };
+}
+// A target is the reader's own number and never a cap: a place above it is
+// shown, named as above it, and is not a suggestion to spend more.
+export const TARGET_BAND_PCT = 5;
+export function budgetBand(home = {}, record = {}, prefs = defaults) {
+  const target = amount(prefs.targetRent);
+  const cost = costs(home, record, prefs);
+  const total = prefs.basis === "total";
+  const figure = total ? (cost.rent === null ? null : cost.known) : cost.rent;
+  const basis = total ? "known monthly subtotal" : "base rent";
+  // Whatever the basis, the figure is not an all-in cost while anything is
+  // unquoted, and the band says so rather than letting the reader assume it.
+  const caveat = cost.unknown.length
+    ? `${total ? "Known subtotal" : "Base rent"} only · ${cost.unknown.join(", ")} not quoted`
+    : total ? "Every recorded monthly amount is quoted" : "Base rent only · other monthly costs are quoted separately";
+  const base = { target, figure, basis, caveat, delta: null };
+  if (target === null) return { ...base, status: "off", label: "No target set" };
+  if (figure === null) return { ...base, status: "unpriced", label: "No base rent quoted",
+    detail: "Nobody has quoted this one, so it has no figure to put against your target." };
+  const edge = (target * TARGET_BAND_PCT) / 100;
+  const delta = figure - target;
+  const status = delta < -edge ? "under" : delta <= edge ? "near" : figure <= prefs.max ? "stretch" : "outside";
+  // Only the band this record is in gets its sentences built.
+  const label = status === "under" ? `${money(Math.abs(delta))} under your ${money(target)} target`
+    : status === "near" ? `Within ${money(Math.round(edge))} of your ${money(target)} target`
+      : status === "stretch" ? `${money(delta)} above your ${money(target)} target`
+        : `${money(delta)} above your target and past your ${money(prefs.max)} cap`;
+  const detail = status === "stretch"
+    ? `On ${basis}, inside your ${money(prefs.max)} cap. Shown so you can weigh it, not because it is worth more. ${caveat}.`
+    : status === "outside" ? `On ${basis}. Outside the range your filters are set to.`
+      : `On ${basis}. ${caveat}.`;
+  return { ...base, delta, status, label, detail };
+}
+// Four parking answers that mean four different things. An unknown is not a no,
+// an advertised space is not a reserved one, and a quoted $0 is a known amount
+// rather than a missing one. A public or street space near the building is not
+// this building's parking and is never folded in here.
+export function parkingStanding(home = {}, record = {}) {
+  const status = ["yes", "no", "unknown"].includes(home.parking?.status) ? home.parking.status : "unknown";
+  const yours = amount(record.parkingCost);
+  const monthly = yours ?? amount(home.parking?.monthly);
+  const note = typeof home.parking?.note === "string" ? home.parking.note : "";
+  if (status === "no")
+    return { status: "none", monthly: null, quotedBy: null, note,
+      label: "The source reports no resident parking",
+      detail: "Anything you park would be outside the building." };
+  if (status === "unknown")
+    return { status: "unknown", monthly: null, quotedBy: null, note,
+      label: "Parking not recorded",
+      detail: "Unknown is not a no, and it is not free." };
+  if (monthly === null)
+    return { status: "advertised", monthly: null, quotedBy: null, note,
+      label: "Parking advertised · price not quoted",
+      detail: "The building advertises resident parking. No one has quoted what it costs, and no space is reserved for you." };
+  return { status: "priced", monthly, quotedBy: yours === null ? "source" : "you", note,
+    label: `Parking advertised · ${money(monthly)}/mo ${yours === null ? "on record" : "in your own quote"}`,
+    detail: `${money(monthly)} a month is the amount recorded, not a reserved space. Confirm availability and any one-time charge.` };
+}
+// One question: is the reader currently reading through the downtown lens? Its
+// three controls are ordinary preferences, so every surface asks this rather
+// than each keeping its own idea of when the lens is on.
+export function doubleDownOn(prefs = defaults) {
+  return prefs.urbanScope !== defaults.urbanScope || amount(prefs.targetRent) !== null || prefs.highRise === true;
+}
+// The unresolved facts worth carrying onto an attention surface: the record's
+// own open questions, in the order openQuestions already ranks them by decision
+// weight, with the one the ACTIVE lens makes consequential first. A reader who
+// has asked for high-rises is owed the fact that this building's height was
+// never recorded -- and a reader who has not asked is not, so it is not
+// offered. A tour is a visit the reader has not arranged, not a property of the
+// apartment, and is skipped. Nothing is invented to fill a slot: a record with
+// nothing outstanding returns an empty list.
+export function focusUnknowns(home = {}, record = {}, prefs = defaults, now = new Date(), limit = 1) {
+  const lens = [];
+  if (prefs.highRise) {
+    const form = buildingForm(home);
+    if (form.status === "unknown")
+      lens.push({ key: "form", kind: "form", label: "Building height not recorded",
+        detail: form.because, target: "detail-sources" });
+    else if (form.status === "low_mid_rise")
+      lens.push({ key: "form", kind: "form", label: "Recorded as low or mid-rise",
+        detail: "You asked for high-rises; this record’s own description says otherwise.", target: "detail-sources" });
+  }
+  const out = [], seen = new Set();
+  for (const item of [...lens, ...openQuestions(home, record, prefs, now).filter((item) => item.kind !== "tour")]) {
+    if (seen.has(item.key)) continue;
+    seen.add(item.key);
+    out.push(item);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
 // Why a candidate is on an attention surface -- and nothing else.
 //
 // Every entry names a rule that actually ran for THIS record: a filter the
@@ -1043,6 +1278,10 @@ const signalReason = {
     : null,
   rail: (home, { pick }) => pick?.nearby
     ? `${pick.nearby.distance.toFixed(2)} mi straight-line to ${pick.nearby.title} CTA station` : null,
+  // Only a recorded high-rise has anything to say here. An unrecorded height
+  // did not raise this candidate and must not be written as though it had.
+  form: (home) => buildingForm(home).status === "high_rise"
+    ? "The building\u2019s own description calls it a high-rise" : null,
 };
 export function surfacedBecause(home, workspace = emptyWorkspace(), prefs = defaults, context = {}, now = new Date()) {
   const rec = workspace.records?.[home.id] ?? {};
@@ -1077,6 +1316,19 @@ export function surfacedBecause(home, workspace = emptyWorkspace(), prefs = defa
     add("layoutScope", "filter", layout.status === "confirmed"
       ? "A layout you checked yourself, which your evidence filter accepts"
       : "A source-listed floor plan, which your evidence filter requires");
+  if (prefs.urbanScope !== defaults.urbanScope) {
+    const setting = urbanSetting(home, context.feed ?? {});
+    if (prefs.urbanScope === "core" ? setting.status === "core" : ["core", "near"].includes(setting.status))
+      add("urbanScope", "filter", `${setting.miles.toFixed(1)} straight-line miles from ${setting.anchor}, inside the ${prefs.urbanScope === "core" ? "downtown core" : "near-downtown area"} you chose`);
+  }
+  // A height nobody recorded says nothing, whatever the reader asked for.
+  if (prefs.highRise && buildingForm(home).status === "high_rise")
+    add("form", "filter", "Its own description calls it a high-rise, the kind you asked to see first");
+  if (amount(prefs.targetRent) !== null) {
+    const band = budgetBand(home, rec, prefs);
+    if (["under", "near", "stretch"].includes(band.status))
+      add("target", "filter", `${band.label}, on ${band.basis}`);
+  }
   if (prefs.parking && home.parking?.status === "yes")
     add("parking", "filter", "Resident parking is advertised, which your filter requires");
   if (prefs.charging && home.charging?.status === "yes")
@@ -1112,7 +1364,7 @@ export function surfacedBecause(home, workspace = emptyWorkspace(), prefs = defa
 // record with nothing outstanding returns null, and the surface then says
 // nothing rather than inventing an unknown to fill the slot.
 export function headlineUnknown(home = {}, record = {}, prefs = defaults, now = new Date()) {
-  return openQuestions(home, record, prefs, now).find((item) => item.kind !== "tour") ?? null;
+  return focusUnknowns(home, record, prefs, now, 1)[0] ?? null;
 }
 // A difference is only a fact when every place holds that figure on the same
 // basis. One engine, so the Final Three and the full comparison cannot report

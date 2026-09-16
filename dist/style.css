@@ -1431,15 +1431,29 @@ input, select, textarea { font-size: 1rem; }
 .saved-ruled { margin: 20px 0 0; border: 1px dashed var(--line); border-radius: 14px; padding: 4px 18px 18px; }
 .saved-ruled > summary { padding: 12px 0; min-height: 44px; display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; }
 .saved-ruled > summary span { border-radius: 99px; background: var(--blue-wash); color: var(--blue); padding: 1px 9px; font-weight: 400; font-variant-numeric: tabular-nums; }
-.tour-companion { border: 1px solid var(--blue); border-radius: 16px; padding: 16px; margin: 20px 0; background: var(--blue-wash); }
-.tour-companion > summary { font-size: 1.15rem; font-weight: 700; cursor: pointer; padding: 8px 0; }
+.tour-companion { border: 1px solid var(--blue); border-radius: 16px; padding: 16px; margin: 0 0 20px; background: var(--blue-wash); }
+.tour-companion > summary { font-size: 1.15rem; font-weight: 700; cursor: pointer; padding: 8px 0; min-height: 44px; }
 .tour-companion > summary span { display: block; margin-top: 5px; font-size: .875rem; font-weight: 400; color: var(--muted); }
+/* Which apartment the reader is standing in, when the tour is and how much is
+   left, kept on screen while the checks scroll past. It sticks under the
+   record's own dock -- the fields below carry scroll-margin for both -- and
+   goes with the walkthrough when that scrolls away. */
+.tour-head { position: sticky; top: var(--tour-head-top,64px); z-index: 5; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; margin: 0 -16px 10px; padding: 10px 16px; background: var(--blue-wash); border-block: 1px solid var(--line); }
+.tour-head > div { display: grid; gap: 2px; min-width: 0; }
+.tour-head > div:first-child { flex: 1 1 200px; }
+.tour-head strong { font-size: 1rem; overflow-wrap: anywhere; }
+.tour-head span { font-size: .8125rem; color: var(--muted); overflow-wrap: anywhere; }
+.tour-head .tour-when { flex: 0 0 auto; text-align: right; }
+.tour-head .text-button { flex: 0 0 auto; display: inline-flex; align-items: center; min-height: 44px; }
 .tour-checklist { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
 .tour-check { display: flex; gap: 12px; align-items: flex-start; padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); cursor: pointer; }
-.tour-check input { flex-shrink: 0; margin-top: 4px; }
+.tour-check input { flex-shrink: 0; width: 24px; height: 24px; margin: 0; accent-color: var(--wine); }
 .tour-check > span { display: grid; gap: 5px; min-width: 0; }
 .tour-check strong { font-size: .95rem; }
 .tour-check span span { font-size: .875rem; color: var(--muted); }
+/* What the record already says about the thing this check sends you to look at.
+   It is evidence, not an answer: checking the box is still the reader's. */
+.tour-known { border-top: 1px dashed var(--line); padding-top: 6px; font-size: .8125rem !important; }
 .tour-check:has(input:checked) { border-color: var(--blue); box-shadow: inset 3px 0 var(--blue); }
 .cost-lab { display: grid; grid-template-columns: minmax(0,.95fr) minmax(0,1.1fr); gap: 24px; align-items: start; }
 .lab-controls { padding: 24px; border-radius: 20px; border: 1px solid var(--line); background: var(--surface); }
@@ -1529,6 +1543,7 @@ input, select, textarea { font-size: 1rem; }
   .saved-money { text-align: left; flex: 1 1 100%; }
   .saved-ruled { padding: 4px 14px 14px; }
   .tour-checklist { grid-template-columns: 1fr; }
+  #detail-content { --tour-head-top: 112px; }
   .cost-lab { gap: 16px; }
   .lab-controls, .lab-output { padding: 20px; }
   .lab-inputs { gap: 14px 10px; }
@@ -1726,6 +1741,9 @@ input, select, textarea { font-size: 1rem; }
 .detail-dock button { min-height: 44px; }
 .detail-dock > div button { padding: 8px 10px; background: transparent; color: var(--blue); border: 0; border-radius: 8px; cursor: pointer; }
 #detail-content section, #detail-content input, #detail-content select, #detail-content textarea, #tour-draft-count { scroll-margin-top: 130px; }
+/* A field jumped to inside the walkthrough clears the dock and the tour head
+   together, not just the dock. */
+.tour-companion input, .tour-companion select, .tour-companion textarea { scroll-margin-top: 200px; }
 @media (max-width: 1000px) { .finalist-grid { grid-template-columns: 1fr; } }
 @media (max-width: 780px) {
   .jump-trigger { margin-left: auto; font-size: .875rem; padding: 8px; }

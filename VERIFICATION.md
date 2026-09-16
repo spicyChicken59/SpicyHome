@@ -845,6 +845,97 @@ public origin — the proxy still refuses `spicychicken59.github.io` with 403
 CONNECT. A fixture is not proof of a lease, an availability, an amenity or an
 external source.
 
+### Milestone, 16 September 2026 — the tour-day walkthrough
+
+**Revision.** Branch `claude/spicyhome-source-evidence-m6fqo1`, restarted from
+`main` at `46d17b8` (the merge of #21, whose post-merge `Checks` run
+35037554446 and `Publish website` run 35037554413 are both green) because its
+own pull request was already merged and the branch carried only that merged
+history. `dist/data.json`, `dist/status.json`, `data/**`, `src/**` and the
+vendored `dist/design-system/` are untouched to the byte; the notebook schema is
+unchanged. No provider request, dispatch, booking, calendar mutation, merge,
+deployment or sibling write.
+
+**Rendered before anything was decided** (`scratchpad/repro/tour_before.mjs`
+against `46d17b8`, a saved provider contender with a tour date, two checks done
+and a note):
+
+| | 1280 px | 390 px | 320 px |
+|---|---|---|---|
+| record dialog | 3,252 px | 5,603 px | 6,469 px |
+| the walkthrough's own height | 678 px | 1,338 px | 1,707 px |
+| **from the last check to the first field** | 956 px | **1,657 px** | **1,940 px** |
+| the apartment named where the reader is working | **no** | **no** | **no** |
+| checkbox | 17 px | 17 px | 17 px |
+
+Standing in the apartment, the first phone screen carried the dock, the tail of
+an introductory paragraph, and checks 01–05. **Nothing on it said which
+apartment it was** — no unit, no plan, no address, no tour date, no progress —
+and the fields that record what a check finds were four screens below, past the
+cost table, the parking and charging facts, the atmosphere and the price
+history. The parking evidence a reader needs at the parking check sat 1,000 px
+above it.
+
+**Changed — composition, not mechanism.** `tourCompanion()` gained a head
+carrying the building, the exact plan or unit, the address, the tour date when
+one is recorded and a directions link built from that recorded address;
+`tourCheckEvidence()` puts what the record already holds beside the four checks
+it holds anything about, and returns nothing for the four it does not. The
+walkthrough moved from five sections above the notebook form to directly above
+it. No field was duplicated, no second checklist or tour record was created, and
+`tourChecks` and the record schema are exactly as they were.
+
+| | 1280 px | 390 px | 320 px |
+|---|---|---|---|
+| **from the last check to the first field** | **20 px** | **20 px** | **20 px** |
+| the apartment named where the reader is working | **yes** | **yes** | **yes** |
+| checkbox / target row | 24 / 151 px | 24 / 100 px | 24 / 121 px |
+
+**Gates, all run here at the tip.** `npm ci --ignore-scripts`; **`npm test`
+187** (181 before, 6 added); **`npm run check`** — JS syntax plus 43 Python;
+**`python tools/check_site.py`** — 22 immutable design assets and 1,000 records;
+**`npm run browser-check --shots` 310/310** (250 before, 60 added at 1280, 390
+and 320 px in both themes); `git diff --check` clean. **40 of the 60 new
+scenarios fail on `46d17b8`**, each printing its own before-number.
+
+**Eleven mutants over the new rules, all dead**, among them: a recorded $0
+parking cost read as not quoted; the source's silence about parking read as *no
+parking*; the charging cost said to be in the subtotal; an unavailable public
+dataset read as *no stations nearby*; a tour nobody scheduled given today at
+9 AM; directions built from coordinates rather than the recorded address; a
+source-listed plan read as a layout the reader checked; and the walkthrough
+drifting back away from the fields.
+
+**One layout defect this milestone's own measurement found.** The head is sticky
+so the apartment stays named while eight checks scroll past, and the record's
+dock is **66 px at 1280 but 108 px on a phone** — it wraps to two rows — so a
+64 px offset hid 21 px of the head behind it. The offset is per width now and a
+check measures the overlap at every width, so a dock that changes shape again
+fails rather than quietly clipping.
+
+**Screenshots looked at**, at 1280, 390 and 320 px in both themes: the
+walkthrough on opening, the charger check's evidence, and the fields after a
+jump. The head rests below the dock at every width; the charger check reads
+*“Building charging unknown. Its cost is quoted by no one here and is not in the
+subtotal. No public charging dataset is loaded, which is not evidence that there
+are none nearby.”*; a field jumped to sits clear of both sticky bars with its
+half-typed text intact.
+
+**Shared design.** Installed **v2.13.0**, commit
+`14a752dd0269bd6ebbb7080eb0d9e1922cd1ef2c`, 22 files; still the newest tag.
+**Measured drift: 0 of 22**, both ways, nothing re-vendored and no vendored byte
+moved. No shared-component usage changed either way: the walkthrough is
+app-scoped `tour-*` styles, and the record's `.sc-estimate` and `.sc-unreported`
+marks are as they were. **Reusable upstream candidates: none this round** — the
+only new pattern is a section head that sticks under an existing sticky bar,
+which is an offset this consumer measures for itself rather than a component.
+
+**Not claimed.** No live provider request and no new listing data. No physical
+phone and no public origin — the proxy still refuses `spicychicken59.github.io`
+with 403 CONNECT. **No external navigation fixture proves an apartment fact:**
+a directions link opening is not evidence that the building, the unit, the
+parking or the charger is as the record describes.
+
 ### NEXT BUILDER PROMPT — live, and level except SpicyStock
 
 Verify the tips before trusting any of them; the SpicyHome and design-system
@@ -855,10 +946,10 @@ repositories commit to `main` on a schedule.
   still the newest tag `origin` carries.
 - **SpicyCar** `main` was `62db117` on 14 Sep, a `snapshot 2026-09-14` tracker
   commit over `aea4fa3` (#79). It vendors **v2.13.0**. Not re-read since.
-- **SpicyHome** `main` is `c983f6a` (the merge of #20), vendoring **v2.13.0**
+- **SpicyHome** `main` is `46d17b8` (the merge of #21), vendoring **v2.13.0**
   with zero hash drift, **and served** at
   https://spicychicken59.github.io/SpicyHome/ — the publish job validated and
-  deployed that commit (run 35026663139).
+  deployed that commit (run 35037554413).
 - **SpicyStock** `main` was `ce2c6c1` (#61) on 14 Sep and still vendored
   **v2.11.0** (`6f10309`). Not re-read since.
 
@@ -899,10 +990,10 @@ cost-basis marks, the shortlist's next step, the Atlas, or this adoption.
      against a blank tile, which is precisely the gap.
 
 Offline gates, all of which must pass before a pull request: `npm ci
---ignore-scripts`, `npm test` (**181**), `npm run check` (**43** Python),
+--ignore-scripts`, `npm test` (**187**), `npm run check` (**43** Python),
 `python tools/check_site.py` (22 assets; it prints whatever the committed feed
-holds — **1,000 records** on `c983f6a`), `npm run browser-check --shots <dir>`
-(**250** Chromium scenarios; it needs a Playwright whose bundled Chromium
+holds — **1,000 records** on `46d17b8`), `npm run browser-check --shots <dir>`
+(**310** Chromium scenarios; it needs a Playwright whose bundled Chromium
 revision matches the one installed — 1194 here, which is playwright 1.56.x, and
 `npm install --no-save --ignore-scripts playwright@1.56.1` gets it without
 touching `package.json` — and it reports SKIP and exits 1 without it). Also
@@ -922,6 +1013,9 @@ Standing hazards, still true:
 - `.sc-eyebrow` lowercases. A proper noun inside one needs `.sc-case`.
 - Never vendor from an unmerged branch: pin a commit that is on the design
   system's `main`, and prefer the one its release tag points at.
+- The record dialog's dock is `position: sticky` and **wraps to two rows below
+  720 px**, so anything else that sticks under it needs a per-width offset, not
+  one number. Measure the overlap rather than assuming the dock's height.
 - A control inside a closed `<details>` is not focusable, and the saved desk
   nests them: a row's *More* sits inside the ruled-out section. Anything that
   hands focus to a control after a re-render has to open every ancestor

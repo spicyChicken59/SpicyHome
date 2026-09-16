@@ -428,6 +428,100 @@ try {
     await context.close();
   }
 
+  // --- 1d. the downtown lens, on a screen -----------------------------------
+  // The lens is three ordinary preferences, so this drives the real controls.
+  // What a screen has to settle: the panel and the band fit the card at phone
+  // width, a recorded form is visible without opening anything, and nothing the
+  // lens prints reads as a verdict.
+  for (const [label, size] of [['390px', { width: 390, height: 900, mobile: true }], ['1280px', { width: 1280, height: 1100 }]]) {
+    const { context, page, errors } = await open(browser, { ...size, theme: 'dark' });
+    await page.waitForTimeout(700);
+    await page.evaluate(() => {
+      document.querySelector('#search-controls').open = true;
+      const scope = document.querySelector('#urban-scope');
+      scope.value = 'near'; scope.onchange();
+      document.querySelector('#target').value = '2700';
+      document.querySelector('#filters').dispatchEvent(new Event('change', { bubbles: true }));
+      const tall = document.querySelector('#filter-highRise');
+      tall.checked = true; tall.dispatchEvent(new Event('change'));
+    });
+    await page.waitForTimeout(500);
+    const lens = await page.evaluate(() => {
+      const panel = document.querySelector('#downtown-lens');
+      const doc = document.documentElement;
+      const band = document.querySelector('.home-card .band-line');
+      const card = band?.closest('.home-card');
+      const cardBox = card?.getBoundingClientRect(), bandBox = band?.getBoundingClientRect();
+      return {
+        shown: panel && !panel.hidden,
+        text: panel?.textContent.replace(/\s+/g, ' ').trim() ?? '',
+        panelFits: panel ? panel.scrollWidth <= panel.clientWidth + 1 : false,
+        sideways: doc.scrollWidth > doc.clientWidth + 1,
+        band: band?.textContent.replace(/\s+/g, ' ').trim() ?? '',
+        bandInside: !!(cardBox && bandBox && bandBox.right <= cardBox.right + 1 && bandBox.left >= cardBox.left - 1),
+        bandHeight: bandBox ? Math.round(bandBox.height) : 0,
+        cardHeight: cardBox ? Math.round(cardBox.height) : 0,
+      };
+    });
+    check(`${label}: the lens says what it can see, before anything is opened`,
+      lens.shown && /retained record/.test(lens.text) && /Against your \$2,700 target/.test(lens.text), lens.text.slice(0, 90));
+    check(`${label}: missing evidence is an absence of evidence, never of buildings`,
+      /A height nobody wrote down is not a low building/.test(lens.text)
+      && !/there are no high-rises/i.test(lens.text), lens.text.slice(0, 90));
+    check(`${label}: the lens panel and the page do not scroll sideways`,
+      lens.panelFits && !lens.sideways, `panel ${lens.panelFits} page ${!lens.sideways}`);
+    check(`${label}: a target band stays inside the card it belongs to`,
+      !!lens.band && lens.bandInside, lens.band.slice(0, 70));
+    check(`${label}: the band says what it measured, and never claims an all-in cost`,
+      /Base rent only/.test(lens.band) && !/all[- ]in/i.test(lens.band), lens.band.slice(0, 70));
+    // A card that grows by a third for one line is not compact any more.
+    check(`${label}: the band costs the card less than a fifth of its height`,
+      lens.cardHeight > 0 && lens.bandHeight / lens.cardHeight < 0.2,
+      `${lens.bandHeight} of ${lens.cardHeight}px`);
+    // Raise the cap and the one described building arrives, chip and all.
+    const tall = await page.evaluate(() => {
+      document.querySelector('#max').value = '3200';
+      document.querySelector('#filters').dispatchEvent(new Event('change', { bubbles: true }));
+      const card = document.querySelector('.home-card[data-home="73-east-lake"]');
+      const chip = card?.querySelector('.chip.form');
+      return { arrived: !!card, chip: chip?.textContent.trim() ?? '',
+        chips: document.querySelectorAll('.chip.form').length,
+        quiet: document.querySelector('.home-card[data-home="amli-900"]')?.textContent ?? '' };
+    });
+    check(`${label}: a recorded high-rise is readable on its card without opening it`,
+      tall.arrived && /High-rise recorded/.test(tall.chip), `${tall.arrived} ${tall.chip}`);
+    check(`${label}: a building nobody described carries no form mark at all`,
+      tall.chips === 1 && !/low[- ]rise|not a high-rise/i.test(tall.quiet), `${tall.chips} marks`);
+    const words = lens.text + ' ' + lens.band + ' ' + tall.chip;
+    check(`${label}: the lens never prints a verdict, a score or a confidence`,
+      !/\b(best|winner|perfect|ideal|recommended for you|guaranteed fit)\b/i.test(words)
+      && !/\bscore\b/i.test(words), words.slice(0, 80));
+    // Keyboard only: reach all three controls and change one by keystroke.
+    const keys = await page.evaluate(async () => {
+      const ids = ['urban-scope', 'target', 'filter-highRise'];
+      const reach = ids.map((id) => {
+        const el = document.getElementById(id);
+        if (!el) return false;
+        el.focus();
+        return document.activeElement === el && el.tabIndex >= 0;
+      });
+      const box = document.getElementById('filter-highRise');
+      box.focus(); box.checked = false; box.dispatchEvent(new Event('change'));
+      const off = !document.querySelector('#downtown-lens').textContent.includes('A height nobody wrote down');
+      box.checked = true; box.dispatchEvent(new Event('change'));
+      return { reach, off, back: document.querySelector('#downtown-lens').textContent.includes('A height nobody wrote down') };
+    });
+    check(`${label}: every lens control takes keyboard focus`, keys.reach.every(Boolean), JSON.stringify(keys.reach));
+    check(`${label}: a lens sentence leaves with the preference that produced it`,
+      keys.off && keys.back, `off ${keys.off} back ${keys.back}`);
+    check(`${label}: no page errors while the lens is driven`, errors.length === 0, errors.slice(0, 2).join(' '));
+    if (shots) {
+      await mkdir(shots, { recursive: true });
+      await page.screenshot({ path: join(shots, `lens-${label.replace('px', '')}.png`) }).catch(() => {});
+    }
+    await context.close();
+  }
+
   // --- 2. the pick behaves like a popover, and its exits work ---------------
   {
     const { context, page } = await open(browser, { width: 390, height: 844, mobile: true, theme: 'dark' });

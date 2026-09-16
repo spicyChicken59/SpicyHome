@@ -36,8 +36,10 @@ place a press on the map actually selects, whether a mark prints a price only
 where it has one figure to print and the room to print it, whether a pick and
 Focus say why they are showing a place and what is still open without opening a
 disclosure — and whether a reason disappears when the filter that produced it
-does — and whether a saved home's name still gets the wider half of its card
-when its rent caption is long. Pass
+does — whether the downtown lens fits its panel and its band inside a card on a
+phone, reaches every control by keyboard, and never reports missing evidence as
+an absence of tall buildings — and whether a saved home's name still gets the
+wider half of its card when its rent caption is long. Pass
 `--shots <directory>` to save what it saw.
 
 Open the local URL printed by Vite. The app reads the committed public feed, with
@@ -229,7 +231,8 @@ source histories, scan/request budgets and shared design assets are unchanged.
 ## SpicyPicks — September 8, 2026
 
 Discover surfaces up to three distinct approximate building locations for
-Best fit, Budget wins, More space, EV + parking and Near CTA. Each pick identifies
+Best fit, Budget wins, More space, EV + parking, Near CTA and Downtown value.
+Each pick identifies
 the exact plan, base rent, known monthly subtotal, three reasons to look closer,
 and the unresolved costs or evidence that could change the decision.
 
@@ -553,3 +556,55 @@ unchanged. What changed is where the Tour Companion sits and what it carries.
 No second tour record, checklist engine or activity log; no booking, calendar
 mutation, location tracking or photo system. Saved checks, quotes and notes
 survive a refresh and an absent or stale feed exactly as before.
+
+## The downtown lens — September 16, 2026
+
+Three optional preferences, on the same filter panel as everything else: a
+**downtown lens** (the core within one straight-line mile of the centre the
+search itself recorded, or near-downtown within three), a **target monthly
+figure**, and **prefer recorded high-rises**. Turn any of them on and a short
+panel says what the lens can and cannot see over the records actually retained:
+how many sit in the band, how many have a building height in their own sources,
+how the rest fall around your target, and how many advertise resident parking.
+Turn them off and every one of those sentences leaves with them.
+
+**Building form is read only from text a source supplied** — the building
+description, the advertised amenities, and what each cited source is recorded as
+supporting — and it carries the words it was read from, the field, the source
+link and that source's own observation date. It is never inferred from price,
+neighborhood, a downtown address, a unit number, a building's name, luxury
+branding or how crowded the map looks. The provider's documented listing schema
+has no storey count, floor count, class or building subtype, so of 1,000 retained
+records exactly one — 73 East Lake, whose own description says "Spacious
+high-rise homes" — can be called a high-rise, and none can be called low or
+mid-rise. The other 999 read **height not recorded**, which is not a finding that
+a building is short: a place with nothing recorded carries no form mark at all,
+and the panel says in words that a height nobody wrote down is not a low
+building. A tour checklist asking you to confirm the elevators is a question to
+go and ask, not a description, and is never read as one; neither is a rooftop
+terrace, a floor plan or floor-to-ceiling windows.
+
+**A target is your own number and never a cap.** Each card carries the distance
+from it on the basis your budget filter is set to — base rent or known monthly
+subtotal — beside a line naming what is still unquoted, because $2,650 with
+parking unquoted is not $2,700 all in. A place above the target is labelled as
+above it and stays on the page; a place past your maximum is counted in the panel
+with the figure it would take to see it, rather than disappearing. Nothing here
+names a winner, scores a place or calls one best.
+
+**Parking keeps four answers that mean four different things**: a price on
+record (including a recorded $0, which is an amount), advertised with no price
+quoted, a source reporting none, and nothing recorded at all. An unknown parking
+answer is never drawn as a building without parking. Street and public parking
+near a building is still not that building's parking.
+
+A sixth SpicyPicks priority, **Downtown value**, gates on the same geography and
+weighs recorded building form, advertised parking and evidence above budget,
+because the cheapest downtown apartment is not the one this priority is looking
+for. Every reason on its cards is a rule that ran for that record, and one or two
+unresolved facts ride beside them — for a reader asking for high-rises, an
+unrecorded height is the first of those.
+
+The lens narrows the same visible set the cards, the map and the counts already
+share, so the map shows exactly the places the cards do. It adds no marker colour
+and no marker category: the price-forward marks are unchanged.

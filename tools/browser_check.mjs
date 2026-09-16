@@ -781,6 +781,37 @@ try {
           const [l1, l2] = [lum(blended), lum(behind)].sort((x, y) => y - x);
           return Math.round(((l1 + 0.05) / (l2 + 0.05)) * 10) / 10;
         })(),
+        // A pinned home has to be identifiable at a glance. Its card is a two
+        // column grid on a phone, and the money column carries a price AND its
+        // basis sentence: sized to that sentence, it leaves the address column
+        // a few characters wide and the rank badge broken across lines.
+        // A short name asking for less than the money column is not that --
+        // what is measured is whether the name got what it ASKED for, and when
+        // it could not, whether it was still left the wider half.
+        finalistCards: [...document.querySelectorAll('.finalist-grid article')].map((a) => {
+          const heading = a.querySelector('h4');
+          const n = box(a.querySelector('.finalist-number'));
+          const h = box(heading);
+          const money = box(a.querySelector('.finalist-rent'));
+          const over = (x, y) => !!x && !!y && x.left < y.right && y.left < x.right && x.top < y.bottom && y.top < x.bottom;
+          // What one unwrapped line of this name would take.
+          const wants = (() => {
+            if (!heading) return 0;
+            const copy = heading.cloneNode(true);
+            copy.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;width:auto;left:-9999px;top:0';
+            heading.parentElement.appendChild(copy);
+            const w = Math.round(copy.getBoundingClientRect().width);
+            copy.remove();
+            return w;
+          })();
+          return { name: (heading?.textContent ?? '').trim().slice(0, 26),
+            rankHeight: n ? Math.round(n.height) : 0, rankWidth: n ? Math.round(n.width) : 0,
+            nameWidth: h ? Math.round(h.width) : 0, moneyWidth: money ? Math.round(money.width) : 0,
+            wants,
+            // Only a phone puts the two beside each other; a wide card stacks them.
+            sideBySide: !!h && !!money && money.top < h.bottom,
+            overlap: over(h, money) || over(n, money) };
+        }),
         pinnedRows: rows.filter((r) => r.classList.contains('is-finalist')).length,
         finalistMarked: rows.filter((r) => r.classList.contains('is-finalist'))
           .every((r) => /Final Three/.test(r.querySelector('.saved-chips')?.textContent ?? '')),
@@ -800,6 +831,11 @@ try {
       `opacity ${desk.ruledOpacity}`);
     check(`${label} a ruled-out home stays readable while it is demoted`,
       desk.ruledContrast !== null && desk.ruledContrast >= 4.5, `${desk.ruledContrast}:1 at ${desk.ruledOpacity} opacity`);
+    check(`${label} a pinned home's name is not squeezed by the money beside it`,
+      desk.finalistCards.length > 0 && desk.finalistCards.every((c) =>
+        c.rankHeight > 0 && c.rankHeight <= 26 && !c.overlap &&
+        (!c.sideBySide || c.nameWidth >= Math.min(c.wants, c.moneyWidth))),
+      desk.finalistCards.map((c) => `${c.name}: name ${c.nameWidth}px of the ${c.wants}px it wants, money ${c.moneyWidth}px${c.sideBySide ? ' beside' : ' stacked'}, rank ${c.rankWidth}x${c.rankHeight}${c.overlap ? ', OVERLAPS the money' : ''}`).join(' · '));
     check(`${label} a pinned home says so on its own row`,
       desk.pinnedRows > 0 && desk.finalistMarked, `${desk.pinnedRows} pinned rows`);
     check(`${label} the desk does not push the page sideways`, !desk.sideways);

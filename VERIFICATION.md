@@ -1211,6 +1211,29 @@ At 320px in the overlapping state **no price is printed at all**, and that is
 the rule working rather than failing: the single's label would span 240–290px of
 a 290px pane, flush with the edge, so the circle stands instead.
 
+**CI went red on this branch for something that is not this milestone's, and
+the sweep found eight more of it.** `source details stay compact when healthy`
+asserts that a healthy feed leaves `#source-status` closed. The app opens that
+disclosure when `ageDays(feed.provider?.last_success ?? feed.generated_at) > 7`,
+and `data/seed.json` is dated **2026-09-08T04:18:00.506Z**, so `floor(age)`
+became 8 at **2026-09-16T04:18:00Z** — between the local run that passed at
+04:07 and the runner that failed at 04:19. The seed had simply become stale,
+and the test was asserting that a feed the app rightly calls stale looks
+healthy. It supplies its own fresh feed now, and passes with the clock moved
++30 and +400 days.
+
+The class is this file's own worst kind — a test whose answer depends on the
+hour it runs — so it was swept rather than patched and forgotten. A twelve-line
+harness (`--import` a module that shifts `Date`) runs the suite at an offset
+clock: at **+0 days one test fails, at +7 days nine do.** The other eight are
+the SpicyPicks and Decision Studio suites, whose engines read
+`pickAge(home.observed_at, now)` against fixture dates that are equally fixed —
+`SpicyPicks shows priorities` expects 3 cards and gets 0 once the fixture's
+observations age past the pick windows. **They are not red yet and they are not
+repaired here**: dating those fixtures relative to the clock is its own change,
+and widening this one to carry it would hide both. They are named here, and
+above in the next-builder prompt, with the harness that finds them.
+
 **What was deliberately not done.** No map mode and no settings toggle: the
 brief asks for one only on evidence that it is needed, and the measurement says
 the answer is decidable from the boxes without asking the reader. No change to
@@ -1304,6 +1327,15 @@ Standing hazards, still true:
 - A stylesheet rule naming a Leaflet or design-system class at equal specificity
   wins by load order and can silently undo the library's own layout. The map
   case is covered; the general one is not.
+- **Nine tests in `tests/app.test.mjs` depend on the hour they run**, because
+  `data/seed.json` and the picks fixtures carry fixed dates and the app measures
+  them against `new Date()`. One (`source details stay compact when healthy`) is
+  repaired; **eight remain and go red within seven days of any run** — the
+  SpicyPicks and Decision Studio suites. Find them with a `Date`-shifting
+  `--import` module (see the milestone entry): `SHIFT_DAYS=7 node --import
+  ./shift.mjs --test tests/app.test.mjs`. Dating those fixtures relative to the
+  clock is the fix, and it is a change of its own. Until it is made, a green
+  `main` says nothing about tomorrow.
 - Every map marker's icon box is **28x28 and must stay so**, whatever it draws.
   Leaflet places each one by a transform off a single pane origin, and `every
   mark sits where its coordinates put it` reads that origin back by subtracting

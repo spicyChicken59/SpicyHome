@@ -836,7 +836,13 @@ test("Cost Lab keeps invalid-field feedback when another field changes", async (
 });
 
 test("source details stay compact when healthy and expand for a failed refresh", async () => {
-  const healthy=await boot();assert.equal(healthy.doc.querySelector('#source-status').open,false);healthy.close();
+  // Healthy is a property of the FEED, not of the hour this suite runs in. The
+  // seed's own generated_at crosses the app's seven-day line eight days after
+  // it was written, and from that minute this test was asserting that a feed
+  // the app rightly calls stale looks healthy. It supplies a fresh one instead.
+  const fresh={...seed,generated_at:new Date().toISOString()};
+  const healthy=await boot({remote:fresh,packaged:fresh});assert.equal(healthy.doc.querySelector('#source-status').open,false);
+  assert.doesNotMatch(healthy.doc.querySelector('#source-status-label').textContent,/attention/);healthy.close();
   const failed=await boot({remote:null,packaged:seed});
   assert.equal(failed.doc.querySelector('#source-status').open,true);
   assert.match(failed.doc.querySelector('#source-status-label').textContent,/attention/);

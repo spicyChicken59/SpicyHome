@@ -1706,6 +1706,14 @@ Standing hazards, still true:
   observed pane's `isConnected`, and `map.stop()` before `map.remove()`. It is
   one console error with no visible effect; whoever fixes it should reproduce it
   first and prove the fix by execution, not by argument.
+- **`npm ci` removes Playwright from this sandbox.** It is deliberately not a
+  `package.json` dependency — `browser-check` reports SKIP without it — so a
+  clean install wipes it, and reinstalling the newest version then fails to
+  launch because `/opt/pw-browsers` carries a specific Chromium build
+  (`chromium-1194`, which is Playwright **1.56.0**). Restore it with
+  `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install --no-save --ignore-scripts
+  playwright@1.56.0`; `--no-save` leaves `package.json` and the lockfile
+  untouched, which was checked with `git status` afterwards.
 - A helper that builds every branch of a sentence map to use one branch is free
   in a test and expensive on a thousand cards. `money()` made a fresh
   `Intl.NumberFormat` per call, and `budgetBand()` built four labels per record:

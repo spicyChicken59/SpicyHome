@@ -152,12 +152,14 @@ try {
         const on = m.classList.contains('is-priced');
         const el = on ? m.querySelector('.map-price') : m.querySelector('.map-dot');
         return { on, box: el.getBoundingClientRect(), text: el.textContent.trim(),
-          label: m.querySelector('.map-marker-label').textContent };
+          label: m.querySelector('.map-price') ? m.querySelector('.map-price').textContent : null,
+          spoken: m.querySelector('.map-marker-label').textContent };
       });
       const over = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
       const dot = getComputedStyle(marks[0].querySelector('.map-dot'));
       const radius = parseFloat(dot.borderTopLeftRadius);
       return { marks: marks.length, shown: painted.filter((p) => p.on).length,
+        candidates: painted.filter((p) => p.label).length,
         round: dot.borderTopLeftRadius,
         circle: /%$/.test(dot.borderTopLeftRadius) ? radius >= 50
           : radius * 2 >= parseFloat(dot.width) - 0.5,
@@ -170,7 +172,7 @@ try {
         // label carries -- a crowd's label counts places and carries none
         wrong: painted.filter((p) => {
           if (!p.on) return false;
-          const exact = /\$([\d,]+)/.exec(p.label);
+          const exact = /\$([\d,]+)/.exec(p.spoken);
           if (!exact) return false;
           const n = Number(exact[1].replace(/,/g, ''));
           const k = Math.round(n / 100) / 10;
@@ -179,13 +181,22 @@ try {
     });
     check(`${label} a mark is a circle, not a box`, priced.circle && priced.square,
       `radius ${priced.round}, square ${priced.square}`);
+    // Each of these asks first whether this map had a figure to print at all.
+    // A map with none satisfies "nothing overlaps" and "nothing is cut off"
+    // without being a map that prints prices, and a check that cannot fail on
+    // the tree before this one is not a check.
     check(`${label} a metro-wide map degrades to circles rather than stacking boxes`,
-      priced.marks > 5 && priced.shown < priced.marks / 2, `${priced.shown} priced of ${priced.marks} marks`);
-    check(`${label} no price label covers another mark`, priced.covering === 0, `${priced.covering} covering`);
-    check(`${label} no price label is cut off by the map's edge`, priced.cut === 0, `${priced.cut} cut off`);
+      priced.candidates > 0 && priced.marks > 5 && priced.shown < priced.marks / 2,
+      `${priced.shown} printed of ${priced.candidates} that had a figure, ${priced.marks} marks`);
+    check(`${label} no price label covers another mark`,
+      priced.candidates > 0 && priced.covering === 0,
+      `${priced.covering} covering, ${priced.candidates} had a figure`);
+    check(`${label} no price label is cut off by the map's edge`,
+      priced.candidates > 0 && priced.cut === 0,
+      `${priced.cut} cut off, ${priced.candidates} had a figure`);
     check(`${label} a printed price is its own record's figure, rounded`,
-      priced.malformed === 0 && priced.wrong === 0,
-      `${priced.malformed} malformed, ${priced.wrong} not its own figure`);
+      priced.candidates > 0 && priced.malformed === 0 && priced.wrong === 0,
+      `${priced.malformed} malformed, ${priced.wrong} not its own figure, ${priced.candidates} had a figure`);
     check(`${label} no page errors while pressing the map`, errors.length === 0, errors.slice(0, 2).join(' '));
     await context.close();
   }
@@ -248,8 +259,8 @@ try {
       room.candidates >= 2 && room.shown >= 1 && room.missed === 0 && room.wrong === 0,
       `${room.shown} printed of ${room.candidates} that had a figure, ${room.missed} had the room and went without, ${room.wrong} not its own figure`);
     check(`${label} a printed price touches no other mark, no edge, and little of the map`,
-      room.misplaced === 0 && room.inkPct < 15,
-      `${room.misplaced} misplaced, ${room.inkPct}% of the pane`);
+      room.shown > 0 && room.misplaced === 0 && room.inkPct < 15,
+      `${room.shown} printed, ${room.misplaced} misplaced, ${room.inkPct}% of the pane`);
     const state = await page.evaluate(() => {
       const marks = [...document.querySelectorAll('.home-map-marker')];
       const paint = (m) => {

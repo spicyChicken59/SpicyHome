@@ -1160,6 +1160,24 @@ passed *because a different rule said no*. Zeroing every home's figure is what a
 `$0` leak actually looks like, and that one dies in `a place with no quoted
 figure gets a mark and no number`, alone.
 
+**Five of the new gate checks could not fail, and running them against
+`55a853a` is what showed it.** `no price label covers another mark`, `no price
+label is cut off by the map's edge`, `a printed price is its own record's
+figure` and `a metro-wide map degrades to circles` were all green on the tree
+that prints no price at all: a map with nothing to draw satisfies "nothing
+overlaps" and "nothing is cut off" without being a map that prints prices —
+the first shape this file names, a check that passes because a different fact
+makes it moot. Each asks first whether that map had a figure to print
+(`candidates > 0`, a mark carrying a `.map-price` at all), and the sparse
+state's `touches no other mark` asks that one was printed. **Twenty of the
+twenty-two new checks now fail at `55a853a`**; the two that remain are the
+two page-error checks, which are of that kind by nature. The margin on the
+metro state is thin and worth knowing: at 390 px exactly **one** of the 14
+marks carries a figure today, so a scheduled data commit that clusters that
+one away turns those four checks red. The message says why — *0 had a figure*
+— and that is the right answer to look at rather than a green that means
+nothing.
+
 **The screenshots, compared state for state against the boxed marks rather than
 admired on their own.** Twenty-eight map states captured the same way before and
 after — sparse, moderate, dense Chicago, the whole metro, overlapping

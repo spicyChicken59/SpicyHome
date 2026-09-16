@@ -7,7 +7,7 @@ Start with real, sourced building prospects; compare the known monthly cost; sav
 ## What is built
 
 - Twenty-two official-source apartment plans at 18 buildings, researched September 7–8, 2026. Starting prices and advertised monthly totals retain their original meaning. These are **not guaranteed available units**.
-- Interactive OpenStreetMap/Leaflet map with sourced approximate building coordinates. Places whose recorded coordinates fall within a mark's width of each other at the current zoom share one mark, anchored on a real recorded coordinate and carrying the number it stands for; a press is resolved by distance from the press, and when several places are within a finger it asks which one you meant rather than choosing silently. A crowd too large to name one by one offers the zoom that separates it. Unlocated plans remain in the list, which is counted and stays the precise path to a named place. Includes 37 CTA station references for nearby transit context.
+- Interactive OpenStreetMap/Leaflet map with sourced approximate building coordinates. A mark is a circle, and it prints the price its own card prints — rounded to the nearest $100, never an all-in cost, a verified current rent or proof that the exact unit is free — where every place under it prints that same figure on the same basis, and where the label clears every other mark and the edge of the map. Where it cannot, the circle stands and carries the number of places it holds, so a dense map degrades to circles rather than stacking boxes; what decides that is the boxes on the screen at the current zoom, not a record count. The shortlist fills its mark, the Final Three add a warm ring, and the mark you are on takes the focus blue. Places whose recorded coordinates fall within a mark's width of each other at the current zoom share one mark, anchored on a real recorded coordinate; a press is resolved by distance from the press — a press anywhere on a printed price is that mark's — and when several places are within a finger it asks which one you meant rather than choosing silently. A crowd too large to name one by one offers the zoom that separates it. Unlocated plans remain in the list, which is counted and stays the precise path to a named place. Includes 37 CTA station references for nearby transit context.
 - Rent and neighborhood filters, optional advertised parking/EV filters, and explicit inclusion of unquoted base rents.
 - Three-home comparison matrix, real observed price history, saved-home snapshots, shortlist statuses, quote calculator, tour notes and personal calendar downloads.
 - Manual apartment entries and JSON notebook export/import. Personal notes stay in the browser; the source feed does not receive them.
@@ -32,8 +32,9 @@ npm run dev
 `npm run browser-check` serves the committed `dist/` and answers the remote feed
 with the committed records, then judges what jsdom cannot: where things land on a
 screen, whether every map mark sits where its coordinates put it, which
-place a press on the map actually selects, and whether a saved home's name still
-gets the wider half of its card when its rent caption is long. Pass
+place a press on the map actually selects, whether a mark prints a price only
+where it has one figure to print and the room to print it, and whether a saved
+home's name still gets the wider half of its card when its rent caption is long. Pass
 `--shots <directory>` to save what it saw.
 
 Open the local URL printed by Vite. The app reads the committed public feed, with

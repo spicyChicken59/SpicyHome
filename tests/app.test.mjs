@@ -590,6 +590,129 @@ test("empty bedroom coverage offers an explicit way to broaden it", async () => 
   d.close();
 });
 
+// A number on a map is read as a fact about the place under it, so what a mark
+// may print is the same contract the card keeps: the figure the card prints,
+// on the basis the card names, for every place the mark stands for.
+const markerFor = (capture, id, seedHomes) => {
+  const home = seedHomes.find((h) => h.id === id);
+  return capture.find((m) => m.coords[0] === home.lat && m.coords[1] === home.lng);
+};
+
+test("a mark prints the figure its own card prints, rounded, and carries the exact one", async () => {
+  const capture = [];
+  const d = await boot({ leaflet: mapStub(capture) });
+  const mark = markerFor(capture, "amli-lofts", seed.homes);
+  assert.match(mark.options.icon.html, /class="map-price"[^>]*>\$2\.7k</);
+  // the exact figure and its basis word, for a reader who cannot see the pill
+  assert.match(mark.options.icon.html, /AMLI Lofts[^<]*Base rent from[^<]*\$2,663/);
+  assert.match(mark.options.title, /Base rent from[^"]*\$2,663/);
+  // and it is the same figure the card prints for that record
+  const card = d.doc.querySelector('.home-card[data-home="amli-lofts"]');
+  assert.match(card.querySelector(".rent").textContent, /\$2,663/);
+  assert.match(card.querySelector(".price-kind").textContent, /Base rent from/);
+  d.close();
+});
+
+test("a mark standing for places that disagree on price prints no price", async () => {
+  const capture = [];
+  const d = await boot({ leaflet: mapStub(capture) });
+  const mark = markerFor(capture, "tapestry-station", seed.homes);
+  assert.match(mark.options.icon.html, /3 options/);
+  assert.equal(/class="map-price"/.test(mark.options.icon.html), false);
+  assert.match(mark.options.icon.html, /class="map-dot map-dot-group"/);
+  // and the silence is this mark's, not the map's: a place whose one figure is
+  // agreed still prints it in the same render
+  assert.match(markerFor(capture, "amli-lofts", seed.homes).options.icon.html, /class="map-price"/);
+  d.close();
+});
+
+test("a mark standing for places that agree prints the one figure they share", async () => {
+  const feed = structuredClone(seed);
+  const base = feed.homes.find((h) => h.id === "tapestry-station");
+  for (const id of ["tapestry-station", "tapestry-station-sheridan", "tapestry-station-dempster"]) {
+    const home = feed.homes.find((h) => h.id === id);
+    home.rent = null;
+    home.advertised_price = base.advertised_price;
+    home.advertised_price_type = base.advertised_price_type;
+  }
+  const capture = [];
+  const d = await boot({ leaflet: mapStub(capture), remote: feed, packaged: feed });
+  const mark = markerFor(capture, "tapestry-station", feed.homes);
+  assert.match(mark.options.icon.html, /3 options/);
+  assert.match(mark.options.icon.html, /class="map-price"[^>]*>\$2\.3k</);
+  d.close();
+});
+
+test("a mark prints no price where one figure would mean two different bases", async () => {
+  const feed = structuredClone(seed);
+  // Same number, two bases: a base rent read from a plan, and an advertised
+  // monthly total whose base rent nobody has seen. One pill would say they are
+  // the same kind of money.
+  const one = feed.homes.find((h) => h.id === "tapestry-station");
+  const two = feed.homes.find((h) => h.id === "tapestry-station-sheridan");
+  const three = feed.homes.find((h) => h.id === "tapestry-station-dempster");
+  for (const home of [one, two, three]) { home.rent = null; home.advertised_price = 2400; }
+  one.advertised_price_type = "total_monthly";
+  two.advertised_price_type = "total_monthly";
+  three.advertised_price_type = "monthly_fee_treatment_unspecified";
+  const capture = [];
+  const d = await boot({ leaflet: mapStub(capture), remote: feed, packaged: feed });
+  const mark = markerFor(capture, "tapestry-station", feed.homes);
+  assert.match(mark.options.icon.html, /3 options/);
+  assert.equal(/class="map-price"/.test(mark.options.icon.html), false);
+  // and with the odd one out removed, the two that agree do print it
+  three.advertised_price_type = "total_monthly";
+  const agreed = [];
+  const e = await boot({ leaflet: mapStub(agreed), remote: feed, packaged: feed });
+  assert.match(markerFor(agreed, "tapestry-station", feed.homes).options.icon.html,
+    /class="map-price"[^>]*>\$2\.4k</);
+  d.close(); e.close();
+});
+
+test("a place with no quoted figure gets a mark and no number", async () => {
+  const capture = [];
+  const d = await boot({ leaflet: mapStub(capture) });
+  const mark = markerFor(capture, "marlowe", seed.homes);
+  assert.equal(/class="map-price"/.test(mark.options.icon.html), false);
+  assert.match(mark.options.icon.html, /class="map-dot"/);
+  assert.match(mark.options.icon.html, /Not quoted/);
+  // never a zero standing in for a figure nobody quoted
+  assert.equal(/\$0/.test(mark.options.icon.html), false);
+  assert.match(markerFor(capture, "amli-lofts", seed.homes).options.icon.html, /class="map-price"/);
+  d.close();
+});
+
+test("a rounded mark rounds to the nearest hundred and never below a thousand", async () => {
+  const feed = structuredClone(seed);
+  const cases = [["amli-lofts", 1749, "\\$1\\.7k"], ["amli-900", 1750, "\\$1\\.8k"],
+    ["amli-west-loop", 3000, "\\$3k"], ["73-east-lake", 999, "\\$999"]];
+  for (const [id, rent] of cases) feed.homes.find((h) => h.id === id).rent = rent;
+  const capture = [];
+  // The reader's own budget decides which places the map draws at all, so this
+  // one is opened wide: what is under test is the figure, not the filter.
+  const d = await boot({ leaflet: mapStub(capture), remote: feed, packaged: feed,
+    notebook: { version: 1, records: {}, manual: [], events: [], preferences: { min: 0, max: 20000 } } });
+  for (const [id, , shown] of cases)
+    assert.match(markerFor(capture, id, feed.homes).options.icon.html,
+      new RegExp(`class="map-price"[^>]*>${shown}<`), id);
+  d.close();
+});
+
+test("a mark carries the shortlist and the final three it stands for", async () => {
+  const capture = [];
+  const d = await boot({ leaflet: mapStub(capture), notebook: { version: 1, records: {
+    "amli-lofts": { saved: true },
+    "amli-evanston": { saved: true, finalist: true },
+  }, manual: [], events: [] } });
+  assert.match(markerFor(capture, "amli-lofts", seed.homes).options.icon.className, /home-map-marker is-saved$/);
+  assert.match(markerFor(capture, "amli-lofts", seed.homes).options.icon.html, /saved to your shortlist/);
+  const finalist = markerFor(capture, "amli-evanston", seed.homes);
+  assert.match(finalist.options.icon.className, /is-finalist is-saved$/);
+  assert.match(finalist.options.icon.html, /one of your final three/);
+  assert.match(markerFor(capture, "amli-900", seed.homes).options.icon.className, /^home-map-marker$/);
+  d.close();
+});
+
 test("Explore offers compact filters and working List Map Focus switches", async () => {
   const capture=[];const d=await boot({leaflet:mapStub(capture)});
   assert.equal(d.doc.querySelector('#search-controls').open,false);
@@ -713,7 +836,13 @@ test("Cost Lab keeps invalid-field feedback when another field changes", async (
 });
 
 test("source details stay compact when healthy and expand for a failed refresh", async () => {
-  const healthy=await boot();assert.equal(healthy.doc.querySelector('#source-status').open,false);healthy.close();
+  // Healthy is a property of the FEED, not of the hour this suite runs in. The
+  // seed's own generated_at crosses the app's seven-day line eight days after
+  // it was written, and from that minute this test was asserting that a feed
+  // the app rightly calls stale looks healthy. It supplies a fresh one instead.
+  const fresh={...seed,generated_at:new Date().toISOString()};
+  const healthy=await boot({remote:fresh,packaged:fresh});assert.equal(healthy.doc.querySelector('#source-status').open,false);
+  assert.doesNotMatch(healthy.doc.querySelector('#source-status-label').textContent,/attention/);healthy.close();
   const failed=await boot({remote:null,packaged:seed});
   assert.equal(failed.doc.querySelector('#source-status').open,true);
   assert.match(failed.doc.querySelector('#source-status-label').textContent,/attention/);

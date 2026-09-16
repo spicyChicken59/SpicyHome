@@ -2110,10 +2110,39 @@ h1, h2, h3, h4, strong { color: inherit; }
 }
 /* Keep Leaflet controls inside the map's stacking context, below mobile navigation. */
 .map-panel { isolation: isolate; z-index: 0; }
+/* One mark, one shape: a ring for a place, the same ring grown with its number
+   inside it for a crowd, and the same ring replaced by the price where the map
+   has room to read it. Never a box, and never a badge hung off the side of one.
+   `position` is deliberately not set here -- Leaflet gives every marker
+   `position: absolute` at the same specificity from a sheet that loads first,
+   and taking that away once put every mark over the wrong building. */
 .home-map-marker { display: grid; place-items: center; background: transparent; border: 0; }
-.map-dot { display: block; width: 12px; height: 12px; border: 2px solid #fff; border-radius: 4px; background: #57091b; box-shadow: 0 1px 5px #111f3170; }
-.map-dot-group { width: 14px; height: 14px; }
-.home-map-marker:hover .map-dot, .home-map-marker:focus .map-dot { background: #165194; outline: 3px solid #16519455; }
+.map-dot { --map-dot-size: 16px; display: grid; place-items: center; box-sizing: border-box;
+  width: var(--map-dot-size); height: var(--map-dot-size); border: 2px solid var(--wine);
+  border-radius: 50%; background: var(--surface); color: var(--wine);
+  font: 700 10px/1 "IBM Plex Mono",monospace; font-variant-numeric: tabular-nums;
+  box-shadow: 0 1px 5px #111f3170; }
+.map-dot-group { --map-dot-size: 21px; }
+/* The figure the card prints for the same record, rounded to the nearest
+   hundred so it fits between two buildings. It is drawn only where it clears
+   every other mark, so it never hides a home's location; where it cannot, the
+   ring above stands in its place. */
+.map-price { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+  visibility: hidden; white-space: nowrap; padding: 3px 7px; border-radius: 999px;
+  border: 1.5px solid var(--wine); background: var(--surface); color: var(--wine);
+  font: 700 11px/1 "IBM Plex Mono",monospace; font-variant-numeric: tabular-nums;
+  box-shadow: 0 1px 5px #111f3140; }
+.home-map-marker.is-priced .map-price { visibility: visible; }
+.home-map-marker.is-priced .map-dot { display: none; }
+/* Saved fills the mark, the way the shortlist heart fills; the Final Three add
+   the warm ring the decision desk gives them; selection is the app's focus
+   blue. Three states, two accents, no new vocabulary. */
+.home-map-marker.is-saved .map-dot { background: var(--wine); color: var(--surface); border-color: var(--surface); }
+.home-map-marker.is-saved .map-price { background: var(--wine); color: var(--surface); border-color: var(--wine); }
+.home-map-marker.is-finalist .map-dot, .home-map-marker.is-finalist .map-price { outline: 2px solid var(--warm); outline-offset: 1px; }
+.home-map-marker.is-selected .map-dot, .home-map-marker.is-selected .map-price { outline: 3px solid var(--blue); outline-offset: 2px; }
+.home-map-marker:hover .map-dot, .home-map-marker:focus .map-dot { border-color: var(--blue); color: var(--blue); }
+.home-map-marker:hover .map-price, .home-map-marker:focus .map-price { border-color: var(--blue); color: var(--blue); }
 .map-marker-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; clip-path: inset(50%); overflow: hidden; white-space: nowrap; }
 #budget-note { margin-top: 14px; }
 .search-controls > .search-shelf { margin: 8px 14px; }
@@ -2136,9 +2165,5 @@ h1, h2, h3, h4, strong { color: inherit; }
 .map-pick .sc-pick__head h4 { margin: 0; font-size: .9375rem; color: var(--ink); }
 .map-pick .sc-pick__item { font-family: inherit; }
 .map-pick .sc-pick__item .sc-figure { font-weight: 700; white-space: nowrap; }
-/* A mark that stands for several places says how many, in the mark itself. */
-.map-dot-count { position: absolute; top: -3px; right: -5px; min-width: 17px; padding: 0 3px; border-radius: 9px;
-  background: #165194; color: #fff; font: 700 10px/17px "IBM Plex Mono", monospace; text-align: center;
-  box-shadow: 0 1px 4px #111f3166; }
 /* A surface brought to the top of the screen keeps a little air above it. */
 .map-panel, .results-column, #focus-surface, #atlas-surface { scroll-margin-top: 12px; }

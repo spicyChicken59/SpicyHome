@@ -34,7 +34,7 @@ import {
   recipeDefaults, recipeLabels, remixPicks, decisionPool, apartmentTradeoffs, areaMatch, pricePulse, nextMoves, nextMove, costField,
   sourceAccess, sourceReferences, scanContext, chargingEvidence, publicChargingMiles,
   openQuestions, figureSpread,
-} from "./model.js?v=20260916-tour-day";
+} from "./model.js?v=20260916-map-price";
 const $ = (s) => document.querySelector(s),
   KEY = "spicyhome.workspace.v1",
   CACHE = "spicyhome.feed.v1";
@@ -403,6 +403,101 @@ const MAP_CLUSTER_RADIUS = 30;
 // zoom that separates them instead. The popup, which the list route opens, is
 // bounded the same way.
 const MAP_PICK_LIST_MAX = 12, MAP_POPUP_MAX = 12;
+// A price is four times the width of the dot it replaces, so two marks far
+// enough apart to be TOLD APART are not necessarily far enough apart to be
+// READ. What decides is not how many records loaded: it is whether the label
+// this page just rendered clears the marks already drawn, measured on their own
+// boxes at the zoom in front of the reader. These two are the clearance that
+// measurement allows itself -- a hair between neighbours, and a hair inside the
+// pane, because a price cut off by the map's edge is not a price.
+const MAP_LABEL_GAP = 2, MAP_PANE_INSET = 3;
+// The one figure a mark may print: the figure the CARD prints for the same
+// record. Where the homes under one mark do not all print that one figure on
+// that one basis, the mark has no honest number and says how many places it
+// holds instead. A rounded figure is never a quote, an all-in cost, or proof
+// that the exact unit is available.
+function markPrice(group) {
+  const price = displayPrice(group[0]);
+  if (price === null) return null;
+  const basis = priceKind(group[0]);
+  return group.every((h) => displayPrice(h) === price && priceKind(h) === basis) ? price : null;
+}
+// "$1,749" is six characters to fit between two buildings and "$1.7k" is five.
+// The exact figure with its basis word stays on the mark's own label, in the
+// panel a press opens and on the card; the map says underneath that a mark is
+// rounded to the nearest hundred.
+function compactMoney(n) {
+  if (!Number.isFinite(n)) return null;
+  if (n < 1000) return money(n);
+  const k = Math.round(n / 100) / 10;
+  return `$${Number.isInteger(k) ? k : k.toFixed(1)}k`;
+}
+// A mark that stands for more places is drawn larger, never past the width at
+// which two of them would touch, and it carries its number INSIDE the circle
+// rather than in a box hung off its side.
+function clusterSize(n) {
+  return Math.min(MAP_CLUSTER_RADIUS - 2, Math.round(18 + Math.log2(n) * 3));
+}
+// The reader's own state, in the marks this app already uses for it: the
+// shortlist is filled, the Final Three add the warm ring the desk gives them,
+// and what is selected takes the focus blue. Nothing else is coloured.
+function markState(group) {
+  const records = group.map((home) => record(home.id));
+  return (records.some((r) => r.finalist) ? " is-finalist" : "")
+    + (records.some((r) => r.saved) ? " is-saved" : "");
+}
+// Which marks may wear their price, decided on the marks as drawn. A label is
+// taken only where its own box clears every mark already on the map -- dot or
+// label -- and sits wholly inside the pane; everything else keeps the compact
+// circle, so a crowd degrades to circles instead of stacking boxes. The
+// reader's own marks are offered a label first and the rest keep the order the
+// clusters were built in, so the same map answers the same way twice.
+function placePrices() {
+  const surface = $("#map");
+  if (!surface || !mapGroups.length) return;
+  const marks = mapGroups.map((group, index) => {
+    const element = group.marker.getElement?.();
+    element?.classList.remove("is-priced");
+    return { index, element, price: element?.querySelector(".map-price"),
+      dot: element?.querySelector(".map-dot") };
+  });
+  // Every box is read after every class is written, so one layout answers all.
+  const pane = surface.getBoundingClientRect();
+  for (const mark of marks) {
+    mark.held = mark.dot?.getBoundingClientRect?.() ?? null;
+    mark.label = mark.price?.getBoundingClientRect?.() ?? null;
+  }
+  const held = marks.map((mark) => (mark.held?.width ? mark.held : null));
+  const rank = (mark) => (mark.element?.classList.contains("is-finalist") ? 0
+    : mark.element?.classList.contains("is-saved") ? 1 : 2);
+  for (const mark of marks.slice().sort((a, b) => rank(a) - rank(b) || a.index - b.index)) {
+    const box = mark.label;
+    if (!mark.price || !box?.width) continue;
+    if (box.left < pane.left + MAP_PANE_INSET || box.right > pane.right - MAP_PANE_INSET
+      || box.top < pane.top + MAP_PANE_INSET || box.bottom > pane.bottom - MAP_PANE_INSET) continue;
+    if (held.some((other, i) => i !== mark.index && other
+      && box.left - MAP_LABEL_GAP < other.right && other.left < box.right + MAP_LABEL_GAP
+      && box.top - MAP_LABEL_GAP < other.bottom && other.top < box.bottom + MAP_LABEL_GAP)) continue;
+    mark.element.classList.add("is-priced");
+    held[mark.index] = box;
+  }
+}
+// The mark the reader is on is obvious at every width: the focus blue around
+// it and raised over its neighbours. It changes no mark's shape, so choosing
+// one never re-shuffles the labels on the rest of the map.
+function paintSelection() {
+  for (const group of mapGroups) {
+    const element = group.marker.getElement?.();
+    if (!element) continue;
+    const on = group.homes.some((home) => home.id === mapSelection);
+    element.classList.toggle("is-selected", on);
+    group.marker.setZIndexOffset?.(on ? 1000 : 0);
+  }
+}
+function selectMark(id) {
+  mapSelection = id;
+  paintSelection();
+}
 // Places whose recorded coordinates land within a mark's width of each other at
 // the current zoom. Every cluster is anchored on a real recorded coordinate --
 // its first member's -- so no mark is drawn anywhere the feed does not place a
@@ -442,11 +537,18 @@ function mapPressCandidates(x, y) {
     const box = element?.getBoundingClientRect?.();
     if (!box?.width) continue;
     const distance = Math.hypot(box.left + box.width / 2 - x, box.top + box.height / 2 - y);
+    // A price reaches further than the dot it replaces, so a press ON one is
+    // that mark's however far the label's far edge sits from the coordinate --
+    // a label is placed only where it covers no other mark, so nothing is
+    // hidden under it. Everything else within a finger still joins the list.
+    const label = element.classList.contains("is-priced")
+      ? element.querySelector(".map-price")?.getBoundingClientRect?.() : null;
+    const pressed = !!label && x >= label.left && x <= label.right && y >= label.top && y <= label.bottom;
     // Only the home travels: the marker is rebuilt whenever the zoom regroups,
     // so a reference to it here would be the same stale-object trap the
     // directory route already paid for once.
-    if (distance <= MAP_TAP_RADIUS)
-      for (const home of group.homes) found.push({ distance, home });
+    if (pressed || distance <= MAP_TAP_RADIUS)
+      for (const home of group.homes) found.push({ distance: pressed ? 0 : distance, home });
   }
   return found.sort((a, b) => a.distance - b.distance);
 }
@@ -483,7 +585,7 @@ function fillMapPick() {
     button.onclick = () => {
       const id = button.dataset.mapPick;
       closeMapPick(false);
-      mapSelection = id;
+      selectMark(id);
       // A stable list control survives a feed rerender, as the popup path does.
       focusHomeControl(id, "map-home");
       showDetail(id);
@@ -548,7 +650,7 @@ function bindMapPick(surface) {
     const found = mapPressCandidates(event.clientX, event.clientY);
     mapAmbiguousPress = found.length > 1;
     if (!found.length) { closeMapPick(false); return; }
-    if (found.length === 1) { closeMapPick(false); mapSelection = found[0].home.id; return; }
+    if (found.length === 1) { closeMapPick(false); selectMark(found[0].home.id); return; }
     // Leaflet would open the hit-tested marker's popup on the click that
     // follows, which is the answer this panel exists to refuse.
     event.preventDefault();
@@ -621,7 +723,7 @@ function renderDiscover() {
     ...new Set(allHomes().map((h) => h.neighborhood)),
   ].sort();
   $("#view-content").innerHTML =
-    `${exploreToolbar()}<details id="search-controls" class="search-controls" ${filtersOpen ? "open" : ""}><summary>Fine-tune filters <span id="filter-caption"></span></summary><section class="area-controls" aria-label="Search area"><div class="area-selects"><div class="field"><label for="search-bedrooms">Bedrooms</label><select id="search-bedrooms"><option value="all" ${prefs.bedrooms === "all" ? "selected" : ""}>1 &amp; 2 bedrooms</option><option value="1" ${prefs.bedrooms === "1" ? "selected" : ""}>1 bedroom</option><option value="2" ${prefs.bedrooms === "2" ? "selected" : ""}>2 bedrooms</option></select></div><div class="field"><label for="search-region">Where to look</label><select id="search-region"><option value="all" ${prefs.region === "all" ? "selected" : ""}>Chicago + selected suburbs</option><option value="chicago" ${prefs.region === "chicago" ? "selected" : ""}>Chicago only</option><option value="suburbs" ${prefs.region === "suburbs" ? "selected" : ""}>Suburbs only</option></select></div><div class="field"><label for="search-radius">Distance from central Chicago</label><select id="search-radius"><option value="0" ${prefs.radiusMiles === 0 ? "selected" : ""}>Full search · 35-mile coverage</option>${[10,20,35].map((m) => `<option value="${m}" ${prefs.radiusMiles === m ? "selected" : ""}>Within ${m} miles · located places only</option>`).join("")}</select></div></div><p class="meta">Distances are straight-line, not driving or commute times. The full search includes entries with unverified coordinates.</p><details class="area-guide"><summary>Areas &amp; last listing checks</summary><p class="meta">${esc(feed.search_area?.scan_note ?? "One city per scheduled scan. Each area keeps its own last observations.")}</p><div class="area-grid">${(feed.search_area?.areas ?? []).map((area) => {const scan = feed.provider?.area_scans?.[area.city]; const count = allHomes().filter((h) => homeCity(h) === area.city && !h.notebook_only); return `<article><h3>${esc(area.city)}</h3><p>${esc(area.note)}</p><p class="meta">${count.filter((h) => h.kind === "building").length} sourced plans · ${count.filter((h) => h.kind === "listing").length} retained listing snapshots</p><p class="meta">${scan ? `Last listing scan: ${esc(dateLabel(scan.last_success))}${scan.truncated || scan.total == null && scan.returned === 500 ? " · capped coverage" : ""}` : "Awaiting first listing scan"}</p><p class="meta">${esc(scanBedroomScope(feed.provider, area.city))}</p>${link(area.source_url,"Area & transport details ↗")}</article>`;}).join("")}</div></details></section><div class="layout-controls"><label for="layout-scope">Layout evidence</label><select id="layout-scope"><option value="all" ${prefs.layoutScope === "all" ? "selected" : ""}>All potential matches</option><option value="source" ${prefs.layoutScope === "source" ? "selected" : ""}>Source-listed plans + my checked layouts</option><option value="confirmed" ${prefs.layoutScope === "confirmed" ? "selected" : ""}>Only layouts I have checked</option></select><p id="layout-summary" class="meta" role="status"></p></div><form class="filters" id="filters"><div class="field"><label for="search">Building, plan or area</label><input type="search" id="search" name="search" maxlength="500" placeholder="Try Evanston, Oak Park or a plan name" value="${esc(prefs.search)}"></div><div class="field"><label for="min">Minimum / month</label><input type="number" id="min" name="min" min="0" max="20000" step="50" value="${prefs.min}"></div><div class="field"><label for="max">Maximum / month</label><input type="number" id="max" name="max" min="0" max="20000" step="50" value="${prefs.max}"></div><div class="field"><label for="basis">Compare budget against</label><select id="basis" name="basis"><option value="rent" ${prefs.basis === "rent" ? "selected" : ""}>Base rent</option><option value="total" ${prefs.basis === "total" ? "selected" : ""}>Known monthly subtotal</option></select></div><div class="field"><label for="neighborhood">Neighborhood / suburb</label><select id="neighborhood" name="neighborhood"><option value="all">All neighborhoods & suburbs</option>${neighborhoods.map((n) => `<option ${prefs.neighborhood === n ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></div></form><div class="filter-options"><label><input type="checkbox" id="filter-parking" ${prefs.parking ? "checked" : ""}>Advertised parking only</label><label><input type="checkbox" id="filter-charging" ${prefs.charging ? "checked" : ""}>Advertised EV charging only</label><label><input type="checkbox" id="filter-unknown" ${prefs.unknown ? "checked" : ""}>Include unquoted base rent</label><button class="text-button" id="reset-filters">Reset</button><span class="meta">Target: 1–2 separate bedrooms · 1–2 bathrooms</span></div>${searchShelf()}</details><div class="filter-summary" id="filter-summary" role="status" aria-live="polite" hidden></div><section id="focus-surface" aria-label="Focus review" hidden></section><section id="atlas-surface" aria-label="Rent and space atlas" hidden></section><div class="results-layout" id="explore-results"><aside class="map-panel" aria-label="Chicago and suburbs apartment map"><div class="map-heading"><h3>Explore the area</h3><button class="text-button" id="map-fit">Fit all homes</button></div><div class="map-surface" id="map" role="region" aria-label="Apartment locations"></div><details class="map-directory"><summary>Places on this map <span id="map-directory-count" class="meta"></span></summary><ul class="map-list" id="map-list"></ul></details><div class="map-foot">Approximate locations &middot; tap a dot for prices &amp; plans. Where several places share a spot, a tap asks which one you meant; the list below reaches any of them by name. Public chargers are separate from resident amenities.</div></aside><div class="results-column"><section id="spicy-picks" aria-labelledby="picks-title"></section><div class="results-top"><strong id="result-count"></strong><label class="meta">Sort <select id="sort" aria-label="Sort apartments"><option value="rent" ${prefs.sort === "rent" ? "selected" : ""}>${prefs.basis === "rent" ? "Base rent" : "Known subtotal"}: low to high</option><option value="space" ${prefs.sort === "space" ? "selected" : ""}>More room</option><option value="recent" ${prefs.sort === "recent" ? "selected" : ""}>Recently observed</option></select></label></div><div class="home-grid" id="results"></div></div></div><p class="research-note" id="budget-note">${feed.mode === "research" ? "Start with sourced building prospects. These are research leads, not confirmed available apartments." : "Listing snapshots and sourced building prospects are shown together, each labeled by its source."} Budget is ${prefs.basis === "rent" ? "base rent; parking, utilities and other fees can take your monthly cost above it." : "a known subtotal; missing fees are never treated as free."}</p><details class="excluded-layouts" id="excluded-layouts"><summary id="excluded-summary"></summary><p class="meta">These places are outside your 1–2 bedroom search. Open a record to review the source or correct your layout choice. Removing a heart does not erase a layout correction.</p><div class="home-grid" id="excluded-results"></div></details><div id="compare-tray"></div>`;
+    `${exploreToolbar()}<details id="search-controls" class="search-controls" ${filtersOpen ? "open" : ""}><summary>Fine-tune filters <span id="filter-caption"></span></summary><section class="area-controls" aria-label="Search area"><div class="area-selects"><div class="field"><label for="search-bedrooms">Bedrooms</label><select id="search-bedrooms"><option value="all" ${prefs.bedrooms === "all" ? "selected" : ""}>1 &amp; 2 bedrooms</option><option value="1" ${prefs.bedrooms === "1" ? "selected" : ""}>1 bedroom</option><option value="2" ${prefs.bedrooms === "2" ? "selected" : ""}>2 bedrooms</option></select></div><div class="field"><label for="search-region">Where to look</label><select id="search-region"><option value="all" ${prefs.region === "all" ? "selected" : ""}>Chicago + selected suburbs</option><option value="chicago" ${prefs.region === "chicago" ? "selected" : ""}>Chicago only</option><option value="suburbs" ${prefs.region === "suburbs" ? "selected" : ""}>Suburbs only</option></select></div><div class="field"><label for="search-radius">Distance from central Chicago</label><select id="search-radius"><option value="0" ${prefs.radiusMiles === 0 ? "selected" : ""}>Full search · 35-mile coverage</option>${[10,20,35].map((m) => `<option value="${m}" ${prefs.radiusMiles === m ? "selected" : ""}>Within ${m} miles · located places only</option>`).join("")}</select></div></div><p class="meta">Distances are straight-line, not driving or commute times. The full search includes entries with unverified coordinates.</p><details class="area-guide"><summary>Areas &amp; last listing checks</summary><p class="meta">${esc(feed.search_area?.scan_note ?? "One city per scheduled scan. Each area keeps its own last observations.")}</p><div class="area-grid">${(feed.search_area?.areas ?? []).map((area) => {const scan = feed.provider?.area_scans?.[area.city]; const count = allHomes().filter((h) => homeCity(h) === area.city && !h.notebook_only); return `<article><h3>${esc(area.city)}</h3><p>${esc(area.note)}</p><p class="meta">${count.filter((h) => h.kind === "building").length} sourced plans · ${count.filter((h) => h.kind === "listing").length} retained listing snapshots</p><p class="meta">${scan ? `Last listing scan: ${esc(dateLabel(scan.last_success))}${scan.truncated || scan.total == null && scan.returned === 500 ? " · capped coverage" : ""}` : "Awaiting first listing scan"}</p><p class="meta">${esc(scanBedroomScope(feed.provider, area.city))}</p>${link(area.source_url,"Area & transport details ↗")}</article>`;}).join("")}</div></details></section><div class="layout-controls"><label for="layout-scope">Layout evidence</label><select id="layout-scope"><option value="all" ${prefs.layoutScope === "all" ? "selected" : ""}>All potential matches</option><option value="source" ${prefs.layoutScope === "source" ? "selected" : ""}>Source-listed plans + my checked layouts</option><option value="confirmed" ${prefs.layoutScope === "confirmed" ? "selected" : ""}>Only layouts I have checked</option></select><p id="layout-summary" class="meta" role="status"></p></div><form class="filters" id="filters"><div class="field"><label for="search">Building, plan or area</label><input type="search" id="search" name="search" maxlength="500" placeholder="Try Evanston, Oak Park or a plan name" value="${esc(prefs.search)}"></div><div class="field"><label for="min">Minimum / month</label><input type="number" id="min" name="min" min="0" max="20000" step="50" value="${prefs.min}"></div><div class="field"><label for="max">Maximum / month</label><input type="number" id="max" name="max" min="0" max="20000" step="50" value="${prefs.max}"></div><div class="field"><label for="basis">Compare budget against</label><select id="basis" name="basis"><option value="rent" ${prefs.basis === "rent" ? "selected" : ""}>Base rent</option><option value="total" ${prefs.basis === "total" ? "selected" : ""}>Known monthly subtotal</option></select></div><div class="field"><label for="neighborhood">Neighborhood / suburb</label><select id="neighborhood" name="neighborhood"><option value="all">All neighborhoods & suburbs</option>${neighborhoods.map((n) => `<option ${prefs.neighborhood === n ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></div></form><div class="filter-options"><label><input type="checkbox" id="filter-parking" ${prefs.parking ? "checked" : ""}>Advertised parking only</label><label><input type="checkbox" id="filter-charging" ${prefs.charging ? "checked" : ""}>Advertised EV charging only</label><label><input type="checkbox" id="filter-unknown" ${prefs.unknown ? "checked" : ""}>Include unquoted base rent</label><button class="text-button" id="reset-filters">Reset</button><span class="meta">Target: 1–2 separate bedrooms · 1–2 bathrooms</span></div>${searchShelf()}</details><div class="filter-summary" id="filter-summary" role="status" aria-live="polite" hidden></div><section id="focus-surface" aria-label="Focus review" hidden></section><section id="atlas-surface" aria-label="Rent and space atlas" hidden></section><div class="results-layout" id="explore-results"><aside class="map-panel" aria-label="Chicago and suburbs apartment map"><div class="map-heading"><h3>Explore the area</h3><button class="text-button" id="map-fit">Fit all homes</button></div><div class="map-surface" id="map" role="region" aria-label="Apartment locations"></div><details class="map-directory"><summary>Places on this map <span id="map-directory-count" class="meta"></span></summary><ul class="map-list" id="map-list"></ul></details><div class="map-foot">Approximate locations &middot; tap a mark for the exact price, its basis and the plan. A mark shows a price only where every place under it prints that same figure on the same basis, rounded to the nearest $100 &mdash; never an all-in cost, a verified current rent or proof that the exact unit is free; otherwise it shows how many places it stands for, and zooming in until it stands for one shows that price. Where several places share a spot, a tap asks which one you meant; the list below reaches any of them by name. Public chargers are separate from resident amenities.</div></aside><div class="results-column"><section id="spicy-picks" aria-labelledby="picks-title"></section><div class="results-top"><strong id="result-count"></strong><label class="meta">Sort <select id="sort" aria-label="Sort apartments"><option value="rent" ${prefs.sort === "rent" ? "selected" : ""}>${prefs.basis === "rent" ? "Base rent" : "Known subtotal"}: low to high</option><option value="space" ${prefs.sort === "space" ? "selected" : ""}>More room</option><option value="recent" ${prefs.sort === "recent" ? "selected" : ""}>Recently observed</option></select></label></div><div class="home-grid" id="results"></div></div></div><p class="research-note" id="budget-note">${feed.mode === "research" ? "Start with sourced building prospects. These are research leads, not confirmed available apartments." : "Listing snapshots and sourced building prospects are shown together, each labeled by its source."} Budget is ${prefs.basis === "rent" ? "base rent; parking, utilities and other fees can take your monthly cost above it." : "a known subtotal; missing fees are never treated as free."}</p><details class="excluded-layouts" id="excluded-layouts"><summary id="excluded-summary"></summary><p class="meta">These places are outside your 1–2 bedroom search. Open a record to review the source or correct your layout choice. Removing a heart does not erase a layout correction.</p><div class="home-grid" id="excluded-results"></div></details><div id="compare-tray"></div>`;
   renderResults();
   $("#search-controls").ontoggle = (event) => { if (event.currentTarget?.isConnected) filtersOpen = event.currentTarget.open; };
   bindExploreToolbar();
@@ -793,14 +895,25 @@ function renderMap(homes) {
     mapGroups = [];
     for (const group of mapClusters(placed)) {
       const h = group[0];
+      const price = markPrice(group);
+      const state = markState(group);
+      const spoken = (group.length > 1
+        ? `${group.length} options at this approximate location`
+        : `${h.title} · ${planLabel(h)} · ${priceKind(h)}: ${money(displayPrice(h))}`)
+        + (state.includes("finalist") ? ` · ${group.length > 1 ? "holds one of" : "one of"} your final three`
+          : state ? ` · ${group.length > 1 ? "holds a home you saved" : "saved to your shortlist"}` : "");
+      // The icon box stays one size for every mark, whatever it draws. Leaflet
+      // places each one by a transform off a single pane origin, and a box that
+      // changed width per mark would move that origin with it; the circle and
+      // the label are centred inside it and overflow it without resizing it.
       const marker = L.marker([h.lat, h.lng], {
         icon: L.divIcon({
-          className: "home-map-marker",
-          html: `<span class="map-dot ${group.length > 1 ? "map-dot-group" : ""}" aria-hidden="true"></span>${group.length > 1 ? `<span class="map-dot-count" aria-hidden="true">${group.length}</span>` : ""}<span class="map-marker-label">${group.length > 1 ? `${group.length} options` : esc(money(displayPrice(h)))}</span>`,
+          className: `home-map-marker${state}`,
+          html: `<span class="map-dot${group.length > 1 ? " map-dot-group" : ""}"${group.length > 1 ? ` style="--map-dot-size:${clusterSize(group.length)}px"` : ""} aria-hidden="true">${group.length > 1 ? group.length : ""}</span>${price === null ? "" : `<span class="map-price" aria-hidden="true">${esc(compactMoney(price))}</span>`}<span class="map-marker-label">${esc(spoken)}</span>`,
           iconSize: [28, 28],
           iconAnchor: [14, 14],
         }),
-        title: group.length > 1 ? `${group.length} apartment options at this location` : `${h.title} · ${planLabel(h)}`,
+        title: group.length > 1 ? `${group.length} apartment options at this location` : `${h.title} · ${planLabel(h)} · ${priceKind(h)}: ${money(displayPrice(h))}`,
         keyboard: true,
       }).addTo(map);
       const popup = document.createElement("div");
@@ -810,7 +923,7 @@ function renderMap(homes) {
         button.onclick = () => {
           const id = button.dataset.mapPlan;
           // Use a stable list control for focus restoration after a feed rerender.
-          mapSelection = id;
+          selectMark(id);
           focusHomeControl(id, "map-home");
           showDetail(id);
         };
@@ -821,11 +934,18 @@ function renderMap(homes) {
       mapGroups.push({ marker, homes: group });
     }
     bindMapDirectory();
+    placePrices();
+    paintSelection();
   };
   drawMarkers();
   bindMapPick($("#map"));
-  // The clusters are a function of the zoom, so they are rebuilt when it changes.
-  if (typeof map.on === "function") map.on("zoomend", () => { closeMapPick(false); drawMarkers(); });
+  // The clusters are a function of the zoom, so they are rebuilt when it
+  // changes. A pan regroups nothing, but it moves which marks are wholly inside
+  // the pane, so the labels alone are reconsidered.
+  if (typeof map.on === "function") {
+    map.on("zoomend", () => { closeMapPick(false); drawMarkers(); });
+    map.on("moveend", placePrices);
+  }
   const fitHomes = () => {
     if (placed.length) map.fitBounds(placed.map(h => [h.lat, h.lng]), { padding: [45, 35], maxZoom: 14 });
     else map.setView([41.882, -87.632], 11);
@@ -838,7 +958,10 @@ function renderMap(homes) {
   if (typeof ResizeObserver !== "undefined") {
     const currentMap = map;
     mapResizeObserver = new ResizeObserver(() => {
-      if (map === currentMap) currentMap.invalidateSize({ pan: false });
+      if (map !== currentMap) return;
+      currentMap.invalidateSize({ pan: false });
+      // A resized pane holds a different number of labels.
+      placePrices();
     });
     mapResizeObserver.observe($("#map"));
   }
@@ -874,7 +997,7 @@ function openRevealed() {
 function revealOnMap(id) {
   const marker = markers.get(id);
   if (!marker || !map) { showDetail(id); return; }
-  mapSelection = id;
+  selectMark(id);
   mapReveal = id;
   const target = marker.getLatLng();
   const view = { animate: !matchMedia("(prefers-reduced-motion: reduce)").matches };

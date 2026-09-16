@@ -1011,6 +1011,109 @@ export function openQuestions(home = {}, record = {}, prefs = defaults, now = ne
       target: "detail-sources" });
   return items;
 }
+// Why a candidate is on an attention surface -- and nothing else.
+//
+// Every entry names a rule that actually ran for THIS record: a filter the
+// reader moved off its default and this record satisfied, the ranking signal
+// that contributed most to its place under the chosen priority, or a recorded
+// fact one of those rules read. A filter still at its default narrowed nothing,
+// so it explains nothing and is not offered. That is also why this copy cannot
+// go stale: it is derived from the CURRENT preferences every time it is asked,
+// so a reason whose rule stops applying stops being produced.
+//
+// SpicyPicks and Focus are attention aids over the retained pool. Nothing here
+// says an omitted apartment is worse or unavailable, and nothing here calls an
+// apartment a fit.
+const signalReason = {
+  // A record nobody has quoted a base rent for has no figure to be under a cap:
+  // its known subtotal is zero, and "the full cap below your cap" would read as
+  // the cheapest thing on the page. An unquoted rent is never a budget reason.
+  budget: (home, { cost, prefs }) => cost.rent !== null && cost.known < prefs.max
+    ? `${money(prefs.max - cost.known)} under your ${money(prefs.max)} ${prefs.basis === "total" ? "known-subtotal" : "base-rent"} cap${cost.unknown.length ? " \u00b7 unquoted costs still apply" : ""}`
+    : null,
+  space: (home) => home.sqft > 0 ? `${home.sqft} reported sq ft` : null,
+  amenities: (home) => home.parking?.status === "yes" && home.charging?.status === "yes"
+    ? "Resident parking and EV charging are both advertised"
+    : home.parking?.status === "yes" ? "Resident parking is advertised"
+      : home.charging?.status === "yes" ? "Resident EV charging is advertised" : null,
+  evidence: (home, { layout }) => layout.status === "confirmed" ? "You checked this bedroom and bathroom layout"
+    : layout.status === "source_listed" ? "An identified floor plan supports the bedroom count" : null,
+  value: (home, { pick }) => pick?.saving !== null && pick?.saving !== undefined && pick.saving >= .05
+    ? `${Math.round(pick.saving * 100)}% lower base rent per sq ft than the median of ${pick.peerCount} nearby comparison locations`
+    : null,
+  rail: (home, { pick }) => pick?.nearby
+    ? `${pick.nearby.distance.toFixed(2)} mi straight-line to ${pick.nearby.title} CTA station` : null,
+};
+export function surfacedBecause(home, workspace = emptyWorkspace(), prefs = defaults, context = {}, now = new Date()) {
+  const rec = workspace.records?.[home.id] ?? {};
+  const layout = layoutEvidence(home, rec);
+  const cost = costs(home, rec, prefs);
+  const { pick = null, weights = null, priority = null } = context;
+  const out = [];
+  const add = (key, kind, text) => { if (text && !out.some((r) => r.key === key)) out.push({ key, kind, text }); };
+
+  // 1. The gates the reader themselves moved. visibleHomes() applied each one,
+  //    and each sentence re-checks the record against the gate it names rather
+  //    than trusting that the caller only asks about records that passed.
+  const city = homeCity(home);
+  if (prefs.search.trim() && `${home.title} ${home.address} ${home.neighborhood} ${city} ${planLabel(home)}`
+    .toLowerCase().includes(prefs.search.trim().toLowerCase()))
+    add("search", "filter", `Matches your search for “${prefs.search.trim()}”`);
+  if (prefs.neighborhood !== defaults.neighborhood && home.neighborhood === prefs.neighborhood)
+    add("neighborhood", "filter", `In ${home.neighborhood}, the area you chose`);
+  if (prefs.region !== defaults.region && city
+    && (prefs.region === "chicago" ? city === "Chicago" : suburbCities.includes(city)))
+    add("region", "filter", `In ${city}, inside the ${prefs.region === "chicago" ? "Chicago-only" : "suburbs-only"} area you chose`);
+  if (prefs.radiusMiles !== defaults.radiusMiles) {
+    const away = distanceMiles(home, searchCenter);
+    if (away !== null && away <= prefs.radiusMiles)
+      add("radius", "filter", `${away.toFixed(1)} straight-line miles from central Chicago, inside your ${prefs.radiusMiles}-mile limit`);
+  }
+  if (prefs.bedrooms !== defaults.bedrooms && layout.bedrooms === Number(prefs.bedrooms))
+    add("bedrooms", "filter", `${layout.bedrooms} bedroom, the size you chose`);
+  if (prefs.layoutScope === "confirmed" && layout.status === "confirmed")
+    add("layoutScope", "filter", "A layout you checked yourself, which your evidence filter requires");
+  else if (prefs.layoutScope === "source" && ["source_listed", "confirmed"].includes(layout.status))
+    add("layoutScope", "filter", layout.status === "confirmed"
+      ? "A layout you checked yourself, which your evidence filter accepts"
+      : "A source-listed floor plan, which your evidence filter requires");
+  if (prefs.parking && home.parking?.status === "yes")
+    add("parking", "filter", "Resident parking is advertised, which your filter requires");
+  if (prefs.charging && home.charging?.status === "yes")
+    add("charging", "filter", "Resident EV charging is advertised, which your filter requires");
+  if (prefs.min !== defaults.min || prefs.max !== defaults.max || prefs.basis !== defaults.basis)
+    add("budget", "filter", signalReason.budget(home, { cost, prefs }));
+
+  // 2. The signal that contributed most to its place under the chosen priority.
+  //    This is a readback of the weight the ranking already used, not a score.
+  if (pick?.signals && weights) {
+    const [top] = Object.entries(weights)
+      .map(([key, points]) => [key, (pick.signals[key] ?? 0) * points])
+      .filter(([, value]) => value > 0)
+      .sort((a, b) => b[1] - a[1]);
+    if (top) add(top[0], priority === "recipe" ? "recipe" : "priority",
+      signalReason[top[0]]?.(home, { cost, prefs, layout, pick }));
+  }
+
+  // 3. Recorded facts the rules above read, for a reader who narrowed nothing.
+  add("budget", "budget", signalReason.budget(home, { cost, prefs }));
+  add("layout", "evidence", signalReason.evidence(home, { layout }));
+  const seen = ageDays(home.observed_at, now);
+  if (seen !== null && seen <= 7)
+    add("observed", "evidence", `Observed ${seen === 0 ? "today" : seen === 1 ? "yesterday" : seen + " days ago"}`);
+  const moved = changeFor(home);
+  if (moved) add("history", "evidence", `${money(Math.abs(moved))} ${moved < 0 ? "lower" : "higher"} than the previous recorded observation`);
+  return out;
+}
+// The one unresolved fact worth carrying onto an attention surface: the first
+// of the record's OWN open questions, in the order openQuestions already ranks
+// them by decision weight, skipping the tour checklist -- a visit the reader
+// has not arranged is not a property of the apartment or of its evidence. A
+// record with nothing outstanding returns null, and the surface then says
+// nothing rather than inventing an unknown to fill the slot.
+export function headlineUnknown(home = {}, record = {}, prefs = defaults, now = new Date()) {
+  return openQuestions(home, record, prefs, now).find((item) => item.kind !== "tour") ?? null;
+}
 // A difference is only a fact when every place holds that figure on the same
 // basis. One engine, so the Final Three and the full comparison cannot report
 // the same set of numbers differently; neither of them names a winner.

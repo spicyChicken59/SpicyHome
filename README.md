@@ -33,8 +33,11 @@ npm run dev
 with the committed records, then judges what jsdom cannot: where things land on a
 screen, whether every map mark sits where its coordinates put it, which
 place a press on the map actually selects, whether a mark prints a price only
-where it has one figure to print and the room to print it, and whether a saved
-home's name still gets the wider half of its card when its rent caption is long. Pass
+where it has one figure to print and the room to print it, whether a pick and
+Focus say why they are showing a place and what is still open without opening a
+disclosure — and whether a reason disappears when the filter that produced it
+does — and whether a saved home's name still gets the wider half of its card
+when its rent caption is long. Pass
 `--shots <directory>` to save what it saw.
 
 Open the local URL printed by Vite. The app reads the committed public feed, with
@@ -225,10 +228,29 @@ source histories, scan/request budgets and shared design assets are unchanged.
 
 ## SpicyPicks — September 8, 2026
 
-Discover now recommends up to three distinct approximate building locations for
+Discover surfaces up to three distinct approximate building locations for
 Best fit, Budget wins, More space, EV + parking and Near CTA. Each pick identifies
 the exact plan, base rent, known monthly subtotal, three reasons to look closer,
-and the unresolved costs or evidence that could change the decision. Existing
+and the unresolved costs or evidence that could change the decision.
+
+Every pick, and the one place Focus puts in front of you, says **why it is here**
+and **what is still open**, on the card rather than behind a disclosure. The
+reasons are the rules that actually ran for that record: a filter you moved off
+its default and it satisfied, the ranking signal the chosen priority or your own
+recipe weighted most, or a recorded fact one of those rules read. A gate left at
+its default narrowed nothing, so it is not offered — and because the reasons are
+derived from your current preferences every time the surface draws, a reason
+whose rule stops applying stops being shown rather than lingering as something
+that still looks true. Each one re-checks the record against the gate it names,
+so no sentence claims a match that was never tested, and an unquoted base rent is
+never described as room under your cap. The one open question is the record's own
+first unresolved item in `openQuestions`' existing decision-weight order — the
+same order the shortlist's next step is taken from — declining only the tour
+checklist, which is about a visit you have not arranged rather than about the
+apartment or its evidence. A record with nothing outstanding says nothing rather
+than filling the slot. These are attention aids over the retained pool: they
+never say an apartment left out is worse or unavailable, and they name no
+winner, score or confidence. Existing
 filters apply; save, details, comparison and a resident-review search are nearby.
 Phone layouts offer a swipeable card row with labeled priority buttons.
 

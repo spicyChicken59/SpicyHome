@@ -337,6 +337,97 @@ try {
     await context.close();
   }
 
+  // --- 1c. why a candidate is in front of the reader, and what is open ------
+  // The answer has to be on the card, not behind a disclosure, and it has to
+  // follow the reader's own filters: a reason whose rule stops applying has to
+  // stop being drawn, or it reads as still true.
+  for (const [label, size] of [['390px', { width: 390, height: 900, mobile: true }], ['1280px', { width: 1280, height: 1100 }]]) {
+    const { context, page, errors } = await open(browser, { ...size, theme: 'dark' });
+    await page.waitForTimeout(700);
+    const read = () => page.evaluate(() => {
+      const card = document.querySelector('.pick-card');
+      if (!card) return { card: false };
+      const block = card.querySelector('.why-block');
+      const items = [...card.querySelectorAll('.why-item')];
+      const box = card.getBoundingClientRect();
+      return { card: true, id: card.dataset.pickHome, block: !!block,
+        behindDisclosure: !!block?.closest('details'),
+        reasons: items.map((n) => n.textContent.trim()),
+        escapes: items.some((n) => { const b = n.getBoundingClientRect();
+          return b.right > box.right + 1 || b.left < box.left - 1; }),
+        open: card.querySelector('.why-open')?.textContent.replace(/\s+/g, ' ').trim() ?? '',
+        text: block?.textContent ?? '' };
+    });
+    const first = await read();
+    check(`${label} a pick says why it is here without opening anything`,
+      first.card && first.block && !first.behindDisclosure
+      && first.reasons.length >= 1 && first.reasons.length <= 3,
+      first.card ? `${first.reasons.length} reasons${first.behindDisclosure ? ', behind a disclosure' : ''}` : 'no pick card');
+    check(`${label} a pick names one thing that is still open`,
+      /Still open/.test(first.open), first.open || 'none');
+    // Asks for a reason first: a card with none satisfies "nothing escapes"
+    // without anything being drawn, which is green on the tree before this one.
+    check(`${label} a reason stays inside the card it explains`,
+      first.reasons.length > 0 && !first.escapes, `${first.reasons.length} reasons`);
+    check(`${label} the explanation is neither a verdict nor a score`,
+      first.block && !/\b(best|winner|perfect|ideal|guaranteed)\b|recommended for you/i.test(first.text)
+      && !/\bscore\b|\bconfidence\b|\b\d+\s*points?\b/i.test(first.text),
+      first.text.replace(/\s+/g, ' ').slice(0, 90));
+    // A filter the reader sets is named; put it back and the sentence is gone.
+    const area = await page.evaluate(async (id) => {
+      document.querySelector('#search-controls')?.setAttribute('open', '');
+      const card = [...document.querySelectorAll('#results [data-home]')].find((n) => n.dataset.home === id);
+      const picked = document.querySelector('#neighborhood');
+      const home = card?.querySelector('.neighborhood')?.textContent ?? '';
+      const match = [...picked.options].find((o) => home.includes(o.value) && o.value !== 'all');
+      if (!match) return { skipped: true };
+      picked.value = match.value;
+      picked.dispatchEvent(new Event('change', { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 700));
+      const named = [...document.querySelectorAll('.pick-card')].map((c) =>
+        [...c.querySelectorAll('.why-item')].some((n) => /the area you chose/.test(n.textContent)));
+      const chipsWhileOn = document.querySelectorAll('.why-item--filter').length;
+      picked.value = 'all';
+      picked.dispatchEvent(new Event('change', { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 700));
+      const left = [...document.querySelectorAll('.why-item')].some((n) => /the area you chose/.test(n.textContent));
+      return { skipped: false, value: match.value, named, left, chipsWhileOn,
+        chips: document.querySelectorAll('.why-item--filter').length };
+    }, first.id);
+    check(`${label} an area the reader chooses is named on every pick that matched it`,
+      area.skipped || (area.named.length > 0 && area.named.every(Boolean)), JSON.stringify(area));
+    // There has to have been something to outlive: a tree that never drew the
+    // reason also never leaves it behind, and that is not the same fact.
+    check(`${label} a reason does not outlive the filter that produced it`,
+      area.skipped || (area.chipsWhileOn > 0 && !area.left && area.chips === 0), JSON.stringify(area));
+    // Focus explains the one place it puts in front of the reader.
+    const focus = await page.evaluate(async () => {
+      document.querySelector('button[data-surface="focus"]')?.click();
+      await new Promise((r) => setTimeout(r, 700));
+      const block = document.querySelector('#focus-surface .why-block');
+      if (!block) return { block: false };
+      block.scrollIntoView({ block: 'center' });
+      await new Promise((r) => setTimeout(r, 200));
+      const b = block.getBoundingClientRect();
+      const bar = document.querySelector('.focus-actions')?.getBoundingClientRect();
+      return { block: true, reasons: block.querySelectorAll('.why-item').length,
+        open: /Still open/.test(block.textContent),
+        covered: bar ? Math.round(Math.max(0, Math.min(b.bottom, bar.bottom) - Math.max(b.top, bar.top))) : 0 };
+    });
+    check(`${label} Focus explains the one place it shows, and the sticky bar does not bury it`,
+      focus.block && focus.reasons >= 1 && focus.open && focus.covered === 0, JSON.stringify(focus));
+    check(`${label} no page errors while the explanation follows the filters`,
+      errors.length === 0, errors.slice(0, 2).join(' '));
+    if (shots) {
+      await mkdir(shots, { recursive: true });
+      await page.evaluate(() => document.querySelector('button[data-surface="split"]')?.click());
+      await page.waitForTimeout(500);
+      await page.locator('.pick-card').first()
+        .screenshot({ path: join(shots, `why-pick-${label.replace('px', '')}.png`) }).catch(() => {});
+    }
+    await context.close();
+  }
+
   // --- 2. the pick behaves like a popover, and its exits work ---------------
   {
     const { context, page } = await open(browser, { width: 390, height: 844, mobile: true, theme: 'dark' });

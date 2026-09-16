@@ -15,6 +15,32 @@ const app = fs
 const seed = JSON.parse(
   fs.readFileSync(new URL("../data/seed.json", import.meta.url), "utf8"),
 );
+const { openQuestions: modelOpenQuestions, defaults: modelDefaults } =
+  await import("../dist/model.js");
+const openQuestionsFor = (home) => modelOpenQuestions(home, {}, modelDefaults, testNow());
+// One clock for the fixture and for the page under test. The app is evaluated
+// INSIDE the jsdom window and reads that window's own Date, so a fixture
+// stamped from the Node process clock while the page reads another measures the
+// gap between two clocks rather than the behaviour it names. An earlier sweep
+// shifted only the process clock and reported eight "clock-dependent" discovery
+// tests; what it had actually done was date every observation into the page's
+// future, which pickAge() refuses by design.
+// SPICYHOME_TEST_CLOCK_SKEW_DAYS moves BOTH together, which is the only way to
+// ask "does this still hold a year from now". Unset -- as in CI -- it is zero
+// and nothing here changes: the clock is never frozen, only carried forward, so
+// a rule that reads the calendar still reads a real one.
+const SKEW_DAYS = Number(process.env.SPICYHOME_TEST_CLOCK_SKEW_DAYS ?? 0);
+const CLOCK_SKEW = Number.isFinite(SKEW_DAYS) ? SKEW_DAYS * 86400000 : 0;
+const testNow = () => new Date(Date.now() + CLOCK_SKEW);
+function shiftWindowClock(w) {
+  if (!CLOCK_SKEW) return;
+  const Real = w.Date;
+  class Shifted extends Real {
+    constructor(...args) { if (!args.length) super(Real.now() + CLOCK_SKEW); else super(...args); }
+    static now() { return Real.now() + CLOCK_SKEW; }
+  }
+  w.Date = Shifted;
+}
 async function boot({
   remote = seed,
   cache = null,
@@ -71,6 +97,7 @@ async function boot({
     return { ok: true, text: async () => JSON.stringify(data) };
   };
   if (leaflet) w.L = leaflet(w);
+  shiftWindowClock(w);
   w.eval(model + "\n" + app);
   for (let i = 0; i < 30 && !w.document.querySelector(".home-card"); i++)
     await new Promise((r) => setTimeout(r, 3));
@@ -840,7 +867,7 @@ test("source details stay compact when healthy and expand for a failed refresh",
   // seed's own generated_at crosses the app's seven-day line eight days after
   // it was written, and from that minute this test was asserting that a feed
   // the app rightly calls stale looks healthy. It supplies a fresh one instead.
-  const fresh={...seed,generated_at:new Date().toISOString()};
+  const fresh={...seed,generated_at:testNow().toISOString()};
   const healthy=await boot({remote:fresh,packaged:fresh});assert.equal(healthy.doc.querySelector('#source-status').open,false);
   assert.doesNotMatch(healthy.doc.querySelector('#source-status-label').textContent,/attention/);healthy.close();
   const failed=await boot({remote:null,packaged:seed});
@@ -1034,10 +1061,25 @@ test("detail dock jumps to notes and tour checks and saves the same notebook for
 });
 
 function picksSnapshot() {
-  const now=new Date().toISOString();
+  const now=testNow().toISOString();
   const homes=seed.homes.map(h=>({...h,observed_at:now}));
   return {...seed,generated_at:now,homes,city_context:{cta:{updated_at:now}},transit_stops:[{id:'cta:test',title:'Test CTA',lat:homes[0].lat,lng:homes[0].lng,routes:[]}]};
 }
+test('the fixture clock and the page\'s own clock are one clock', async () => {
+  const snapshot=picksSnapshot(),d=await boot({remote:snapshot,packaged:snapshot});
+  // The app is evaluated inside the jsdom window and reads THAT window's Date.
+  // If the two ever drift, a fixture stamped "now" lands in the page's future,
+  // pickAge() refuses it by design and every discovery surface empties -- which
+  // is how an earlier shifted-clock sweep mistook its own instrument for eight
+  // broken tests. Assert the invariant and the consequence together, so a
+  // harness that forgets to carry the window forward is caught at any offset.
+  const pageNow=d.w.eval('Date.now()');
+  assert(Math.abs(pageNow-testNow().getTime())<60000,
+    `page clock ${new Date(pageNow).toISOString()} vs fixture clock ${testNow().toISOString()}`);
+  assert.equal(d.doc.querySelectorAll('.pick-card').length,3);
+  assert.equal(d.doc.querySelector('#source-status').open,false);
+  d.close();
+});
 test('SpicyPicks shows priorities, exact plans, caveats and review links and follows bedroom filters', async () => {
   const snapshot=picksSnapshot(),d=await boot({remote:snapshot,packaged:snapshot});
   assert.equal(d.doc.querySelectorAll('#spicy-picks [data-pick-lens]').length,5);
@@ -1055,6 +1097,83 @@ test('SpicyPicks shows priorities, exact plans, caveats and review links and fol
   d.doc.querySelector('[data-bed="1"]').click();
   assert.equal(d.doc.querySelectorAll('.pick-card').length,3);d.close();
 });
+// Scoped to ONE element: '.pick-card .why-item' over the document matches every
+// card at once, which is how a three-reason cap first read as nine.
+const whyTexts = (root) => [...(root?.querySelectorAll('.why-item') ?? [])].map((n) => n.textContent);
+
+test('a pick says why it is here and what is still open, without opening anything', async () => {
+  const snapshot=picksSnapshot(),d=await boot({remote:snapshot,packaged:snapshot});
+  const card=d.doc.querySelector('.pick-card');
+  // Visible on the card itself: the disclosure below it is for the full
+  // evidence, not for the answer to "why am I looking at this".
+  const block=card.querySelector('.why-block');
+  assert(block,'no why block on the pick card');
+  assert.equal(block.closest('details'),null,'the explanation is hidden behind a disclosure');
+  const reasons=whyTexts(card);
+  assert(reasons.length>=1 && reasons.length<=3,`${reasons.length} reasons`);
+  const open=card.querySelector('.why-open');
+  assert(open,'no open question on the pick card');
+  assert.match(open.textContent,/Still open/);
+  // The one unknown is the record's own first open question.
+  const id=card.dataset.pickHome;
+  const home=snapshot.homes.find(h=>h.id===id);
+  assert(open.textContent.includes(
+    openQuestionsFor(home).find(q=>q.kind!=='tour').label),open.textContent);
+  d.close();
+});
+
+test('Focus explains the one place it is showing, with the same vocabulary', async () => {
+  const snapshot=picksSnapshot(),d=await boot({remote:snapshot,packaged:snapshot});
+  d.doc.querySelector('button[data-surface="focus"]').click();
+  const block=d.doc.querySelector('#focus-surface .why-block');
+  assert(block,'Focus shows no explanation');
+  assert(whyTexts(d.doc.querySelector('#focus-surface')).length>=1);
+  assert.match(block.textContent,/Still open/);
+  d.close();
+});
+
+test('an explanation follows the filters and leaves nothing stale behind', async () => {
+  const snapshot=picksSnapshot(),d=await boot({remote:snapshot,packaged:snapshot});
+  const area=/the area you chose/;
+  const allReasons=()=>[...d.doc.querySelectorAll('.pick-card')].flatMap(c=>whyTexts(c));
+  assert.equal(allReasons().some(t=>area.test(t)),false,'claimed an area nobody chose');
+  const pick=snapshot.homes.find(h=>h.id===d.doc.querySelector('.pick-card').dataset.pickHome);
+  const select=d.doc.querySelector('#neighborhood');
+  select.value=pick.neighborhood;select.dispatchEvent(new d.w.Event('change',{bubbles:true}));
+  const cards=[...d.doc.querySelectorAll('.pick-card')];
+  assert(cards.length,'the chosen area has no picks to explain');
+  for(const card of cards)
+    assert(whyTexts(card).some(t=>area.test(t)),`${card.dataset.pickHome} does not name the area filter`);
+  // Put the filter back: the sentence it produced is gone, not merely hidden.
+  select.value='all';select.dispatchEvent(new d.w.Event('change',{bubbles:true}));
+  assert.equal(allReasons().some(t=>area.test(t)),false,'a reason outlived its rule');
+  assert.equal(d.doc.querySelectorAll('.why-item--filter').length,0);
+  // A budget the reader narrows is named on its own terms.
+  // #filters listens on change; only the search box debounces an input event.
+  const max=d.doc.querySelector('#max');max.value='2600';max.dispatchEvent(new d.w.Event('change',{bubbles:true}));
+  assert(d.doc.querySelectorAll('.pick-card').length,'no picks left to explain under the narrowed cap');
+  assert(allReasons().some(t=>/under your \$2,600 base-rent cap/.test(t)),JSON.stringify(allReasons()));
+  d.close();
+});
+
+test('the attention surfaces never print a verdict, a score or a confidence', async () => {
+  const snapshot=picksSnapshot(),d=await boot({remote:snapshot,packaged:snapshot});
+  const banned=/\b(best|winner|perfect|ideal|guaranteed)\b|recommended for you/i;
+  for(const scope of ['#spicy-picks','#focus-surface']){
+    if(scope==='#focus-surface')d.doc.querySelector('button[data-surface="focus"]').click();
+    const blocks=[...d.doc.querySelectorAll(`${scope} .why-block`)];
+    // A surface with nothing to read satisfies "says no verdict" without
+    // saying anything, so the check asks for the explanation first.
+    assert(blocks.length,`${scope} has no explanation to check`);
+    for(const node of blocks){
+      assert.doesNotMatch(node.textContent,banned,node.textContent);
+      // No opaque number stands in for the explanation.
+      assert.doesNotMatch(node.textContent,/\bscore\b|\bconfidence\b|\b\d+\s*\/\s*100\b|\b\d+\s*points?\b/i,node.textContent);
+    }
+  }
+  d.close();
+});
+
 test('SpicyPick saving preserves snapshots and comparison checkboxes stay synchronized with the full list', async () => {
   const snapshot=picksSnapshot(),d=await boot({remote:snapshot,packaged:snapshot});
   const id=d.doc.querySelector('.pick-card').dataset.pickHome;
@@ -1086,7 +1205,7 @@ function studioSnapshot() {
     {...h,id:'studio-room',title:'Roomy Place',kind:'listing',floor_plan:undefined,address:'300 Main St, Chicago, IL 60601',city:'Chicago',layout_status:'provider_reported',rent:2600,sqft:1000,lat:41.90,lng:-87.63},
     {...h,id:'studio-ev',title:'EV Place',kind:'listing',floor_plan:undefined,address:'400 Main St, Elmhurst, IL 60126',city:'Elmhurst',layout_status:'provider_reported',rent:2550,sqft:850,lat:41.9,lng:-87.94},
   ];
-  const before=new Date(Date.now()-86400000).toISOString();snapshot.homes.forEach(home=>home.history=[{date:before,rent:home.rent+100},{date:snapshot.generated_at,rent:home.rent}]);
+  const before=new Date(testNow().getTime()-86400000).toISOString();snapshot.homes.forEach(home=>home.history=[{date:before,rent:home.rent+100},{date:snapshot.generated_at,rent:home.rent}]);
   return snapshot;
 }
 async function bootStudio(notebook=null) {

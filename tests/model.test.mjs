@@ -28,7 +28,7 @@ import {
   spicyPicks,
   recipeDefaults, recipeWeights, remixPicks, apartmentTradeoffs, areaMatch, pricePulse, nextMoves, nextMove, costField,
   sourceAccess, sourceReferences, searchIdentity, scanContext, chargingEvidence, isDocumentationUrl, publicChargingMiles,
-  openQuestions, figureSpread, tourChecks,
+  openQuestions, figureSpread, tourChecks, surfacedBecause, headlineUnknown,
 } from "../dist/model.js";
 const seed = JSON.parse(
   fs.readFileSync(new URL("../data/seed.json", import.meta.url)),
@@ -958,4 +958,130 @@ test("one spread engine answers for the finalists and the full comparison alike"
   assert.equal(figureSpread([]).reason, "one");
   // NaN and Infinity are not figures either.
   assert.equal(figureSpread([{ name: "A", value: NaN }, { name: "B", value: 1 }]).comparable, false);
+});
+
+// --- why a candidate is on an attention surface --------------------------
+// Pinned to deskNow, like every other dated assertion here, so the answers
+// cannot drift with the hour the suite runs in.
+const why = (home, prefs = defaults, context = {}, ws = emptyWorkspace(), now = deskNow) =>
+  surfacedBecause(home, ws, prefs, context, now);
+const texts = (...args) => why(...args).map((r) => r.text);
+
+test("a reason is only offered for a filter the reader actually moved", () => {
+  // Every gate at its default narrowed nothing, so none of them is a reason.
+  const plain = why(deskHome);
+  assert.equal(plain.some((r) => r.kind === "filter"), false, JSON.stringify(plain));
+  // Move one, and exactly that one appears.
+  const chosen = why(deskHome, { ...defaults, neighborhood: deskHome.neighborhood });
+  const named = chosen.filter((r) => r.kind === "filter");
+  assert.equal(named.length, 1);
+  assert.match(named[0].text, /the area you chose/);
+  assert.equal(named[0].key, "neighborhood");
+  // Put it back and the sentence is gone, not merely hidden.
+  assert.equal(why(deskHome).some((r) => r.key === "neighborhood"), false);
+});
+
+test("a reason never claims a match the record does not hold", () => {
+  // Asked about a record that would NOT pass the gate, the gate stays silent
+  // rather than asserting it matched.
+  const elsewhere = { ...deskHome, neighborhood: "Somewhere else" };
+  assert.equal(why(elsewhere, { ...defaults, neighborhood: "Chicago · neighborhood unverified" })
+    .some((r) => r.key === "neighborhood"), false);
+  assert.equal(why(deskHome, { ...defaults, bedrooms: "2" }).some((r) => r.key === "bedrooms"), false);
+  assert.equal(why(deskHome, { ...defaults, bedrooms: "1" }).some((r) => r.key === "bedrooms"), true);
+  // deskHome's layout is provider-reported, so a source-evidence filter cannot
+  // be the reason it is here.
+  assert.equal(why(deskHome, { ...defaults, layoutScope: "source" }).some((r) => r.key === "layoutScope"), false);
+  const listed = { ...deskHome, kind: "building", floor_plan: "A2", layout_status: "source_listed" };
+  assert.equal(why(listed, { ...defaults, layoutScope: "source" }).some((r) => r.key === "layoutScope"), true);
+  assert.equal(why(deskHome, { ...defaults, search: "constance" }).some((r) => r.key === "search"), true);
+  assert.equal(why(deskHome, { ...defaults, search: "evanston" }).some((r) => r.key === "search"), false);
+});
+
+test("the ranking signal offered is the one the chosen weights actually rewarded", () => {
+  const pick = { signals: { budget: 1, value: 0, space: .2, amenities: 0, evidence: .5, rail: 0 }, saving: null, nearby: null };
+  const budgetLed = why(deskHome, defaults, { pick, weights: { budget: 65, space: 5, evidence: 10 }, priority: "budget" });
+  assert.equal(budgetLed[0].kind, "priority");
+  assert.match(budgetLed[0].text, /under your .* cap/);
+  // Re-weight the same candidate and a different rule explains it.
+  const roomy = { ...deskHome, sqft: 900 };
+  const spaceLed = why(roomy, defaults, { pick: { ...pick, signals: { ...pick.signals, space: 1 } },
+    weights: { budget: 5, space: 80, evidence: 10 }, priority: "space" });
+  assert.equal(spaceLed[0].kind, "priority");
+  assert.match(spaceLed[0].text, /900 reported sq ft/);
+  // A recipe says so in its own kind, so the surface can mark it as the
+  // reader's explicit mix rather than a preset priority.
+  const mixed = why(roomy, defaults, { pick: { ...pick, signals: { ...pick.signals, space: 1 } },
+    weights: { space: 80 }, priority: "recipe" });
+  assert.equal(mixed[0].kind, "recipe");
+  // A priority that contributes NOTHING cannot be the explanation. The weight
+  // has to be present and zero for this to bite: leaving the key out entirely
+  // would let a missing entry do the rejecting instead of the rule under test.
+  const weightless = why(roomy, defaults, { pick: { ...pick, signals: { ...pick.signals, space: 1 } },
+    weights: { space: 0 }, priority: "space" });
+  assert.equal(weightless.some((r) => r.kind === "priority"), false, JSON.stringify(weightless));
+  // and the same candidate under a weight that does count is explained by it,
+  // so the check above fails for the weight rather than for the sentence.
+  const weighted = why(roomy, defaults, { pick: { ...pick, signals: { ...pick.signals, space: 1 } },
+    weights: { space: 1 }, priority: "space" });
+  assert.equal(weighted.filter((r) => r.kind === "priority").length, 1);
+});
+
+test("an unquoted base rent is never a reason to be under a cap", () => {
+  // Its known subtotal is zero, so the arithmetic would offer the whole cap as
+  // headroom and read as the cheapest thing on the page. This repository's rule
+  // is that unknown base rents never become cheap picks; the same holds for the
+  // sentence that explains one.
+  const unquoted = { ...deskHome, rent: null, advertised_price: 1900, advertised_price_type: "total_monthly" };
+  const reasons = why(unquoted, { ...defaults, unknown: true });
+  assert.equal(reasons.some((r) => r.key === "budget"), false, JSON.stringify(reasons));
+  assert.equal(texts(unquoted, { ...defaults, unknown: true }).some((t) => /\$3,000 under your \$3,000/.test(t)), false);
+  // and a record that IS quoted still gets it, so the guard is about the quote.
+  assert.equal(why(deskHome).some((r) => r.key === "budget"), true);
+});
+
+test("an explanation never uses the language of a verdict", () => {
+  const banned = /\b(best|winner|perfect|ideal|guaranteed)\b|recommended for you/i;
+  const homes = [deskHome, { ...deskHome, sqft: 900, parking: { status: "yes", monthly: null }, charging: { status: "yes" } },
+    { ...deskHome, kind: "building", floor_plan: "A2", layout_status: "source_listed" }];
+  const prefsList = [defaults, { ...defaults, bedrooms: "1", parking: true, charging: true, search: "constance",
+    neighborhood: deskHome.neighborhood, min: 1000, max: 2000, basis: "total", layoutScope: "source", radiusMiles: 35 }];
+  for (const home of homes) for (const prefs of prefsList) {
+    for (const reason of why(home, prefs, { pick: { signals: { budget: 1, space: 1, amenities: 1, evidence: 1, value: 0, rail: 0 },
+      saving: null, nearby: null }, weights: { budget: 20, space: 20, amenities: 20, evidence: 20 }, priority: "balanced" }))
+      assert.doesNotMatch(reason.text, banned, reason.text);
+    const open = headlineUnknown(home, {}, prefs, deskNow);
+    if (open) assert.doesNotMatch(open.label + " " + open.detail, banned, open.label);
+  }
+});
+
+test("the headline unknown is the record's own first open question, never a tour it has not had", () => {
+  // openQuestions already ranks by decision weight; this takes that order and
+  // only declines the tour checklist, which is about a visit, not the record.
+  const all = openQuestions(deskHome, {}, defaults, deskNow).map((q) => q.kind);
+  assert(all.includes("tour"));
+  assert.equal(headlineUnknown(deskHome, {}, defaults, deskNow).key, "layout");
+  // Settle the questions ahead of it and the next one steps up, in that order.
+  const checked = { layoutReview: "one_bed", parkingCost: 0, monthlyFees: 0, utilities: 0,
+    rentOverride: 1750, quoteDate: "2026-09-16" };
+  const next = headlineUnknown(deskHome, checked, defaults, deskNow);
+  assert.equal(next.key, "parking");
+  assert.match(next.detail, /Unknown is not none/);
+  // A recorded $0 is an answer and a source's "no" is an answer, so neither is
+  // what is still open; the record's missing exact URL is, and it steps up.
+  const answered = headlineUnknown({ ...deskHome, parking: { status: "yes", monthly: 0 }, charging: { status: "no" } },
+    checked, defaults, deskNow);
+  assert.equal(answered.key, "source");
+  assert.match(answered.label, /No exact listing URL/);
+});
+
+test("nothing outstanding means nothing is said, rather than an unknown invented to fill the slot", () => {
+  const settled = { ...deskHome, parking: { status: "yes", monthly: 0 }, charging: { status: "no" },
+    source_url: "https://example.com/unit-1" };
+  const rec = { layoutReview: "one_bed", parkingCost: 0, monthlyFees: 0, utilities: 0,
+    rentOverride: 1750, quoteDate: "2026-09-16" };
+  assert.equal(headlineUnknown(settled, rec, defaults, deskNow), null);
+  // and the tour checklist, which is genuinely outstanding, is still recorded
+  // by the engine this reads from -- it is declined here, not deleted there.
+  assert(openQuestions(settled, rec, defaults, deskNow).some((q) => q.kind === "tour"));
 });

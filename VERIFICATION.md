@@ -1026,6 +1026,195 @@ publish workflow succeeding proves the deployment ran, not that the origin
 renders. No fixture proves a lease, availability, amenity, price or source
 validity.
 
+### Milestone, 16 September 2026 — a map you can read prices off
+
+**Revision.** Branch restarted from `main` at **`55a853a`** (the merge of #23,
+whose post-merge runs are both green on that commit: *Checks* 35050232849 and
+*Publish website* 35050232850, whose steps ran in order — `check_site.py` before
+the upload, then `deploy-pages`). The committed feed is untouched: `generated_at`
+**2026-09-15T13:28:27Z**, **1,000 records** (978 provider listings, 22 curated
+building plans), **999 with recorded coordinates on 534 distinct ones**, one
+without. The vendored design system is **v2.13.0 / `14a752d`, 22 files, drift 0
+both ways**, and was not touched. No provider request was made, no schedule was
+changed, and no sibling repository was written.
+
+**What was there, read before anything was changed.** `.map-dot` was a 12x12px
+rounded *square* — `border-radius: 4px` — in a hard-coded wine that ignores the
+theme, with a separate rounded-rectangle badge (`.map-dot-count`) hung off its
+top-right corner for a crowd. The price existed in the markup and was
+**invisible**: `.map-marker-label` is `clip-path: inset(50%)`, for screen readers
+only. So the map answered *where* and *how many* and never *how much*, and the
+reader had to open every apartment to find out. `mapSelection` was tracked in
+four places and **rendered nowhere** — nothing on the map showed what the reader
+had chosen, saved or pinned.
+
+**The history, recovered.** The first build (`d3beb83`) did print prices: a
+`.map-price` pill on **every** placed home, with no clustering at all — 999 pills
+over 534 coordinates, which is the "hundreds of overlapping price pills" case.
+`b028946` replaced it with the silent dot, and `a8c79ba` added the cluster and
+the press-by-distance panel that this milestone keeps. SpicyCar's
+`.car-map-dot` was read and not copied: taken from it are the circle, the count
+*inside* it, a size that grows with `log2` of the crowd and a cap, and state as
+an outline rather than a new hue. Left behind are its 12px hit radius, its
+two-tone local/shipping fill and its `is-pick` accent — Home resolves a press by
+distance over a 22px reach, and its own colours mean something else.
+
+**What was measured first, and what it decided.** In Chromium over the committed
+feed, at 1280/390/320 px, split and map surfaces, every zoom the reader can
+reach. A `$1.7k` pill measures **49x19px**; marks are never closer than
+`MAP_CLUSTER_RADIUS` = 30px, and their nearest-neighbour distance runs 30–64px
+(median 32–45). So a label is about four times the width of the dot it replaces,
+and two marks far enough apart to be *told apart* are not necessarily far enough
+apart to be *read* — which is the whole of the density question, and none of it
+is a record count.
+
+The measurement then said something I had not expected, and it changed the
+design: **space is almost never what withholds a price.** Counting, at each
+zoom, marks with no agreed figure against marks that had one and no room:
+
+| 1280px | visible marks | no agreed figure | had a figure, no room | printed |
+|---|---|---|---|---|
+| fitted metro (z9) | 14 | 13 | 0 | 1 |
+| +2 (z11) | 61 | 49 | 3 | 9 |
+| +3 (z12) | 34 | 14 | 8 | 12 |
+
+Placed labels cover **0.1–6.6%** of the pane and **no two ever collide**, so the
+brief's "prefer them if they stay legible at more density than expected" is
+answered: legibility is not the limit. The limit is honesty — a mark standing
+for several apartments at different rents has no one figure to print. I also
+measured whether the cluster radius was the real lever and it is not: dropping
+it 30 → 22 moves the fitted metro view from 1 printed of 14 marks to 2 of 26 and
+leaves the zoomed-in count at 9 either way, while eating the 8px of margin the
+gate's "no mark hides another mark's centre" rule lives on. **It stays 30.**
+
+**What it draws now.** One shape, three forms of it. A place is a circle
+(`border-radius: 50%`, 16px, theme tokens rather than the hard-coded wine).
+A crowd is the same circle grown by `clusterSize()` — `18 + log2(n)*3`, capped
+at `MAP_CLUSTER_RADIUS - 2` so two of them can never touch — with the number
+**inside** it; the badge that hung off the corner is gone. And where a mark can
+honestly print a price and has room for it, the circle is replaced by that price.
+
+`markPrice()` is the honesty rule, and it is the card's own contract: a mark
+prints a figure only when **every** place under it prints **that same figure on
+the same basis** (`displayPrice` and `priceKind`, the two the card already
+prints). A crowd whose rents differ has no number. A place nobody quoted has no
+number — never `$0`. Two records that happen to share a number on two different
+bases have no number, because one pill would say they are the same kind of money.
+`compactMoney()` rounds to the nearest hundred (`$2,663` → `$2.7k`) and leaves
+anything under a thousand exact; the **exact** figure and its basis word stay on
+the mark's own screen-reader label, in its `title`, in the panel a press opens
+and on the card, and the map's caption says underneath that a mark is rounded and
+is never an all-in cost, a verified current rent or proof that the exact unit is
+free.
+
+`placePrices()` is the space rule, and it runs on the marks **as drawn** — after
+every redraw, after a zoom, after a pan, after a resize. It reads each mark's own
+painted box, offers a label to the reader's own marks first (Final Three, then
+shortlist, then the order the clusters were built in, so the same map answers
+the same way twice) and takes one only where it clears every mark already on the
+map by 2px and sits wholly inside the pane. Nothing else changes: the clusters,
+their anchors on real recorded coordinates, the press-by-distance panel and the
+directory are the ones `a8c79ba` proved.
+
+**State, in the marks this app already uses for it.** The shortlist fills its
+mark wine, as the heart fills; the Final Three add the warm ring the desk gives
+their rank; and the mark the reader is on takes the focus blue and is raised over
+its neighbours. `paintSelection()` only toggles a class, so choosing a mark never
+re-shuffles the labels on the rest of the map. Three states, two accents already
+in the palette, no new vocabulary — and the selection is the one thing here that
+had no representation at all before.
+
+**One press rule extended, for the one thing that changed under it.** A price
+reaches further than the dot it replaced: its far edge is 24px from the
+coordinate where a dot's was 8. `mapPressCandidates()` now counts a press
+**inside a painted label** as that mark's, at distance 0, so it sorts first;
+every other mark within the same 22px finger still joins the list, so a crowd
+behind a label stays exactly as reachable as before. A label is only ever placed
+where it covers no other mark, so nothing can hide under one.
+
+**The journey, walked over the committed feed** (`scratchpad/release` harness,
+1280 and 390 px, **15/15**): pressing `$2.7k` selects that mark and opens the
+record it stands for, `amli-evanston`; the popup repeats the exact figure and
+its basis (`Base rent from · A420: $2,739`) rather than the rounding; *Open
+details & notes* opens `amli-evanston` and nothing else; closing it leaves the
+mark still chosen and the focus on that home's own list control; choosing a
+place in *Places on this map* selects its mark and opens its popup, the same
+identity both ways. At the fitted metro zoom the largest mark stands for **243
+places**, prints no price, and a press opens the panel that asks which one you
+meant — choosing one opens `rentcast:720-Benedetti-Dr,-Naperville,-IL-60563`,
+the record's own id, unit and plan intact. The one home the feed cannot place
+reads *(998 of 999 · 1 without a recorded location)* in the directory and is
+never given a position.
+
+**Gates, all run here.** `npm test` **194/194** (7 new); `npm run check` — JS
+syntax plus **43** Python; `python tools/check_site.py` — 22 immutable design
+assets and 1,000 records; **`npm run browser-check --shots` 337/337** (22 new,
+eleven per viewport); `git diff --check` clean. **Every one of the seven new
+unit tests fails at `55a853a`**, run there against the pre-change `dist/` with
+this branch's test file. Seven mutants over the new rules, each against a COPY
+of the tree rather than the live one: six die, each only in the tests that name
+its rule, and a control mutant that only edits a comment stays green. One
+survivor was mine and it was the shape this file keeps finding — zeroing the
+FIRST home's figure left the unanimity comparison to reject it, so the test
+passed *because a different rule said no*. Zeroing every home's figure is what a
+`$0` leak actually looks like, and that one dies in `a place with no quoted
+figure gets a mark and no number`, alone.
+
+**The screenshots, compared state for state against the boxed marks rather than
+admired on their own.** Twenty-eight map states captured the same way before and
+after — sparse, moderate, dense Chicago, the whole metro, overlapping
+coordinates, a selection, a shortlist with a Final Three — at 1280, 390 and
+320 px in both themes, over a stand-in street tile at the lightness
+OpenStreetMap serves (the gate blanks its tiles, which is right for a geometry
+check and useless for a legibility one).
+
+| state | marks | prices before | prices after | label ink | sideways scroll |
+|---|---|---|---|---|---|
+| metro 1280 | 43 | 0 | 3 | 0.4% | none |
+| metro 390 | 14 | 0 | 1 | 0.7% | none |
+| metro 320 | 9 | 0 | 1 | 0.9% | none |
+| Chicago only 1280 | 20 | 0 | 4 | 0.5% | none |
+| Evanston 1280 | 28 | 0 | 7 | 0.9% | none |
+| Evanston 390 | 14 | 0 | 3 | 1.8% | none |
+| Evanston 320 | 14 | 0 | 3 | 2.6% | none |
+| one neighbourhood 1280 | 4 | 0 | 3 | 0.4% | none |
+| 21 homes on one coordinate | 2 | 0 | 1 | 0.1% | none |
+
+Looked at, not just counted. **Before**: 12px rounded squares in a hard wine,
+each with a blue count box hanging off its corner — at 390px the badge of one
+mark sits *over* the square of its neighbour — and not one number on the map.
+**After**: `$2.5k · $2.3k · $2k · $1.9k · $1.8k · $1.6k` sit on the map beside
+circles reading `44 · 23 · 19 · 15 · 12 · 5 · 3 · 2`, the count inside the
+circle. The 21 apartments on one Naperville coordinate are one circle marked
+**21** with no price, because their rents differ, and the single beside them
+reads `$1.8k`. The chosen mark carries a 3px blue ring at every width. A saved
+home's mark is filled; the Final Three add the warm ring.
+At 320px in the overlapping state **no price is printed at all**, and that is
+the rule working rather than failing: the single's label would span 240–290px of
+a 290px pane, flush with the edge, so the circle stands instead.
+
+**What was deliberately not done.** No map mode and no settings toggle: the
+brief asks for one only on evidence that it is needed, and the measurement says
+the answer is decidable from the boxes without asking the reader. No change to
+`MAP_CLUSTER_RADIUS`, to `mapClusters()`, to the press panel, to the directory or
+to any model function — the diff is the marker's markup, its stylesheet, the two
+placement passes and one extra clause in `mapPressCandidates`. And **no derived
+figure**: a cluster's cheapest, its median or a "from $X" would all put a number
+on the map that no card behind it prints, which is the one thing the brief's
+semantics rule forbids. Where that is the only number available, the mark says
+how many places it holds and the price stays one press away.
+
+**Limitations, unchanged and stated rather than worked around.** Public-origin
+verification is still **BLOCKED** from this sandbox — the proxy refuses
+`github.io:443` with a 403 CONNECT — so a green *Publish website* run proves the
+deployment workflow succeeded and **not** that the served page renders; reading
+it back needs a browser outside this environment. Google Fonts is blocked here
+too (`ERR_CERT_AUTHORITY_INVALID`), so every screenshot above shows fallback
+faces, and the map tiles are stand-ins, not OpenStreetMap's own. Nothing here
+claims current lease availability, live pricing, parking, charging or source
+validity: every figure on a mark is a recorded figure from the committed feed,
+rounded, with its basis beside it.
+
 ### NEXT BUILDER PROMPT — live, and level except SpicyStock
 
 Verify the tips before trusting any of them; the SpicyHome and design-system
@@ -1036,10 +1225,11 @@ repositories commit to `main` on a schedule.
   still the newest tag `origin` carries.
 - **SpicyCar** `main` was `62db117` on 14 Sep, a `snapshot 2026-09-14` tracker
   commit over `aea4fa3` (#79). It vendors **v2.13.0**. Not re-read since.
-- **SpicyHome** `main` is `46d17b8` (the merge of #21), vendoring **v2.13.0**
+- **SpicyHome** `main` is `55a853a` (the merge of #23), vendoring **v2.13.0**
   with zero hash drift, **and served** at
   https://spicychicken59.github.io/SpicyHome/ — the publish job validated and
-  deployed that commit (run 35037554413).
+  deployed that commit (Checks 35050232849, Publish website 35050232850, whose
+  `check_site.py` step ran before the upload and `deploy-pages` after it).
 - **SpicyStock** `main` was `ce2c6c1` (#61) on 14 Sep and still vendored
   **v2.11.0** (`6f10309`). Not re-read since.
 
@@ -1080,10 +1270,10 @@ cost-basis marks, the shortlist's next step, the Atlas, or this adoption.
      against a blank tile, which is precisely the gap.
 
 Offline gates, all of which must pass before a pull request: `npm ci
---ignore-scripts`, `npm test` (**187**), `npm run check` (**43** Python),
+--ignore-scripts`, `npm test` (**194**), `npm run check` (**43** Python),
 `python tools/check_site.py` (22 assets; it prints whatever the committed feed
-holds — **1,000 records** on `46d17b8`), `npm run browser-check --shots <dir>`
-(**310** Chromium scenarios; it needs a Playwright whose bundled Chromium
+holds — **1,000 records** on `55a853a`), `npm run browser-check --shots <dir>`
+(**337** Chromium scenarios; it needs a Playwright whose bundled Chromium
 revision matches the one installed — 1194 here, which is playwright 1.56.x, and
 `npm install --no-save --ignore-scripts playwright@1.56.1` gets it without
 touching `package.json` — and it reports SKIP and exits 1 without it). Also
@@ -1096,6 +1286,12 @@ Standing hazards, still true:
 - A stylesheet rule naming a Leaflet or design-system class at equal specificity
   wins by load order and can silently undo the library's own layout. The map
   case is covered; the general one is not.
+- Every map marker's icon box is **28x28 and must stay so**, whatever it draws.
+  Leaflet places each one by a transform off a single pane origin, and `every
+  mark sits where its coordinates put it` reads that origin back by subtracting
+  the transform from the box's centre — a box that changed width per mark would
+  move the centre with it and the check would stop meaning anything. The circle
+  and the price are centred inside the box and overflow it without resizing it.
 - A shared component's flex row is `min-width: auto` by default. Give a
   consumer's instance `min-width: 0` rather than editing the component.
 - Chromium 141 still lays out a closed `<details>`'s content. If the closed

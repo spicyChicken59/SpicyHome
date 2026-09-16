@@ -140,7 +140,189 @@ try {
     });
     check(`${label} every press at a mark's own centre is resolved by distance`,
       sweep.tested > 0 && sweep.wrong === 0 && sweep.asked + sweep.taken === sweep.tested, JSON.stringify(sweep));
+    // A number on a map is read as a fact about the place under it. A mark
+    // prints one only where every place it stands for prints that same figure
+    // on the same basis, and only where the label clears every other mark, so a
+    // crowd degrades to circles instead of stacking boxes over the city. What
+    // decides that is not a record count: it is these boxes, at this zoom.
+    const priced = await page.evaluate(() => {
+      const pane = document.querySelector('#map').getBoundingClientRect();
+      const marks = [...document.querySelectorAll('.home-map-marker')];
+      const painted = marks.map((m) => {
+        const on = m.classList.contains('is-priced');
+        const el = on ? m.querySelector('.map-price') : m.querySelector('.map-dot');
+        return { on, box: el.getBoundingClientRect(), text: el.textContent.trim(),
+          label: m.querySelector('.map-marker-label').textContent };
+      });
+      const over = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+      const dot = getComputedStyle(marks[0].querySelector('.map-dot'));
+      const radius = parseFloat(dot.borderTopLeftRadius);
+      return { marks: marks.length, shown: painted.filter((p) => p.on).length,
+        round: dot.borderTopLeftRadius,
+        circle: /%$/.test(dot.borderTopLeftRadius) ? radius >= 50
+          : radius * 2 >= parseFloat(dot.width) - 0.5,
+        square: Math.round(parseFloat(dot.width)) === Math.round(parseFloat(dot.height)),
+        covering: painted.filter((p, i) => p.on && painted.some((q, j) => i !== j && over(p.box, q.box))).length,
+        cut: painted.filter((p) => p.on && (p.box.left < pane.left || p.box.right > pane.right
+          || p.box.top < pane.top || p.box.bottom > pane.bottom)).length,
+        malformed: painted.filter((p) => p.on && !/^\$[\d,]+(\.\d)?k?$/.test(p.text)).length,
+        // a printed price is the rounding of the exact figure the mark's own
+        // label carries -- a crowd's label counts places and carries none
+        wrong: painted.filter((p) => {
+          if (!p.on) return false;
+          const exact = /\$([\d,]+)/.exec(p.label);
+          if (!exact) return false;
+          const n = Number(exact[1].replace(/,/g, ''));
+          const k = Math.round(n / 100) / 10;
+          return p.text !== (n < 1000 ? exact[0] : `$${Number.isInteger(k) ? k : k.toFixed(1)}k`);
+        }).length };
+    });
+    check(`${label} a mark is a circle, not a box`, priced.circle && priced.square,
+      `radius ${priced.round}, square ${priced.square}`);
+    check(`${label} a metro-wide map degrades to circles rather than stacking boxes`,
+      priced.marks > 5 && priced.shown < priced.marks / 2, `${priced.shown} priced of ${priced.marks} marks`);
+    check(`${label} no price label covers another mark`, priced.covering === 0, `${priced.covering} covering`);
+    check(`${label} no price label is cut off by the map's edge`, priced.cut === 0, `${priced.cut} cut off`);
+    check(`${label} a printed price is its own record's figure, rounded`,
+      priced.malformed === 0 && priced.wrong === 0,
+      `${priced.malformed} malformed, ${priced.wrong} not its own figure`);
     check(`${label} no page errors while pressing the map`, errors.length === 0, errors.slice(0, 2).join(' '));
+    await context.close();
+  }
+
+  // --- 1b. a map with room: prices, the reader's own marks, and the one --
+  //         they are on. Searching one building name leaves four curated
+  //         places at four coordinates across the metro, which is the sparse
+  //         end of the gradient the dense metro view above stands at.
+  for (const [label, size] of [['390px', { width: 390, height: 844, mobile: true }], ['1280px', {}]]) {
+    const notebook = JSON.stringify({ version: 1, records: {
+      'amli-lofts': { saved: true }, 'amli-evanston': { saved: true, finalist: true },
+    }, manual: [], events: [] });
+    const { context, page, errors } = await open(browser, { ...size, theme: 'dark',
+      storage: { 'spicyhome.workspace.v1': notebook } });
+    await page.waitForTimeout(700);
+    await page.evaluate(() => {
+      document.querySelector('#search-controls')?.setAttribute('open', '');
+      const box = document.querySelector('#search');
+      box.value = 'AMLI';
+      box.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await page.waitForTimeout(1400);
+    await page.evaluate(() => document.querySelector('#map-fit')?.click());
+    await page.waitForTimeout(900);
+    // The policy, re-derived from the rendered boxes rather than trusted: a mark
+    // carrying an agreed figure prints it unless its label would touch another
+    // mark or the pane's edge, and a printed one never does either.
+    const room = await page.evaluate(() => {
+      const pane = document.querySelector('#map').getBoundingClientRect();
+      const marks = [...document.querySelectorAll('.home-map-marker')];
+      const painted = marks.map((m) => {
+        const on = m.classList.contains('is-priced');
+        const el = on ? m.querySelector('.map-price') : m.querySelector('.map-dot');
+        return { on, box: el.getBoundingClientRect(), text: el.textContent.trim(),
+          label: m.querySelector('.map-price')?.getBoundingClientRect() ?? null,
+          spoken: m.querySelector('.map-marker-label').textContent };
+      });
+      const over = (a, b, g) => a.left - g < b.right && b.left < a.right + g
+        && a.top - g < b.bottom && b.top < a.bottom + g;
+      const blocked = (b, i) => b.left < pane.left + 3 || b.right > pane.right - 3
+        || b.top < pane.top + 3 || b.bottom > pane.bottom - 3
+        || painted.some((q, j) => j !== i && over(b, q.box, 2));
+      return { marks: marks.length, candidates: painted.filter((p) => p.label).length,
+        shown: painted.filter((p) => p.on).length,
+        // a figure that had the room and was not printed, and one printed without it
+        missed: painted.filter((p, i) => p.label && !p.on && !blocked(p.label, i)).length,
+        misplaced: painted.filter((p, i) => p.on && blocked(p.label, i)).length,
+        wrong: painted.filter((p) => {
+          if (!p.on) return false;
+          const exact = /\$([\d,]+)/.exec(p.spoken);
+          if (!exact) return true;
+          const n = Number(exact[1].replace(/,/g, ''));
+          const k = Math.round(n / 100) / 10;
+          return p.text !== (n < 1000 ? exact[0] : `$${Number.isInteger(k) ? k : k.toFixed(1)}k`);
+        }).length,
+        inkPct: Math.round(painted.filter((p) => p.on)
+          .reduce((n, p) => n + p.box.width * p.box.height, 0) / (pane.width * pane.height) * 1000) / 10 };
+    });
+    check(`${label} a map with room prints every price it honestly can`,
+      room.candidates >= 2 && room.shown >= 1 && room.missed === 0 && room.wrong === 0,
+      `${room.shown} printed of ${room.candidates} that had a figure, ${room.missed} had the room and went without, ${room.wrong} not its own figure`);
+    check(`${label} a printed price touches no other mark, no edge, and little of the map`,
+      room.misplaced === 0 && room.inkPct < 15,
+      `${room.misplaced} misplaced, ${room.inkPct}% of the pane`);
+    const state = await page.evaluate(() => {
+      const marks = [...document.querySelectorAll('.home-map-marker')];
+      const paint = (m) => {
+        const el = m.classList.contains('is-priced') ? m.querySelector('.map-price') : m.querySelector('.map-dot');
+        const s = getComputedStyle(el);
+        return `${s.backgroundColor}|${s.borderColor}|${s.outlineColor}|${s.outlineWidth}`;
+      };
+      const saved = marks.filter((m) => m.classList.contains('is-saved'));
+      const finalist = marks.filter((m) => m.classList.contains('is-finalist'));
+      const plain = marks.find((m) => !m.classList.contains('is-saved'));
+      const onlySaved = saved.find((m) => !m.classList.contains('is-finalist'));
+      return { marks: marks.length, saved: saved.length, finalist: finalist.length,
+        savedDiffers: !!onlySaved && !!plain && paint(onlySaved) !== paint(plain),
+        finalistDiffers: !!finalist[0] && !!onlySaved && paint(finalist[0]) !== paint(onlySaved),
+        says: marks.filter((m) => /saved|final three/.test(m.querySelector('.map-marker-label').textContent)).length };
+    });
+    check(`${label} a saved mark and a Final Three mark are told apart from a plain one`,
+      state.saved === 2 && state.finalist === 1 && state.savedDiffers && state.finalistDiffers
+      && state.says === 2, JSON.stringify(state));
+    // The map as the reader meets it, before any press opens anything over it.
+    if (shots) {
+      await mkdir(shots, { recursive: true });
+      await page.locator('#map')
+        .screenshot({ path: join(shots, `map-prices-${label.replace('px', '')}.png`) }).catch(() => {});
+    }
+    // Selection: press a mark, and only that one wears the ring.
+    const chosen = await page.evaluate(async () => {
+      const pane = document.querySelector('#map').getBoundingClientRect();
+      const m = [...document.querySelectorAll('.home-map-marker')].find((x) => {
+        const r = x.getBoundingClientRect();
+        return r.left > pane.left + 30 && r.right < pane.right - 30
+          && r.top > pane.top + 30 && r.bottom < pane.bottom - 30;
+      });
+      const r = m.getBoundingClientRect();
+      m.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true,
+        clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }));
+      await new Promise((res) => setTimeout(res, 40));
+      const panel = document.querySelector('#map-pick');
+      if (panel && !panel.hidden) panel.querySelector('.sc-pick__item')?.click();
+      await new Promise((res) => setTimeout(res, 40));
+      const on = [...document.querySelectorAll('.home-map-marker.is-selected')];
+      const ring = on[0] ? getComputedStyle(on[0].classList.contains('is-priced')
+        ? on[0].querySelector('.map-price') : on[0].querySelector('.map-dot')) : null;
+      return { selected: on.length, mine: on[0] === m, outline: ring ? parseFloat(ring.outlineWidth) : 0 };
+    });
+    check(`${label} the mark the reader chose is the one that wears the ring`,
+      chosen.selected === 1 && chosen.mine && chosen.outline >= 3, JSON.stringify(chosen));
+    // A price reaches further than the dot it replaced: both ends of the label
+    // sit outside the 22px a dot answers for, and both still answer for it.
+    const edge = await page.evaluate(async () => {
+      const m = [...document.querySelectorAll('.home-map-marker.is-priced')][0];
+      if (!m) return { found: false };
+      const box = m.querySelector('.map-price').getBoundingClientRect();
+      const r = m.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const name = m.querySelector('.map-marker-label').textContent.split(' \u00b7 ')[0];
+      const out = { found: true, reach: 0, answered: 0, tried: 0 };
+      for (const x of [box.left + 1, box.right - 1]) {
+        document.querySelectorAll('.home-map-marker').forEach((o) => o.classList.remove('is-selected'));
+        const panel = document.querySelector('#map-pick');
+        if (panel) { panel.hidden = true; panel.innerHTML = ''; }
+        out.tried++;
+        out.reach = Math.max(out.reach, Math.round(Math.abs(x - cx)));
+        m.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, clientX: x, clientY: cy }));
+        await new Promise((res) => setTimeout(res, 40));
+        const open = document.querySelector('#map-pick');
+        const first = open && !open.hidden ? open.querySelector('.sc-pick__name')?.textContent ?? '' : '';
+        if (m.classList.contains('is-selected') || first === name) out.answered++;
+      }
+      return out;
+    });
+    check(`${label} a press anywhere on a price answers for that mark, past a dot's reach`,
+      edge.found && edge.reach > 22 && edge.answered === edge.tried && edge.tried === 2, JSON.stringify(edge));
+    check(`${label} no page errors on a map that prints prices`, errors.length === 0, errors.slice(0, 2).join(' '));
     await context.close();
   }
 

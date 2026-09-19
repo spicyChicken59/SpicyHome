@@ -66,6 +66,9 @@ async function open(browser, { width = 1280, height = 900, theme = 'dark', mobil
     return route.fulfill({ status: 200, contentType: 'application/json', body: feed === 'empty' ? EMPTY : FEED });
   });
   await context.route('**/api.github.com/**', (route) => route.abort());
+  // App fonts are bundled; external shared-font fallbacks are not test inputs.
+  await context.route('**/fonts.googleapis.com/**', (route) => route.abort());
+  await context.route('**/fonts.gstatic.com/**', (route) => route.abort());
   await context.route('**/tile.openstreetmap.org/**', (route) =>
     tiles === 'fail' ? route.abort() : route.fulfill({ status: 200, contentType: 'image/png', body: PIXEL }));
   const page = await context.newPage();
@@ -344,6 +347,9 @@ try {
   for (const [label, size] of [['390px', { width: 390, height: 900, mobile: true }], ['1280px', { width: 1280, height: 1100 }]]) {
     const { context, page, errors } = await open(browser, { ...size, theme: 'dark' });
     await page.waitForTimeout(700);
+    // Research picks are an optional reading section; inside it each pick
+    // still exposes its reasons and open evidence without another disclosure.
+    if (await page.locator('.research-picks').count()) await page.locator('.research-picks > summary').click();
     const read = () => page.evaluate(() => {
       const card = document.querySelector('.pick-card');
       if (!card) return { card: false };
@@ -351,7 +357,7 @@ try {
       const items = [...card.querySelectorAll('.why-item')];
       const box = card.getBoundingClientRect();
       return { card: true, id: card.dataset.pickHome, block: !!block,
-        behindDisclosure: !!block?.closest('details'),
+        behindDisclosure: block?.closest('details') !== card.closest('details'),
         reasons: items.map((n) => n.textContent.trim()),
         escapes: items.some((n) => { const b = n.getBoundingClientRect();
           return b.right > box.right + 1 || b.left < box.left - 1; }),
@@ -1046,6 +1052,7 @@ try {
         if (!button) return { opened: null };
         button.click();
         await new Promise((r) => setTimeout(r, 350));
+        document.querySelector('[data-detail-jump="detail-sources"]')?.click();
         const box = document.querySelector('#detail-content');
         const dialog = document.querySelector('#detail-dialog').getBoundingClientRect();
         const links = [...box.querySelectorAll('.detail-links a')].map((a) => {
@@ -1107,7 +1114,7 @@ try {
     await page.evaluate(async (id) => {
       [...document.querySelectorAll('[data-detail]')].find((b) => b.dataset.detail === id)?.click();
       await new Promise((r) => setTimeout(r, 350));
-      document.querySelector('#detail-sources')?.scrollIntoView({ block: 'center' });
+      document.querySelector('[data-detail-jump="detail-sources"]')?.click();
     }, ARCHIVED.id);
     await page.waitForTimeout(250);
     await shot(page, `source-${label.replace(/\s+/g, '-')}`);
@@ -1132,6 +1139,7 @@ try {
         .map((sel) => card.querySelector(sel)?.textContent ?? '').join(' ') : '';
       card?.querySelector('[data-detail]')?.click();
       await new Promise((r) => setTimeout(r, 400));
+      document.querySelector('[data-detail-jump="detail-sources"]')?.click();
       const box = document.querySelector('#detail-content');
       const dialog = document.querySelector('#detail-dialog').getBoundingClientRect();
       const lines = [...box.querySelectorAll('.source-dates')].map((p) => {

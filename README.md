@@ -300,8 +300,11 @@ Quick jump. Five tools share the existing apartment facts and notebook:
 4. **Price pulse:** filter recorded rent drops, rises or saved homes. Public source
    histories and private quote histories remain separate. An unchanged scan keeps
    the most recent actual change and its original date. Missing, future or
-   conflicting same-time prices cannot manufacture a change. Old quotes and scan
-   absences have a separate recheck list; no alert subscription is created.
+   conflicting same-time prices cannot manufacture a change. A personal quote
+   counts only on a day you entered: an undated quote, or one recorded before
+   quote-date provenance was kept, forms no movement (see *Personal quote dates*
+   below). Old quotes and scan absences have a separate recheck list; no alert
+   subscription is created.
 5. **Next moves:** show one actionable step for each of up to three saved homes,
    prioritizing near-term tours, layout checks, quotes, unfinished tour checks and
    a decision note. Each action opens the relevant notebook field. Saving real
@@ -633,3 +636,46 @@ look anywhere in the search again.
 The lens narrows the same visible set the cards, the map and the counts already
 share, so the map shows exactly the places the cards do. It adds no marker colour
 and no marker category: the price-forward marks are unchanged.
+
+## Personal quote dates — September 19, 2026
+
+A notebook save time is not a quote-observation date, and the record form no
+longer treats it as one. Before this, a changed base-rent quote saved with the
+*Quote date* left blank was written into your quote history dated the day it
+was saved, and Price Pulse then reported a dated price movement nobody had
+observed; correcting only the date left that history untouched.
+
+1. **Quote date stays optional.** Saving a changed quote with no date keeps the
+   amount as your quote and records its date as unknown. No day is substituted
+   — not today, not the source's observation, not a tour or an import date —
+   and an unknown day earns no freshness: the record still asks for a fresh,
+   dated quote.
+2. **Three facts, kept apart.** Every entry in your quote history carries the
+   amount, the day you were quoted (`date` — the day you entered, or `null`
+   with `date_basis: "unknown"`) and the instant this notebook saved it
+   (`recorded_at`). The recording instant is printed as a time in Chicago's
+   zone and never supplies a quote day, a freshness or a price movement.
+3. **Correcting a date corrects the quote.** Changing only the quote date
+   rewrites the active quote's own history entry and keeps what it replaced
+   under `date_corrections`, so a corrected day is one observation with a
+   history, never a second observation and a movement between the two.
+   Clearing the date is the same correction, back to unknown.
+4. **Only a quote change is an observation.** Saving notes, a stage, a tour
+   date or tour checks records nothing and re-dates nothing; an unchanged save
+   does the same; clearing the amount withdraws your quote and adds no entry.
+   Changing the amount with the date left as it was is a new observation on
+   that day, and two amounts on one day are a conflict, not a movement.
+5. **Every entry stays inspectable.** The record's *Observed base rent* section
+   lists your recorded quotes newest first — amount, day or *unknown*,
+   recording time, corrections — and draws a series only from the days you
+   entered. Price Pulse's *Inspect history* opens that list; the Activity view
+   names each recorded quote and each correction.
+6. **Legacy notebooks are kept as written.** An entry saved before this change
+   carries a day that was either the date you entered or the day it was saved,
+   and nothing on record says which. It is neither re-dated nor certified: the
+   list says its provenance is unrecorded, and it forms a dated movement only
+   where it is the last entry and your dated active quote names the same amount
+   on the same day. Entering the date again establishes it. Source price
+   histories are unchanged and still require a day on every point; a backup
+   with a day-less personal entry that does not say so is refused whole,
+   before anything is merged.

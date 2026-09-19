@@ -503,6 +503,103 @@ function historyOk(v) {
       v.every((p) => isObj(p) && dateOk(p.date) && nullableAmount(p.rent)))
   );
 }
+// ---------------------------------------------------------------------------
+// A reader's own quote history.
+//
+// A source's history is the provider's: every point carries the day the
+// provider observed it, and historyOk() above holds it to that. A personal
+// entry is the notebook's, and the reader may not know the day a quote was
+// given -- a leasing email with no date, a number from a call last week. So a
+// personal entry keeps three facts apart, and none stands in for another:
+//
+//   rent         the amount, as before;
+//   date         the day the quote was OBSERVED: the date the reader entered,
+//                or null with date_basis "unknown" when none was;
+//   recorded_at  the instant this notebook SAVED the entry. It says when an
+//                entry was written, never when a quote was given: it supplies
+//                no freshness and no dated movement.
+//
+// Correcting the active quote's date rewrites that entry's date and keeps what
+// it replaced in date_corrections, so a corrected day is one observation with
+// a history rather than two observations and a movement between them.
+//
+// An entry written before this existed carries neither basis nor recording
+// instant. Its date was the entered quote date OR the day it was saved, and
+// nothing on record says which, so it is kept exactly as written and read as
+// "unrecorded" provenance: shown, never re-dated, never certified, and part of
+// a dated series only where the reader's own dated active quote says the same
+// amount on the same day.
+const quoteBases = ["entered", "unknown"];
+export const QUOTE_HISTORY_MAX = 120, QUOTE_CORRECTIONS_MAX = 40;
+function quoteEntryOk(p) {
+  if (!isObj(p) || !nullableAmount(p.rent)) return false;
+  if (p.date_basis !== undefined && !quoteBases.includes(p.date_basis)) return false;
+  if (p.date_basis === "unknown" ? p.date != null : !dateOk(p.date)) return false;
+  if (p.recorded_at !== undefined && !dateOk(p.recorded_at)) return false;
+  if (p.date_corrections === undefined) return true;
+  return (
+    Array.isArray(p.date_corrections) &&
+    p.date_corrections.length <= QUOTE_CORRECTIONS_MAX &&
+    p.date_corrections.every(
+      (c) => isObj(c) && dateOk(c.at) && (c.from === null || dateOk(c.from)) && (c.basis == null || quoteBases.includes(c.basis)),
+    )
+  );
+}
+function quoteHistoryOk(v) {
+  return v === undefined || (Array.isArray(v) && v.length <= 2000 && v.every(quoteEntryOk));
+}
+const sameDay = (a, b) => (a == null || b == null ? a == null && b == null : Date.parse(a) === Date.parse(b));
+// Every entry a record carries, classified and never rewritten, and the dated
+// points a series may be drawn from: only the days the reader established.
+export function quoteEvidence(record = {}) {
+  const active = amount(record.rentOverride);
+  const activeDate = dateOk(record.quoteDate) ? record.quoteDate : null;
+  const history = Array.isArray(record.quote_history) ? record.quote_history : [];
+  const entries = history.map((p, index) => {
+    const rent = amount(p.rent);
+    const basis = quoteBases.includes(p.date_basis) ? p.date_basis : "unrecorded";
+    const date = basis !== "unknown" && dateOk(p.date) ? p.date : null;
+    const supported =
+      basis === "entered" ||
+      (basis === "unrecorded" && index === history.length - 1 && active !== null && rent === active && date !== null && sameDay(date, activeDate));
+    return {
+      rent, date, basis, supported,
+      recorded_at: dateOk(p.recorded_at) ? p.recorded_at : null,
+      corrections: Array.isArray(p.date_corrections) ? p.date_corrections.map((c) => ({ from: c.from ?? null, basis: c.basis ?? null, at: c.at })) : [],
+    };
+  });
+  return {
+    entries,
+    dated: entries.filter((e) => e.supported && e.date !== null && e.rent !== null).map((e) => ({ date: e.date, rent: e.rent })),
+    unknown: entries.filter((e) => e.basis === "unknown").length,
+    unrecorded: entries.filter((e) => e.basis === "unrecorded" && !e.supported).length,
+  };
+}
+// What one save of the record form does to the quote history, and nothing
+// else does: a changed amount is a new observation on the day entered (or on
+// no day); a changed date alone corrects the active quote's own entry; the
+// same amount on the same day, a cleared amount, or a save that touched only
+// notes, a stage or a tour, records nothing and re-dates nothing.
+export function recordQuote(record = {}, next = {}, at = new Date().toISOString()) {
+  const history = Array.isArray(record.quote_history) ? record.quote_history : [];
+  const rent = amount(next.rentOverride), prior = amount(record.rentOverride);
+  const date = dateOk(next.quoteDate) ? next.quoteDate : null;
+  const unchanged = { history: record.quote_history, change: null };
+  if (rent === null) return unchanged;
+  const observation = { rent, date, date_basis: date ? "entered" : "unknown", recorded_at: at };
+  if (rent !== prior) return { history: [...history, observation].slice(-QUOTE_HISTORY_MAX), change: "observed" };
+  if (sameDay(date, dateOk(record.quoteDate) ? record.quoteDate : null)) return unchanged;
+  const last = history.at(-1);
+  if (!last || amount(last.rent) !== rent) return { history: [...history, observation].slice(-QUOTE_HISTORY_MAX), change: "observed" };
+  const corrected = {
+    ...last, date, date_basis: observation.date_basis,
+    date_corrections: [
+      ...(Array.isArray(last.date_corrections) ? last.date_corrections : []),
+      { from: dateOk(last.date) ? last.date : null, basis: quoteBases.includes(last.date_basis) ? last.date_basis : null, at },
+    ].slice(-QUOTE_CORRECTIONS_MAX),
+  };
+  return { history: [...history.slice(0, -1), corrected], change: "corrected" };
+}
 function eventsOk(v) {
   return (
     Array.isArray(v) &&
@@ -686,7 +783,7 @@ export function validateWorkspace(w) {
         throw Error("The backup contains an invalid date.");
     if (
       (r.snapshot !== undefined && !validateHome(r.snapshot)) ||
-      !historyOk(r.quote_history)
+      !quoteHistoryOk(r.quote_history)
     )
       throw Error("The backup contains an invalid saved home or quote.");
     if (r.scan !== undefined && !savedScanOk(r.scan))
@@ -959,12 +1056,16 @@ function datedRentPoints(history, now) {
 }
 export function pricePulse(homes, workspace, prefs=defaults, savedOnly=false, now=new Date(), feed={}) {
   const pool=visibleHomes(homes,workspace,prefs,feed).filter(h=>!savedOnly || workspace.records[h.id]?.saved);
-  const changes=[],stale=[];let baseline=0;
+  const changes=[],stale=[];let baseline=0,undatedQuotes=0;
   for(const h of pool){const rec=workspace.records[h.id] ?? {};if(rec.status==='ruled out')continue;
     const quoteAge=pickAge(amount(rec.rentOverride)!==null ? rec.quoteDate : h.observed_at,now);
     if(quoteAge===null || quoteAge>7 || h.notebook_only || h.seen_in_latest===false)stale.push(h);
+    // A personal point is a day the reader established, never a day the
+    // notebook saved something (quoteEvidence); the source series is the
+    // provider's own dated observations, as before.
+    const quotes=quoteEvidence(rec);undatedQuotes+=quotes.unknown+quotes.unrecorded;
     let hasSeries=false;
-    for(const [kind,history] of [['source',h.history],['personal',rec.quote_history]]){
+    for(const [kind,history] of [['source',h.history],['personal',quotes.dated]]){
       const points=datedRentPoints(history,now);
       if(points.length<2)continue;hasSeries=true;
       const lastObserved=points.at(-1).date;let index=points.length-1;
@@ -976,7 +1077,7 @@ export function pricePulse(homes, workspace, prefs=defaults, savedOnly=false, no
     if(!hasSeries)baseline++;
   }
   changes.sort((a,b)=>a.latest.date===b.latest.date ? a.delta-b.delta : b.latest.date.localeCompare(a.latest.date));
-  return {changes,stale,baseline,total:pool.filter(h=>workspace.records[h.id]?.status!=='ruled out').length};
+  return {changes,stale,baseline,undatedQuotes,total:pool.filter(h=>workspace.records[h.id]?.status!=='ruled out').length};
 }
 // One saved home's single next step. The shortlist prints this beside the home
 // it belongs to and nextMoves() ranks the same objects, so the board and the

@@ -31,6 +31,7 @@ import {
   openQuestions, figureSpread, tourChecks, surfacedBecause, headlineUnknown, decisionPool,
   buildingForm, HIGH_RISE_STOREYS, urbanSetting, budgetBand, parkingStanding, focusUnknowns, doubleDownOn,
   lensPresets, validatePreferences,
+  quoteEvidence, recordQuote, QUOTE_HISTORY_MAX, QUOTE_CORRECTIONS_MAX,
 } from "../dist/model.js";
 const seed = JSON.parse(
   fs.readFileSync(new URL("../data/seed.json", import.meta.url)),
@@ -517,10 +518,17 @@ test('Decision Studio area samples separate sources, deduplicate units and withh
 });
 test('Decision Studio price pulse preserves actual drop dates after unchanged scans and separates personal series', () => {
   const home=pickHome('pulse',{rent:2300,history:[{date:'2026-09-06',rent:2500},{date:'2026-09-07',rent:2300},{date:'2026-09-08',rent:2300},{date:'2099-01-01',rent:1000}]}),w=emptyWorkspace();
-  w.records.pulse={saved:true,quote_history:[{date:'2026-09-06',rent:2400},{date:'2026-09-08',rent:2200}]};
+  // The reader's own quotes form a series between the days THEY entered.
+  w.records.pulse={saved:true,rentOverride:2200,quoteDate:'2026-09-08',quote_history:[{date:'2026-09-06',rent:2400,date_basis:'entered'},{date:'2026-09-08',rent:2200,date_basis:'entered'}]};
   const result=pricePulse([home],w,defaults,true,pickNow);
   assert.equal(result.changes.length,2);const source=result.changes.find(c=>c.kind==='source');
   assert.equal(source.delta,-200);assert.equal(source.latest.date,'2026-09-07T00:00:00.000Z');assert.equal(source.lastObserved,'2026-09-08T00:00:00.000Z');
+  assert.equal(result.changes.find(c=>c.kind==='personal').delta,-200);assert.equal(result.undatedQuotes,0);
+  // The same two entries written before quote-date provenance was kept say
+  // nothing about which day was entered and which was a save day: no movement.
+  const legacy=emptyWorkspace();legacy.records.pulse={saved:true,quote_history:[{date:'2026-09-06',rent:2400},{date:'2026-09-08',rent:2200}]};
+  const unrecorded=pricePulse([home],legacy,defaults,true,pickNow);
+  assert.equal(unrecorded.changes.filter(c=>c.kind==='personal').length,0);assert.equal(unrecorded.undatedQuotes,2);
   const conflict={...home,history:[{date:'2026-09-06',rent:2400},{date:'2026-09-07',rent:2000},{date:'2026-09-07',rent:2500}]};
   assert.equal(pricePulse([conflict],emptyWorkspace(),defaults,false,pickNow).changes.length,0);
   assert.equal(pricePulse([home],emptyWorkspace(),defaults,true,pickNow).total,0);
@@ -1365,4 +1373,188 @@ test("the parking question the lens raises matches the answer the record gives",
   // The three answers are never merged into one sentence.
   const said = [{ status: "unknown" }, { status: "yes", monthly: null }, { status: "no" }].map((p) => first(p).label);
   assert.equal(new Set(said).size, 3, said.join(" / "));
+});
+
+// ---------------------------------------------------------------------------
+// Personal quote dates. A notebook save time is not a quote-observation date.
+test("a personal quote is observed on the day entered, or on no day, and never on the day it was saved", () => {
+  const at = "2026-09-19T00:00:00.500Z"; // half a second past a UTC midnight
+  const first = recordQuote({}, { rentOverride: 2600, quoteDate: "2026-09-10" }, at);
+  assert.equal(first.change, "observed");
+  assert.deepEqual(first.history, [{ rent: 2600, date: "2026-09-10", date_basis: "entered", recorded_at: at }]);
+  const record = { rentOverride: 2600, quoteDate: "2026-09-10", quote_history: first.history };
+  const blank = recordQuote(record, { rentOverride: 2500, quoteDate: "" }, at);
+  assert.equal(blank.change, "observed");
+  assert.equal(blank.history.length, 2);
+  assert.deepEqual(blank.history[1], { rent: 2500, date: null, date_basis: "unknown", recorded_at: at });
+  assert.deepEqual(blank.history[0], first.history[0], "the earlier observation is untouched");
+  // The recording instant sits on a UTC-midnight boundary; no day is read off it on either side.
+  const ev = quoteEvidence({ rentOverride: 2500, quoteDate: "", quote_history: blank.history });
+  assert.deepEqual(ev.dated, [{ date: "2026-09-10", rent: 2600 }]);
+  assert.equal(ev.unknown, 1);
+  assert.equal(ev.entries[1].date, null);
+  assert.equal(ev.entries[1].recorded_at, at, "the recording instant is kept, as a recording instant");
+  for (const day of ["2026-09-18", "2026-09-19"]) assert(!JSON.stringify(ev.dated).includes(day), `${day} is not a quote date`);
+  // The bound on entries is the one the notebook always had.
+  const full = { rentOverride: 1, quote_history: Array.from({ length: QUOTE_HISTORY_MAX }, (_, i) => ({ rent: i + 1, date: "2026-09-01", date_basis: "entered" })) };
+  assert.equal(recordQuote(full, { rentOverride: 9999, quoteDate: "" }, at).history.length, QUOTE_HISTORY_MAX);
+});
+test("changing only the quote date corrects the active quote's own entry and keeps what it replaced", () => {
+  const at1 = "2026-09-19T01:00:00Z", at2 = "2026-09-19T02:00:00Z", at3 = "2026-09-19T03:00:00Z";
+  const history = [
+    { rent: 2600, date: "2026-09-10", date_basis: "entered", recorded_at: at1 },
+    { rent: 2500, date: null, date_basis: "unknown", recorded_at: at1 },
+  ];
+  const record = { rentOverride: 2500, quoteDate: "", quote_history: history };
+  const dated = recordQuote(record, { rentOverride: 2500, quoteDate: "2026-09-11" }, at2);
+  assert.equal(dated.change, "corrected");
+  assert.equal(dated.history.length, 2, "a corrected day is one observation with a history, not two observations");
+  assert.deepEqual(dated.history[1], { rent: 2500, date: "2026-09-11", date_basis: "entered", recorded_at: at1,
+    date_corrections: [{ from: null, basis: "unknown", at: at2 }] });
+  assert.deepEqual(dated.history[0], history[0]);
+  // One movement, between the two days the reader entered.
+  assert.deepEqual(quoteEvidence({ ...record, quoteDate: "2026-09-11", quote_history: dated.history }).dated,
+    [{ date: "2026-09-10", rent: 2600 }, { date: "2026-09-11", rent: 2500 }]);
+  // Clearing the date is the same kind of correction, back to unknown, with the day it replaced kept.
+  const cleared = recordQuote({ ...record, quoteDate: "2026-09-11", quote_history: dated.history }, { rentOverride: 2500, quoteDate: "" }, at3);
+  assert.equal(cleared.change, "corrected");
+  assert.equal(cleared.history[1].date, null);
+  assert.equal(cleared.history[1].date_basis, "unknown");
+  assert.deepEqual(cleared.history[1].date_corrections,
+    [{ from: null, basis: "unknown", at: at2 }, { from: "2026-09-11", basis: "entered", at: at3 }]);
+  assert.equal(quoteEvidence({ ...record, quote_history: cleared.history }).dated.length, 1);
+  // Corrections are bounded, and the newest are the ones kept.
+  let run = { rentOverride: 2500, quoteDate: "2026-09-01", quote_history: [{ rent: 2500, date: "2026-09-01", date_basis: "entered" }] };
+  for (let i = 2; i <= QUOTE_CORRECTIONS_MAX + 5; i++) {
+    const day = `2026-10-${String(i % 28 + 1).padStart(2, "0")}`;
+    run = { ...run, quoteDate: day, quote_history: recordQuote(run, { rentOverride: 2500, quoteDate: day }, `2026-11-01T00:00:${String(i % 60).padStart(2, "0")}Z`).history };
+  }
+  assert.equal(run.quote_history.length, 1);
+  assert.equal(run.quote_history[0].date_corrections.length, QUOTE_CORRECTIONS_MAX);
+});
+test("a save that changes no quote records nothing and re-dates nothing", () => {
+  const history = [{ rent: 2500, date: "2026-09-11", date_basis: "entered", recorded_at: "2026-09-19T01:00:00Z" }];
+  const record = { rentOverride: 2500, quoteDate: "2026-09-11", quote_history: history, notes: "old", status: "researching" };
+  for (const next of [
+    { ...record, notes: "new notes" },
+    { ...record, status: "toured" },
+    { ...record, tourDate: "2026-09-21T10:00" },
+    { ...record, tourChecks: { noise: true } },
+    { ...record },
+    { ...record, rentOverride: null, quoteDate: "2026-09-12" }, // a day without an amount is not a quote
+    { ...record, rentOverride: null, quoteDate: "" },
+  ]) {
+    const out = recordQuote(record, next, "2026-09-19T02:00:00Z");
+    assert.equal(out.change, null);
+    assert.equal(out.history, history, "the same array, untouched");
+  }
+  // Amount only: the new amount is an observation on the day still in the field.
+  const amountOnly = recordQuote(record, { ...record, rentOverride: 2450 }, "2026-09-19T02:00:00Z");
+  assert.equal(amountOnly.change, "observed");
+  assert.deepEqual(amountOnly.history.at(-1), { rent: 2450, date: "2026-09-11", date_basis: "entered", recorded_at: "2026-09-19T02:00:00Z" });
+  // Two amounts on one day conflict, and a conflict is not a movement.
+  const h = pickHome("quoted", { history: [] }), w = emptyWorkspace();
+  w.records.quoted = { ...record, rentOverride: 2450, quote_history: amountOnly.history, saved: true };
+  assert.equal(pricePulse([h], w, defaults, true, new Date("2026-09-19T12:00:00Z")).changes.length, 0);
+  // A record with an amount but no entry to correct gets its observation recorded now, on the day entered.
+  const bare = recordQuote({ rentOverride: 2500, quoteDate: "" }, { rentOverride: 2500, quoteDate: "2026-09-11" }, "2026-09-19T02:00:00Z");
+  assert.equal(bare.change, "observed");
+  assert.deepEqual(bare.history, [{ rent: 2500, date: "2026-09-11", date_basis: "entered", recorded_at: "2026-09-19T02:00:00Z" }]);
+});
+test("legacy quote entries are kept as written, read as unrecorded provenance, and count only beside the reader's dated active quote", () => {
+  const legacy = [{ date: "2026-09-05", rent: 2600 }, { date: "2026-09-12", rent: 2500 }];
+  // Nothing on record says whether either day was entered or was the day it was saved.
+  const undated = quoteEvidence({ rentOverride: 2500, quoteDate: "", quote_history: legacy });
+  assert.deepEqual(undated.entries.map((e) => e.basis), ["unrecorded", "unrecorded"]);
+  assert.deepEqual(undated.entries.map((e) => e.date), ["2026-09-05", "2026-09-12"], "the days are kept, not erased");
+  assert.deepEqual(undated.dated, []);
+  assert.equal(undated.unrecorded, 2);
+  // The reader's own dated active quote supports the entry it names, and that one only.
+  const supported = quoteEvidence({ rentOverride: 2500, quoteDate: "2026-09-12", quote_history: legacy });
+  assert.deepEqual(supported.entries.map((e) => e.supported), [false, true]);
+  assert.deepEqual(supported.dated, [{ date: "2026-09-12", rent: 2500 }]);
+  assert.equal(supported.unrecorded, 1);
+  // A different amount, a different day, or an entry that is not the last one is no support.
+  assert.deepEqual(quoteEvidence({ rentOverride: 2400, quoteDate: "2026-09-12", quote_history: legacy }).dated, []);
+  assert.deepEqual(quoteEvidence({ rentOverride: 2500, quoteDate: "2026-09-13", quote_history: legacy }).dated, []);
+  assert.deepEqual(quoteEvidence({ rentOverride: 2600, quoteDate: "2026-09-05", quote_history: legacy }).dated, []);
+  // Nothing is rewritten: a legacy notebook validates and comes back as it went in.
+  const w = emptyWorkspace();
+  w.records[home.id] = { saved: true, rentOverride: 2500, quoteDate: "", quote_history: legacy };
+  assert.deepEqual(validateWorkspace(w).records[home.id].quote_history, legacy);
+  // Correcting a legacy entry's date is the reader establishing it; the old day is kept beside it.
+  const fixed = recordQuote(w.records[home.id], { rentOverride: 2500, quoteDate: "2026-09-11" }, "2026-09-19T02:00:00Z");
+  assert.equal(fixed.change, "corrected");
+  assert.deepEqual(fixed.history[1], { date: "2026-09-11", rent: 2500, date_basis: "entered",
+    date_corrections: [{ from: "2026-09-12", basis: null, at: "2026-09-19T02:00:00Z" }] });
+  assert.deepEqual(fixed.history[0], legacy[0]);
+  assert.deepEqual(quoteEvidence({ rentOverride: 2500, quoteDate: "2026-09-11", quote_history: fixed.history }).dated, [{ date: "2026-09-11", rent: 2500 }]);
+});
+test("the personal quote contract validates on import, and the source contract is unchanged", () => {
+  const ok = (history) => { const w = emptyWorkspace(); w.records[home.id] = { saved: true, snapshot: home, quote_history: history }; return validateWorkspace(w); };
+  for (const history of [
+    [{ date: "2026-09-07", rent: 2500 }],
+    [{ rent: 2500, date: "2026-09-07", date_basis: "entered", recorded_at: "2026-09-19T01:00:00Z" }],
+    [{ rent: 2500, date: null, date_basis: "unknown", recorded_at: "2026-09-19T01:00:00Z" }],
+    [{ rent: 2500, date_basis: "unknown" }],
+    [{ rent: 2500, date: "2026-09-08", date_basis: "entered", date_corrections: [{ from: null, basis: "unknown", at: "2026-09-19T01:00:00Z" }, { from: "2026-09-07", basis: null, at: "2026-09-19T02:00:00Z" }] }],
+    [{ rent: null, date: "2026-09-07" }],
+  ]) assert.deepEqual(ok(history).records[home.id].quote_history, history);
+  for (const history of [
+    [{ rent: 2500, date: null }], // no day and nothing saying so
+    [{ rent: 2500, date: "2026-09-07", date_basis: "unknown" }], // a day on an entry that claims none
+    [{ rent: 2500, date: null, date_basis: "entered" }],
+    [{ rent: 2500, date: "2026-09-07", date_basis: "guessed" }],
+    [{ rent: 2500, date: "2026-09-07", recorded_at: "yesterday" }],
+    [{ rent: 2500, date: "2026-09-07", date_corrections: {} }],
+    [{ rent: 2500, date: "2026-09-07", date_corrections: [{ from: "2026-09-06" }] }],
+    [{ rent: 2500, date: "2026-09-07", date_corrections: [{ from: "not a day", at: "2026-09-19T01:00:00Z" }] }],
+    [{ rent: 2500, date: "2026-09-07", date_corrections: [{ from: null, basis: "saved", at: "2026-09-19T01:00:00Z" }] }],
+    [{ rent: 2500, date: "2026-09-07", date_corrections: Array.from({ length: QUOTE_CORRECTIONS_MAX + 1 }, () => ({ from: null, at: "2026-09-19T01:00:00Z" })) }],
+    [{ rent: -1, date: "2026-09-07" }],
+  ]) assert.throws(() => ok(history), /invalid saved home or quote/);
+  // A source history is the provider's and still needs a day on every point.
+  assert.equal(validateHome({ ...home, history: [{ date: "2026-09-07", rent: 2500 }] }), true);
+  assert.equal(validateHome({ ...home, history: [{ date: null, rent: 2500, date_basis: "unknown" }] }), false);
+  assert.throws(() => validateFeed({ ...seed, homes: [{ ...home, history: [{ date: null, rent: 2500, date_basis: "unknown" }] }] }));
+  const w = emptyWorkspace();
+  w.records[home.id] = { saved: true, snapshot: { ...home, history: [{ date: null, rent: 2500, date_basis: "unknown" }] } };
+  assert.throws(() => validateWorkspace(w));
+});
+test("Price Pulse derives a personal movement only between days the reader entered, and says how many it left out", () => {
+  const now = new Date("2026-09-19T12:00:00Z");
+  const h = pickHome("quoted", { history: [] }), w = emptyWorkspace();
+  const entered = [
+    { rent: 2600, date: "2026-09-10", date_basis: "entered", recorded_at: "2026-09-19T00:00:00.000Z" },
+    { rent: 2500, date: null, date_basis: "unknown", recorded_at: "2026-09-19T00:00:00.000Z" },
+  ];
+  w.records.quoted = { saved: true, rentOverride: 2500, quoteDate: "", quote_history: entered };
+  let pulse = pricePulse([h], w, defaults, true, now);
+  assert.equal(pulse.changes.length, 0, "an undated quote is not a dated decrease");
+  assert.equal(pulse.undatedQuotes, 1);
+  assert.deepEqual(pulse.stale.map((s) => s.id), ["quoted"], "an undated active quote is one to recheck, not a fresh one");
+  // The reader dates it: one movement, between their two days, dated by neither recording instant.
+  w.records.quoted = { ...w.records.quoted, quoteDate: "2026-09-11",
+    quote_history: [entered[0], { ...entered[1], date: "2026-09-11", date_basis: "entered", date_corrections: [{ from: null, basis: "unknown", at: "2026-09-19T00:00:00.000Z" }] }] };
+  pulse = pricePulse([h], w, defaults, true, now);
+  assert.equal(pulse.changes.length, 1);
+  assert.equal(pulse.changes[0].kind, "personal");
+  assert.equal(pulse.changes[0].delta, -100);
+  assert.equal(pulse.changes[0].prior.date, "2026-09-10T00:00:00.000Z");
+  assert.equal(pulse.changes[0].latest.date, "2026-09-11T00:00:00.000Z");
+  assert.equal(pulse.changes[0].lastObserved, "2026-09-11T00:00:00.000Z");
+  assert.equal(pulse.undatedQuotes, 0);
+  // A recording instant on either side of a UTC midnight never becomes the day.
+  for (const at of ["2026-09-18T23:59:59.999Z", "2026-09-19T00:00:00.000Z"]) {
+    w.records.quoted = { saved: true, rentOverride: 2500, quoteDate: "", quote_history: [{ ...entered[0], recorded_at: at }, { ...entered[1], recorded_at: at }] };
+    assert.equal(pricePulse([h], w, defaults, true, now).changes.length, 0, at);
+  }
+  // Legacy entries, no active date: kept, counted, no movement. With the reader's
+  // dated active quote naming the last one, still no movement: the first day is unsupported.
+  for (const quoteDate of ["", "2026-09-12"]) {
+    w.records.quoted = { saved: true, rentOverride: 2500, quoteDate, quote_history: [{ date: "2026-09-05", rent: 2600 }, { date: "2026-09-12", rent: 2500 }] };
+    pulse = pricePulse([h], w, defaults, true, now);
+    assert.equal(pulse.changes.length, 0, quoteDate || "undated");
+    assert.equal(pulse.undatedQuotes, quoteDate ? 1 : 2);
+  }
 });

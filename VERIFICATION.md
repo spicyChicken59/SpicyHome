@@ -1893,7 +1893,8 @@ untouched. Asset revision `20260919-quote-dates`; one small `.quote-log` rule.
 under `SPICYHOME_TEST_CLOCK_SKEW_DAYS` **7, 30 and 400**; `npm run check`
 **43** Python; `python tools/check_site.py` (22 immutable assets, 1,000
 records); `git diff --check` clean; `npm run browser-check -- --shots`
-**465/469** on its first full run over this tree, all 64 of the new section 11 passing (1280 dark,
+**469/469** on the corrected harness (below), **465/469** on its first full
+run over this tree, all 76 of the new section 11 passing either way (1280 dark,
 390 dark, 390 light, 320 dark) — the amount and the date entered and cleared
 with the keyboard, the shortlist and the comparison, Price Pulse before and
 after the correction, *History* and *Inspect history* landing under the dock,
@@ -1919,9 +1920,11 @@ and at `c2e8143` the first listing is a Park Ridge row under a complete query
 (18 of 18), whose sentence says *Complete for that recorded query.* The code
 that writes the sentence is untouched here. The scenario now chooses a row
 whose city's scan is capped, by that fact rather than by position — a
-one-line correction to the harness, disclosed here and in the PR — and the
-full check was rerun on the corrected harness; its count, and the base
-commit's own run of the unchanged harness, are appended below.
+one-line correction to the harness, disclosed here and in the PR. Proved
+both ways: the base commit's own run of its unchanged harness is
+**389/393 at `c2e8143`**, failing on exactly those four; the corrected
+harness over this tree is **469/469** with `--shots`, all 76 new scenarios
+and all 393 inherited ones.
 
 **The harness, extended through the coordinated clock, not around it.**
 `shiftWindowClock(w, extra)` and `boot({clockOffsetMs})` carry the page's

@@ -1018,7 +1018,12 @@ try {
   //         jsdom can say the words are in the markup. Only a browser can say
   //         the links wrap instead of pushing the page sideways, that a finger
   //         can hit them, and that the dated evidence is actually visible.
-  const ARCHIVED = JSON.parse(FEED).homes.find((h) => h.kind === 'listing');
+  // A provider row read under a CAPPED query, chosen as such: the scenario
+  // reads the incomplete-coverage sentence, and which row happens to come
+  // first in the committed feed moves with every scan (a complete Park Ridge
+  // query led the feed on 18 Sep where a capped Chicago one had before).
+  const ARCHIVED = JSON.parse(FEED).homes.find((h) => h.kind === 'listing' && JSON.parse(FEED).provider?.area_scans?.[h.city]?.truncated === true)
+    ?? JSON.parse(FEED).homes.find((h) => h.kind === 'listing');
   // A home the current feed no longer carries: the notebook is keyed by the
   // snapshot's own id, which is how a saved record is read back.
   const ARCHIVED_ID = ARCHIVED.id + '-archived';

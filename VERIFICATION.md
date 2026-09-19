@@ -1664,6 +1664,17 @@ as an objective fact.
 
 ### NEXT BUILDER PROMPT — live, and level except SpicyStock
 
+> **Superseded, 19 September 2026.** The cross-repository items below — the
+> SpicyStock re-vendor, the upstream design-system notes, the other consumers'
+> tips — are a dated record of where the family stood on 15–16 September and
+> are no longer an assignment for a SpicyHome builder: SpicyHome work is
+> SpicyHome-only, and SpicyStock, SpicyCar and the design system are read-only
+> from here. The offline gates, the environment notes and the standing hazards
+> that follow remain true and are re-stated with current counts in *Personal
+> quote dates — September 19, 2026* below, which is the authoritative
+> checkpoint. Nothing under this heading was rewritten.
+
+
 Verify the tips before trusting any of them; the SpicyHome and design-system
 lines were re-read on 15 Sep 2026, the other two were not, and two of these
 repositories commit to `main` on a schedule.
@@ -1829,3 +1840,123 @@ cross-tab conflicts and transactional import/export recovery. Invent no
 availability, amenity or travel claim. Make no RentCast, leasing or tour call,
 no merge to `main` without approval, no force-push to a branch someone else
 holds, and no deployment.
+
+## Personal quote dates — September 19, 2026
+
+**Revision.** SpicyHome only. Branch `claude/personal-quote-dates-4aee5g`
+cut from `main` at **`c2e8143b08873dff3625e649e20ae3c5b8d2edff`**, which was
+`origin/main` when this began and again when it ended (the tracker's data-only
+commits since PR #27's merge `82c5f6e` — `data/history/2026-09-16..18.json`,
+`data/usage.json`, `dist/data.json`, `dist/status.json` — are all on that base
+and untouched). SpicyStock, SpicyCar and the design system were not written.
+`dist/data.json`, `dist/status.json`, `data/**`, the tracker, the workflows,
+the vendored `dist/design-system/` (22 hashes, unchanged) and `.env.example`
+are byte-for-byte the base's. Nothing merged, dispatched, deployed or mailed;
+no provider request.
+
+**Reproduced first, through the jsdom harness the suite uses** (the app
+evaluated inside the window, the seed feed; `before-jsdom.txt` in the PR):
+a $2,600 quote dated 2026-09-10, then $2,500 with *Quote date* cleared. At
+`c2e8143` the record kept `quoteDate: ""` while `quote_history` gained
+`{date: "2026-09-19", rent: 2500}` — the UTC save day — and Price Pulse printed
+*−$100 · $2,600 on Sep 10, 2026 → $2,500 on Sep 19, 2026 · Your recorded
+quotes · Last observation Sep 19, 2026*; setting only the date to 2026-09-11
+moved `quoteDate` and left the history at the save day. The append with the
+save-day fallback dates from the first commit (`533b19b`), so **every** entry
+a legacy notebook carries is of unrecorded provenance.
+
+**Settled and built.** A personal entry keeps three facts apart — `rent`,
+`date` (the day the reader entered, or `null` with `date_basis: "unknown"`)
+and `recorded_at` (the instant the notebook saved it, a time and never a day).
+`recordQuote()` in `model.js` is the one writer: a changed amount is an
+observation on the day entered or on no day; a changed date alone corrects
+the active quote's own entry and keeps what it replaced under
+`date_corrections`; the same amount on the same day, a cleared amount, or a
+notes/stage/tour-only save records nothing and re-dates nothing.
+`quoteEvidence()` is the one reader: every entry classified (entered /
+unknown / unrecorded) and never rewritten, and a dated series drawn only from
+days the reader established — an entered day, or a legacy day that is the
+last entry and matches the reader's own dated active quote (amount and day).
+Price Pulse reads the personal series through it and says how many quotes it
+left out; the record's *Observed base rent* section lists every entry
+(`quoteLog()`), newest first, with its day or *unknown*, its recording time in
+Chicago's zone, its corrections and its provenance, and draws the personal
+chart from established days only; *Inspect history* lands on it. The notebook
+validator (`quoteHistoryOk`) accepts the legacy shape unchanged and refuses a
+day-less entry that does not say so, a day on an entry that claims none, a
+bad basis, a bad recording instant or a malformed correction — whole, before
+anything is merged; `historyOk` for source histories and snapshots is
+untouched. Asset revision `20260919-quote-dates`; one small `.quote-log` rule.
+
+**Measured here, all PASS.** `npm ci --ignore-scripts`; `npm test` **246**
+(233 at the base + 13: six model, seven jsdom journeys), and the same 246
+under `SPICYHOME_TEST_CLOCK_SKEW_DAYS` **7, 30 and 400**; `npm run check`
+**43** Python; `python tools/check_site.py` (22 immutable assets, 1,000
+records); `git diff --check` clean; `npm run browser-check -- --shots`
+**465/469** on its first full run over this tree, all 64 of the new section 11 passing (1280 dark,
+390 dark, 390 light, 320 dark) — the amount and the date entered and cleared
+with the keyboard, the shortlist and the comparison, Price Pulse before and
+after the correction, *History* and *Inspect history* landing under the dock,
+the quote log fitting the screen, a notes-only save, a reload, the export
+imported into an empty notebook, and the archived snapshot no feed carries
+opening with its legacy entries. The screenshots were looked at, at all four
+screens and both themes. **Each of the seven jsdom journeys was run against
+`c2e8143` first and fails there** (`regressions-on-base-c2e8143.log`): the
+undated change carries the save day, the date-only edit leaves `2026-09-19`
+where `2026-09-11` was set, the UTC-midnight instant becomes `2026-09-20`.
+The one existing test that changed, the Price Pulse separation test, used
+provenance-less entries as if they were dated by the reader; it now dates
+them and asserts the legacy pair forms no movement.
+
+**The four that failed were not this branch's, and were classified rather
+than waved past.** All four are one pre-existing scenario in section 7,
+*the incomplete provider query is readable beside the home's own date*, at
+1280 and 390 in both themes. It reads the first `listing` row in the committed
+feed and requires its query sentence to say the coverage is incomplete. At PR
+#27's head (`4a50b79`) that row was a Chicago listing under a capped query
+(500 of 4,484); the tracker's data-only commits since then re-ordered the feed
+and at `c2e8143` the first listing is a Park Ridge row under a complete query
+(18 of 18), whose sentence says *Complete for that recorded query.* The code
+that writes the sentence is untouched here. The scenario now chooses a row
+whose city's scan is capped, by that fact rather than by position — a
+one-line correction to the harness, disclosed here and in the PR — and the
+full check was rerun on the corrected harness; its count, and the base
+commit's own run of the unchanged harness, are appended below.
+
+**The harness, extended through the coordinated clock, not around it.**
+`shiftWindowClock(w, extra)` and `boot({clockOffsetMs})` carry the page's
+Date a bounded step past the suite-wide skew, and the boundary journey
+computes its expectation from the same total: saved half a second past a UTC
+midnight, the entry's `recorded_at` is on the far side of it, its Chicago
+label is the evening before, and neither day is printed as the quote's.
+Two of the browser scenarios could not have passed as first written and were
+corrected before commit: Enter inside a date input does not submit the form
+(the amount field does), and `open()`'s init script re-seeds `localStorage` on
+every navigation, so a reload read the seed rather than what the page saved
+— the new section seeds through the page once instead. One pre-existing
+behaviour was met and left alone: a save through an archived record's form
+has always re-read the home through `allHomes()`, so its snapshot carries
+`notebook_only`/`seen_in_latest`, both derived again on load.
+
+**Not run, not claimable.** The served page on the public origin: this sandbox
+cannot reach `spicychicken59.github.io` (the agent proxy answers every CONNECT to it with 403, while `raw.githubusercontent.com` answers 200), so read-only
+public-origin acceptance is NOT RUN and offline fixtures are not production
+proof. A physical phone. Any RentCast, leasing or tour call. Chromium here is
+1194 (Playwright 1.56.0), installed with `--no-save`; `package.json` and the
+lockfile are untouched.
+
+**Keep / fix now / defer / omit.** Keep: quote date optional; three facts
+apart; one writer, one reader; legacy entries as written and disclosed;
+source histories strict. Fix now: nothing found open. Defer: a per-entry
+control to date a legacy quote in place (today the reader re-enters the
+active quote's date, which establishes that entry only); the archived-form
+snapshot flags above. Omit: any migration that guesses which legacy days were
+entered, a second history surface, provider enrichment.
+
+**An approved merge of this branch touches `dist/**`**, so `publish.yml`
+fires on the push to `main` and serves the bytes after `check_site.py`; that
+is the existing workflow, unchanged here, and the publication is Tahir's
+call, not this branch's. Exact next action: review the PR for scope, the
+material diff, the tests, the regressions and the workflow effect; merge only
+on explicit approval; then read the served page once outside this sandbox and
+walk the quote journey on a phone.

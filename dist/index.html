@@ -12,10 +12,13 @@
     <link rel="icon" href="./design-system/assets/favicon.ico" />
     <link rel="stylesheet" href="./design-system/sc.css" />
     <link rel="stylesheet" href="./vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="./style.css?v=20260919-quote-dates" />
+    <link rel="preload" href="./assets/fonts/dm-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="./assets/fonts/dm-serif-display-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="./style.css?v=20260919-flagship" />
+    <link rel="stylesheet" href="./flagship.css?v=20260919-flagship" />
     <script src="./vendor/leaflet/leaflet.js" defer></script>
     <script src="./design-system/sc-theme.js" defer></script>
-    <script type="module" src="./app.js?v=20260919-quote-dates"></script>
+    <script type="module" src="./app.js?v=20260919-flagship"></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to apartments</a>
@@ -34,9 +37,9 @@
       <nav aria-label="Main">
         <button data-view="discover" aria-current="page">Discover</button
         ><button data-view="shortlist">
-          Shortlist <span id="saved-count">0</span></button
+          Decision Desk <span id="saved-count">0</span></button
         ><button data-view="lab">Cost Lab</button><button data-view="timeline">Activity</button
-        ><button data-view="setup">Sources & setup</button>
+        ><button data-view="setup">Sources</button>
       </nav>
       <button id="open-jump" class="jump-trigger" aria-haspopup="dialog">Jump to…</button>
       <button
@@ -48,37 +51,24 @@
       </button>
     </header>
     <main id="main" tabindex="-1">
-      <section class="intro">
-        <div>
-          <p class="eyebrow">YOUR NEXT CHAPTER / CHICAGO + SUBURBS</p>
-          <h1>Your next place.</h1>
-          <p class="intro-copy">
-            Find it. Compare the real costs. Make it yours.
-          </p>
-          <div class="criteria">
-            <span>$1,200–$3,000 / month</span><span>1–2 beds · 1–2 baths</span
-            ><span>Parking + EV charging</span>
-          </div>
+      <section class="intro" aria-labelledby="opening-title">
+        <div class="intro-story">
+          <p class="eyebrow">THE CHICAGO CHAPTER / YOUR APARTMENT NOTEBOOK</p>
+          <h1 id="opening-title">A place to<br /><em>make your own.</em></h1>
+          <p class="intro-copy">A considered search. The real costs.<br />Room for the details that matter to you.</p>
+          <div class="criteria"><span>$1,200–$3,000 / month</span><span>1–2 bedrooms</span><span>Parking + EV</span></div>
         </div>
-        <div class="city-window">
-          <img
-            src="./assets/chicago.jpg"
-            alt="Chicago skyline along Lake Michigan"
-            width="560"
-            height="350"
-          />
-          <div>
-            <span>HOME SEARCH 01</span><strong>Chicago + seven suburbs</strong
-            >
-          </div>
-        </div>
+        <figure class="city-window">
+          <img src="./assets/chicago.jpg" alt="Chicago skyline along Lake Michigan; city context, not a property photograph" width="960" height="320" fetchpriority="high" />
+          <figcaption><span>01 / A SENSE OF PLACE</span><strong>Chicago &amp; beyond.</strong><small>Chicago skyline · photograph by J. Crocker</small></figcaption>
+        </figure>
       </section>
       <details id="source-status" class="source-status"><summary id="source-status-label">Loading source status…</summary><div id="notice" role="status" aria-live="polite"></div></details>
       <section id="workspace" aria-label="Apartment research">
         <div class="workspace-heading">
           <div>
             <p class="eyebrow" id="view-eyebrow">THE SEARCH</p>
-            <h2 id="view-title">Find your place.</h2>
+            <h2 id="view-title">Places to consider.</h2>
           </div>
           <div class="actions">
             <button class="button secondary" id="refresh">

@@ -363,7 +363,7 @@ test("manual entry, shortlist and comparison preserve explicit no charging", asy
     .dispatchEvent(
       new d.w.Event("submit", { bubbles: true, cancelable: true }),
     );
-  assert.match(d.doc.querySelector("#view-title").textContent, /second look/);
+  assert.match(d.doc.querySelector("#view-title").textContent, /Decision Desk/);
   const stored=JSON.parse(d.w.localStorage.getItem("spicyhome.workspace.v1"));
   assert.equal(stored.manual[0].bedrooms,null);
   assert.equal(stored.manual[0].bathrooms,null);
@@ -1114,7 +1114,7 @@ test('a pick says why it is here and what is still open, without opening anythin
   // evidence, not for the answer to "why am I looking at this".
   const block=card.querySelector('.why-block');
   assert(block,'no why block on the pick card');
-  assert.equal(block.closest('details'),null,'the explanation is hidden behind a disclosure');
+  assert.equal(block.closest('details'),card.closest('details'),'once a pick is opened, its explanation needs no further disclosure');
   const reasons=whyTexts(card);
   assert(reasons.length>=1 && reasons.length<=3,`${reasons.length} reasons`);
   const open=card.querySelector('.why-open');
@@ -2187,7 +2187,7 @@ test("the unresolved list is folded, counted, and each item opens the exact fiel
   assert.match(after.querySelector(".saved-cues").textContent, /Unquoted: parking · utilities/);
   assert.match(after.querySelector(".saved-open").textContent, /Parking not quoted/);
   // Returning keeps the shortlist, not the discovery view.
-  assert.match(d.doc.querySelector("#view-title").textContent, /second look/);
+  assert.match(d.doc.querySelector("#view-title").textContent, /Decision Desk/);
   d.close();
 });
 
@@ -2985,7 +2985,9 @@ test("an archived record keeps its quotes and their evidence when the feed no lo
   const text = d.doc.querySelector("#detail-history").textContent.replace(/\s+/g, " ");
   assert.match(text, /\$2,500 · quote date unknown/);
   assert.match(text, /\$2,600 · quoted Sep 10, 2026, a date you entered/);
-  assert.match(d.doc.querySelector("#detail-content .callout").textContent, /Not in this area’s latest capped snapshot; current availability is unverified/, "absent from a capped feed is unverified, not unavailable");
+  assert.match(d.doc.querySelector(".dossier-kicker").textContent, /Archived notebook entry/);
+  assert.match(d.doc.querySelector("#detail-content .callout").textContent, /Absent from the current feed; current availability is unverified/, "absence never establishes unavailability, for complete or capped queries");
+  assert.doesNotMatch(d.doc.querySelector("#detail-content .callout").textContent, /latest capped/, "the archive label does not invent query coverage");
   // Dating it through the archived record works the same way, and Inspect history reaches it.
   const r = saveQuoteRecord(d, gone.id, { quoteDate: "2026-09-11" });
   assert.equal(r.quote_history[1].date, "2026-09-11");

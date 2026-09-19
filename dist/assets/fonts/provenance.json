@@ -1,0 +1,30 @@
+[
+  {
+    "file": "dm-sans-latin-wght-normal.woff2",
+    "package": "@fontsource-variable/dm-sans@5.3.0",
+    "license": "fontsource-variable-dm-sans-5.3.0.txt",
+    "sha256": "9fea608a947e67020c33cad9a6fe3d60c54119dfb8cff87768a8117a15ed7543",
+    "bytes": 36932
+  },
+  {
+    "file": "dm-serif-display-latin-400-normal.woff2",
+    "package": "@fontsource/dm-serif-display@5.3.0",
+    "license": "fontsource-dm-serif-display-5.3.0.txt",
+    "sha256": "fdf61e20fd2c0108e0ea28da4daca0035205b4b7fc031a3974b865b704de160a",
+    "bytes": 24744
+  },
+  {
+    "file": "dm-serif-display-latin-400-italic.woff2",
+    "package": "@fontsource/dm-serif-display@5.3.0",
+    "license": "fontsource-dm-serif-display-5.3.0.txt",
+    "sha256": "ed8b291611e32fa2d2900488dd48fc95faf0957b2ef7ddf1527e8d21dd9cf2df",
+    "bytes": 24572
+  },
+  {
+    "file": "ibm-plex-mono-latin-400-normal.woff2",
+    "package": "@fontsource/ibm-plex-mono@5.3.0",
+    "license": "fontsource-ibm-plex-mono-5.3.0.txt",
+    "sha256": "08949f728dc52d528e69b1667d15c89a5686a4ee9a296ff90983985f99c380f7",
+    "bytes": 14708
+  }
+]

@@ -446,6 +446,13 @@ try {
         ),
     );
     await shot(page, `${tag}-challenge-tour`);
+    const reducedEntry = await page
+      .locator("#detail-dialog[open]")
+      .evaluate(
+        (dialog) =>
+          matchMedia("(prefers-reduced-motion: reduce)").matches &&
+          parseFloat(getComputedStyle(dialog).animationDuration) < 0.001,
+      );
     await page.locator(".detail-dock .dock-close").click();
     const ratios = await page.evaluate(() => {
       const s = getComputedStyle(document.documentElement);
@@ -479,11 +486,7 @@ try {
     );
     check(
       `${tag}: reduced-motion preference suppresses entry motion`,
-      await page
-        .locator("body")
-        .evaluate(
-          (e) => parseFloat(getComputedStyle(e).animationDuration) < 0.01,
-        ),
+      reducedEntry,
     );
     await page.locator("[data-open-studio]").click();
     await page.locator('[data-studio-tab="pulse"]').click();

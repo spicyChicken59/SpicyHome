@@ -218,7 +218,12 @@ try {
     await click('[data-view="discover"]');
     await click("[data-open-studio]");
     await click('[data-studio-tab="pulse"]');
-    await capture("price-pulse", "#studio-panel");
+    // The panel may be taller than the phone viewport. Capture its opening,
+    // rather than asking Playwright to center the entire long history list.
+    await page
+      .locator("#studio-panel")
+      .evaluate((panel) => panel.scrollIntoView({ block: "start" }));
+    await capture("price-pulse");
     await click('[data-view="discover"]');
     await click("#open-search-controls");
     await page.locator("#search").fill("There are no matches for this fixture");

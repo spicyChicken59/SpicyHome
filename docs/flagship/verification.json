@@ -1,0 +1,172 @@
+{
+  "repository": "spicyChicken59/SpicyHome",
+  "base_sha": "50c1b680587b0f1b3a45171c224618d6fe1dc345",
+  "product_commit": "704152fc247326fceb05962a61ac1a801a920238",
+  "dist_tree_sha": "06bf5090efaacf348f9102d3c4de5a4e855133da",
+  "fixture": "committed dist/data.json plus explicitly synthetic personal notebook/edge fixtures",
+  "fixture_records": 1000,
+  "fixture_sha256": "0bdc226967e4390ee0eb177d65dfc36ace641037afbaef3b4966c23b1e46ca77",
+  "gates": {
+    "npm_ci_ignore_scripts": "PASS",
+    "npm_test": {
+      "pass": 246,
+      "fail": 0
+    },
+    "clock_skew_days": {
+      "7": {
+        "pass": 246,
+        "fail": 0
+      },
+      "30": {
+        "pass": 246,
+        "fail": 0
+      },
+      "400": {
+        "pass": 246,
+        "fail": 0
+      }
+    },
+    "npm_run_check": {
+      "javascript_syntax": "PASS",
+      "python_tests_pass": 43
+    },
+    "check_site": "PASS",
+    "browser_check": {
+      "pass": 469,
+      "fail": 0
+    },
+    "flagship_acceptance": {
+      "pass": 89,
+      "fail": 0
+    },
+    "diff_check": "PASS"
+  },
+  "baseline_browser": {
+    "pass": 465,
+    "fail": 4
+  },
+  "visual": {
+    "before_pngs": 108,
+    "after_pngs": 108,
+    "viewports": [
+      [
+        1440,
+        900,
+        "dark"
+      ],
+      [
+        1280,
+        900,
+        "dark"
+      ],
+      [
+        1280,
+        900,
+        "light"
+      ],
+      [
+        390,
+        844,
+        "dark"
+      ],
+      [
+        390,
+        844,
+        "light"
+      ],
+      [
+        320,
+        740,
+        "dark"
+      ]
+    ],
+    "measured_viewports": 102,
+    "max_page_overflow_px": 0,
+    "max_dialog_overflow_px": 0,
+    "page_errors": 0,
+    "reviews": "Three documented review cycles plus final focused repairs and capture"
+  },
+  "provenance": {
+    "design_system": {
+      "version": "2.13.0",
+      "commit": "14a752dd0269bd6ebbb7080eb0d9e1922cd1ef2c",
+      "assets": 22,
+      "drift": []
+    },
+    "fonts": {
+      "count": 4,
+      "bytes": 100956,
+      "drift": []
+    }
+  },
+  "performance": {
+    "before": {
+      "samples": [
+        {
+          "loadMs": 2669,
+          "filterMs": 1083,
+          "records": 1000,
+          "results": 4
+        },
+        {
+          "loadMs": 2388,
+          "filterMs": 921,
+          "records": 1000,
+          "results": 4
+        },
+        {
+          "loadMs": 2237,
+          "filterMs": 863,
+          "records": 1000,
+          "results": 4
+        }
+      ],
+      "median_load_ms": 2388,
+      "median_filter_ms": 921
+    },
+    "after": {
+      "samples": [
+        {
+          "loadMs": 2353,
+          "filterMs": 872,
+          "records": 1000,
+          "results": 4
+        },
+        {
+          "loadMs": 2413,
+          "filterMs": 921,
+          "records": 1000,
+          "results": 4
+        },
+        {
+          "loadMs": 2269,
+          "filterMs": 997,
+          "records": 1000,
+          "results": 4
+        }
+      ],
+      "median_load_ms": 2353,
+      "median_filter_ms": 921
+    }
+  },
+  "performance_limit": "Three local samples per version, shared runner, blocked external resources, includes existing 200ms debounce; not a field benchmark",
+  "unchanged": [
+    "model.js",
+    "provider/query/budget logic",
+    "feed and history data",
+    "availability interpretation",
+    "notebook storage schema",
+    "quote-date provenance",
+    "shared assets",
+    "workflows",
+    "Pages settings",
+    "runtime dependencies"
+  ],
+  "not_run": [
+    "public-origin acceptance",
+    "live map-tile delivery",
+    "Safari/physical-device testing",
+    "provider fact verification"
+  ],
+  "publication": "Merge touching dist/** triggers the existing Publish website workflow. No merge or publication performed."
+}

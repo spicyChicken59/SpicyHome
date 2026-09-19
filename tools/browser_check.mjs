@@ -1445,6 +1445,193 @@ try {
     await context.close();
   }
 
+
+  // --- 11. personal quote dates: a save time is not a quote day, on a screen --
+  //         jsdom holds the record's shape and the words. Only a browser can
+  //         say whether the reader can enter and clear a date with the keyboard,
+  //         whether the history a Price Pulse row points at lands on screen
+  //         under the record's dock, and whether the quote log fits a phone.
+  {
+    const QUOTE_KEY = 'spicyhome.workspace.v1';
+    const QUOTE_HOMES = JSON.parse(FEED).homes;
+    const QUOTE_HOME = QUOTE_HOMES.find((h) => h.kind === 'listing' && h.rent && h.rent > 1500 && h.rent < 2800);
+    // A saved snapshot whose id no feed carries, with two entries from before
+    // quote-date provenance was kept.
+    const ARCHIVED = { ...QUOTE_HOMES.find((h) => h.kind === 'listing' && h.id !== QUOTE_HOME.id && h.rent),
+      id: 'archived-quote-home', title: 'Archived Court', address: '1 Archived Way, Chicago, IL 60601' };
+    const quoteNotebook = JSON.stringify({ version: 1, manual: [], events: [], preferences: {}, savedSearches: [],
+      records: { [ARCHIVED.id]: { saved: true, status: 'contacted', rentOverride: 2350, quoteDate: '', snapshot: ARCHIVED,
+        quote_history: [{ date: '2026-09-05', rent: 2450 }, { date: '2026-09-12', rent: 2350 }] } } });
+    const usDate = (day) => new Date(day).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+    for (const [label, opts] of [['1280px dark', {}],
+                                 ['390px dark', { width: 390, height: 844, mobile: true }],
+                                 ['390px light', { width: 390, height: 844, mobile: true, theme: 'light' }],
+                                 ['320px dark', { width: 320, height: 640, mobile: true }]]) {
+      const tag = label.replace(/\s+/g, '-');
+      const { context, page, errors } = await open(browser, opts);
+      page.on('dialog', (d) => d.accept());
+      // Seeded through the page itself, once, so a later reload re-reads what
+      // the page saved rather than a seed applied on every navigation.
+      await page.evaluate(({ key, notebook }) => localStorage.setItem(key, notebook), { key: QUOTE_KEY, notebook: quoteNotebook });
+      await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(900);
+      const fold = opts.height ?? 900;
+      const id = QUOTE_HOME.id;
+      const record = (which = id) => page.evaluate(({ key, which }) => JSON.parse(localStorage.getItem(key)).records[which], { key: QUOTE_KEY, which });
+      const openRecord = async () => {
+        await page.evaluate(() => document.querySelector('[data-view="discover"]').click());
+        await page.waitForTimeout(350);
+        const opened = await page.evaluate((id) => { const b = document.querySelector(`[data-detail="${id}"]`); if (!b) return false; b.click(); return true; }, id);
+        await page.waitForTimeout(350);
+        return opened;
+      };
+      // Enter submits from the amount field; a date input's Enter does not.
+      const submitByEnter = async () => { await page.focus('#rentOverride'); await page.keyboard.press('Enter'); await page.waitForTimeout(450); };
+      const typeAmount = async (digits) => { await page.focus('#rentOverride'); await page.keyboard.press('Control+A'); await page.keyboard.type(digits); };
+      const typeDate = async (digits) => { await page.focus('#quoteDate'); await page.keyboard.type(digits); };
+      const clearDate = async () => { await page.focus('#quoteDate'); for (let i = 0; i < 3; i++) { await page.keyboard.press('Backspace'); await page.keyboard.press('Tab'); } };
+      const pulse = async () => page.evaluate(async () => {
+        if (!document.querySelector('[data-studio-tab="pulse"]')) {
+          document.querySelector('[data-view="discover"]').click(); await new Promise((r) => setTimeout(r, 200));
+          document.querySelector('[data-open-studio]').click(); await new Promise((r) => setTimeout(r, 200));
+        }
+        document.querySelector('[data-studio-tab="pulse"]').click();
+        if (!document.querySelector('#pulse-saved').checked) document.querySelector('#pulse-saved').click();
+        await new Promise((r) => setTimeout(r, 200));
+        return { rows: [...document.querySelectorAll('.pulse-row')].map((r) => r.textContent.replace(/\s+/g, ' ').trim()),
+          method: document.querySelector('.studio-method').textContent };
+      });
+      // 1. a dated quote, entered with the keyboard
+      check(`${label} the record opens from Discover`, await openRecord());
+      await typeAmount('2600'); await typeDate('09102026'); await submitByEnter();
+      let r = await record();
+      check(`${label} a dated quote is observed on the day entered`,
+        r?.rentOverride === 2600 && r.quoteDate === '2026-09-10' && r.quote_history?.length === 1
+          && r.quote_history[0].date === '2026-09-10' && r.quote_history[0].date_basis === 'entered' && Number.isFinite(Date.parse(r.quote_history[0].recorded_at)),
+        JSON.stringify(r?.quote_history));
+      // 2. the amount changes and the date is cleared, with the keyboard
+      await openRecord(); await clearDate(); await typeAmount('2500'); await submitByEnter();
+      r = await record();
+      const undated = r?.quote_history?.[1];
+      check(`${label} an undated change keeps the amount and invents no day`,
+        r?.rentOverride === 2500 && r.quoteDate === '' && r.quote_history.length === 2 && undated?.rent === 2500
+          && undated.date === null && undated.date_basis === 'unknown' && Number.isFinite(Date.parse(undated.recorded_at)),
+        JSON.stringify(r?.quote_history));
+      const saveDay = usDate(new Date(Number.isFinite(Date.parse(undated?.recorded_at)) ? Date.parse(undated.recorded_at) : Date.now()).toISOString().slice(0, 10));
+      // 3. the shortlist and the comparison carry the amount and no day
+      const desk = await page.evaluate(async (id) => {
+        document.querySelector('[data-view="shortlist"]').click(); await new Promise((r) => setTimeout(r, 400));
+        const row = document.querySelector(`.saved-row[data-home="${id}"]`);
+        row.querySelector('[data-compare]').click(); await new Promise((r) => setTimeout(r, 200));
+        document.querySelector('#open-compare')?.click(); await new Promise((r) => setTimeout(r, 400));
+        const sheet = document.querySelector('#compare-content');
+        const rent = [...sheet.querySelectorAll('.matrix tr, .sc-compare-pair__measure')].map((el) => el.textContent.replace(/\s+/g, ' ')).find((t) => /^Base rent/.test(t)) ?? '';
+        const pair = sheet.querySelector('.sc-compare-pair__rows')?.textContent.replace(/\s+/g, ' ') ?? '';
+        const out = { row: row.textContent.replace(/\s+/g, ' '), rent, pair, open: document.querySelector('#compare-dialog').open };
+        document.querySelector('#compare-content [data-close]')?.click(); await new Promise((r) => setTimeout(r, 200));
+        document.querySelector('#clear-compare')?.click();
+        return out;
+      }, id);
+      check(`${label} the shortlist keeps the amount as the reader's quote and gives it no dated freshness`,
+        /\$2,500/.test(desk.row) && /Your base-rent quote/.test(desk.row) && /No dated quote on record/.test(desk.row), desk.row.slice(0, 100));
+      check(`${label} the comparison shows the same amount and prints no quote day`,
+        desk.open && /\$2,500/.test(desk.rent + desk.pair) && !(desk.rent + desk.pair).includes(saveDay), desk.rent.slice(0, 60));
+      // 4. Price Pulse derives nothing from a day nobody entered
+      let p = await pulse();
+      check(`${label} Price Pulse derives no personal movement from the undated change`,
+        p.rows.filter((row) => /Your recorded quotes/.test(row)).length === 0 && /3 such quotes in this view/.test(p.method), p.method.slice(-120));
+      await shot(page, `quotes-pulse-none-${tag}`);
+      // 5. the history surface lists the undated quote where the reader can read it
+      await openRecord();
+      const hist = await page.evaluate(async () => {
+        document.querySelector('[data-detail-jump="detail-history"]').click(); await new Promise((r) => setTimeout(r, 400));
+        const section = document.querySelector('#detail-history').getBoundingClientRect();
+        const dock = document.querySelector('.detail-dock').getBoundingClientRect();
+        const log = document.querySelector('#detail-history .quote-log');
+        return { top: Math.round(section.top), dockBottom: Math.round(dock.bottom), width: window.innerWidth, active: document.activeElement?.id,
+          items: [...log.querySelectorAll('li')].map((li) => ({ text: li.textContent.replace(/\s+/g, ' '), right: Math.round(li.getBoundingClientRect().right) })),
+          plotted: !!log.previousElementSibling?.classList.contains('history-chart'),
+          sideways: document.querySelector('#detail-dialog').scrollWidth > document.querySelector('#detail-dialog').clientWidth + 1 };
+      });
+      check(`${label} History lands on screen under the dock`, hist.active === 'detail-history' && hist.top >= hist.dockBottom - 1 && hist.top < fold, `top ${hist.top}, dock ${hist.dockBottom}`);
+      check(`${label} the undated quote is listed as unknown, the dated one as entered, and one day is no series`,
+        hist.items.length === 2 && /^\$2,500 · quote date unknown — none entered, none assumed · Recorded .* Chicago time$/.test(hist.items[0].text)
+          && /^\$2,600 · quoted Sep 10, 2026, a date you entered · Recorded .* Chicago time$/.test(hist.items[1].text) && !hist.plotted,
+        hist.items.map((i) => i.text.slice(0, 70)).join(' | '));
+      check(`${label} the quote log fits the screen`, !hist.sideways && hist.items.every((i) => i.right <= hist.width), `rights ${hist.items.map((i) => i.right)} of ${hist.width}`);
+      await shot(page, `quotes-history-unknown-${tag}`);
+      // 6. correcting only the date: one entry corrected, one movement between the reader's own days
+      await openRecord(); await typeDate('09112026'); await submitByEnter();
+      r = await record();
+      check(`${label} a date-only edit corrects the active quote's entry and keeps what it replaced`,
+        r.quoteDate === '2026-09-11' && r.quote_history.length === 2 && r.quote_history[1].date === '2026-09-11' && r.quote_history[1].date_basis === 'entered'
+          && r.quote_history[1].recorded_at === undated.recorded_at && r.quote_history[1].date_corrections?.length === 1 && r.quote_history[1].date_corrections[0].from === null,
+        JSON.stringify(r.quote_history[1]));
+      p = await pulse();
+      const personal = p.rows.filter((row) => /Your recorded quotes/.test(row));
+      check(`${label} Price Pulse shows one movement, between the reader's two days and on no save day`,
+        personal.length === 1 && /\$2,600 on Sep 10, 2026 → \$2,500 on Sep 11, 2026/.test(personal[0]) && /on days you entered/.test(personal[0]) && !personal[0].includes(saveDay),
+        personal[0]?.slice(0, 120));
+      await shot(page, `quotes-pulse-corrected-${tag}`);
+      const reach = await page.evaluate(async () => {
+        const row = [...document.querySelectorAll('.pulse-row')].find((r) => /Your recorded quotes/.test(r.textContent));
+        row.querySelector('[data-studio-task][data-task-target="detail-history"]').click(); await new Promise((r) => setTimeout(r, 450));
+        const section = document.querySelector('#detail-history').getBoundingClientRect();
+        const dock = document.querySelector('.detail-dock').getBoundingClientRect();
+        const log = document.querySelector('#detail-history .quote-log');
+        return { open: document.querySelector('#detail-dialog').open, active: document.activeElement?.id, top: Math.round(section.top), dockBottom: Math.round(dock.bottom),
+          first: log?.querySelector('li')?.textContent.replace(/\s+/g, ' ') ?? '', series: log?.previousElementSibling?.getAttribute('aria-label') ?? '' };
+      });
+      check(`${label} Inspect history reaches the corrected entry, on screen under the dock`,
+        reach.open && reach.active === 'detail-history' && reach.top >= reach.dockBottom - 1 && reach.top < fold
+          && /quoted Sep 11, 2026, a date you entered · Recorded .* · Date corrected .* \(was unknown\)/.test(reach.first)
+          && /from \$2,600 on Sep 10, 2026 to \$2,500 on Sep 11, 2026/.test(reach.series),
+        `${reach.first.slice(0, 100)} | top ${reach.top}`);
+      await shot(page, `quotes-inspect-${tag}`);
+      // 7. a notes-only save changes no quote evidence
+      const frozen = JSON.stringify(r.quote_history);
+      await openRecord(); await page.fill('#notes', 'Ask about the bike room'); await page.click('#record-form button[type="submit"]'); await page.waitForTimeout(450);
+      r = await record();
+      check(`${label} a notes-only save records no quote and re-dates none`, JSON.stringify(r.quote_history) === frozen && r.notes === 'Ask about the bike room' && r.quoteDate === '2026-09-11');
+      // 8. a reload, then the export the reader would download
+      await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(900);
+      r = await record();
+      check(`${label} the quote history survives a reload`, JSON.stringify(r?.quote_history) === frozen);
+      const exported = await page.evaluate((key) => JSON.stringify(JSON.parse(localStorage.getItem(key)), null, 2), QUOTE_KEY);
+      check(`${label} no page errors through the quote journey`, errors.length === 0, errors.join(' | '));
+      await context.close();
+      // 9. that export imported into an empty notebook, and the archived record it carries
+      const fresh = await open(browser, opts);
+      fresh.page.on('dialog', (d) => d.accept());
+      await fresh.page.setInputFiles('#import-file', { name: 'spicyhome-notebook-test.json', mimeType: 'application/json', buffer: Buffer.from(exported) });
+      await fresh.page.waitForTimeout(700);
+      const imported = await fresh.page.evaluate(({ key, id }) => JSON.parse(localStorage.getItem(key) ?? '{}').records?.[id], { key: QUOTE_KEY, id });
+      check(`${label} an export imports with its unknown day and its correction intact`, JSON.stringify(imported?.quote_history) === frozen, JSON.stringify(imported?.quote_history)?.slice(0, 100));
+      const archived = await fresh.page.evaluate(async (fold) => {
+        document.querySelector('[data-view="shortlist"]').click(); await new Promise((r) => setTimeout(r, 400));
+        const row = document.querySelector('.saved-row[data-home="archived-quote-home"]');
+        if (!row) return { ran: false };
+        const evidence = row.querySelector('.saved-evidence')?.textContent ?? '';
+        row.querySelector('[data-detail]').click(); await new Promise((r) => setTimeout(r, 400));
+        document.querySelector('[data-detail-jump="detail-history"]').click(); await new Promise((r) => setTimeout(r, 400));
+        const section = document.querySelector('#detail-history').getBoundingClientRect();
+        return { ran: true, evidence, open: document.querySelector('#detail-dialog').open, title: document.querySelector('#detail-title').textContent,
+          callout: document.querySelector('#detail-content .callout').textContent,
+          items: [...document.querySelectorAll('#detail-history .quote-log li')].map((li) => li.textContent.replace(/\s+/g, ' ')),
+          summary: document.querySelector('#detail-history .quote-log + p')?.textContent ?? '', onScreen: section.top >= 0 && section.top < fold };
+      }, fold);
+      check(`${label} an archived record the feed no longer carries opens with its own quotes`,
+        archived.ran && archived.open && archived.title === 'Archived Court' && /Archived notebook entry/.test(archived.evidence)
+          && /current availability is unverified/.test(archived.callout) && archived.onScreen, `${archived.title} | ${archived.evidence?.slice(0, 50)}`);
+      check(`${label} legacy days are kept, said to be of unrecorded provenance, and form no series`,
+        archived.items?.length === 2 && /^\$2,350 · dated Sep 12, 2026 — recorded before this notebook kept quote-date provenance/.test(archived.items[0])
+          && /^\$2,450 · dated Sep 5, 2026 — recorded before/.test(archived.items[1]) && /0 of 2 dated by you · 2 without date provenance/.test(archived.summary),
+        archived.items?.map((i) => i.slice(0, 50)).join(' | '));
+      await shot(fresh.page, `quotes-archived-${tag}`);
+      check(`${label} no page errors after the import`, fresh.errors.length === 0, fresh.errors.join(' | '));
+      await fresh.context.close();
+    }
+  }
+
 } finally {
   await browser.close();
   server.close();

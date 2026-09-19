@@ -32,12 +32,16 @@ const openQuestionsFor = (home) => modelOpenQuestions(home, {}, modelDefaults, t
 const SKEW_DAYS = Number(process.env.SPICYHOME_TEST_CLOCK_SKEW_DAYS ?? 0);
 const CLOCK_SKEW = Number.isFinite(SKEW_DAYS) ? SKEW_DAYS * 86400000 : 0;
 const testNow = () => new Date(Date.now() + CLOCK_SKEW);
-function shiftWindowClock(w) {
-  if (!CLOCK_SKEW) return;
+// A test may carry the page's clock a bounded step further -- to the far side
+// of a UTC midnight, say -- and it does so THROUGH this one mechanism, on top of
+// the suite-wide skew, computing its expectations from the same total offset.
+function shiftWindowClock(w, extra = 0) {
+  const offset = CLOCK_SKEW + extra;
+  if (!offset) return;
   const Real = w.Date;
   class Shifted extends Real {
-    constructor(...args) { if (!args.length) super(Real.now() + CLOCK_SKEW); else super(...args); }
-    static now() { return Real.now() + CLOCK_SKEW; }
+    constructor(...args) { if (!args.length) super(Real.now() + offset); else super(...args); }
+    static now() { return Real.now() + offset; }
   }
   w.Date = Shifted;
 }
@@ -51,6 +55,7 @@ async function boot({
   configuration = undefined,
   attempt = undefined,
   leaflet = undefined,
+  clockOffsetMs = 0,
 } = {}) {
   const d = new JSDOM(html, {
       url: "https://spicyhome.test/",
@@ -97,7 +102,7 @@ async function boot({
     return { ok: true, text: async () => JSON.stringify(data) };
   };
   if (leaflet) w.L = leaflet(w);
-  shiftWindowClock(w);
+  shiftWindowClock(w, clockOffsetMs);
   w.eval(model + "\n" + app);
   for (let i = 0; i < 30 && !w.document.querySelector(".home-card"); i++)
     await new Promise((r) => setTimeout(r, 3));
@@ -2739,5 +2744,268 @@ test("the lens says what it holds rather than what the area has, when it holds n
   assert(!/no apartments (exist|are available)/i.test(results), results);
   d.doc.querySelector("#widen-lens").click();
   assert.equal(JSON.parse(d.w.localStorage.getItem("spicyhome.workspace.v1")).preferences.urbanScope, "all");
+  d.close();
+});
+
+// ---------------------------------------------------------------------------
+// Personal quote dates: a notebook save time is not a quote-observation date.
+const KEY = "spicyhome.workspace.v1";
+const usDate = (day) => new Date(day).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+function openQuoteRecord(d, id) {
+  if (!d.doc.querySelector(`[data-detail="${id}"]`)) d.doc.querySelector('[data-view="discover"]').click();
+  const opener = d.doc.querySelector(`[data-detail="${id}"]`);
+  assert(opener, `an opener for ${id}`);
+  opener.click();
+  assert(d.doc.querySelector("#detail-dialog").open);
+}
+// Through the record form itself: only the named fields change, the rest is
+// whatever the form was rendered with, as it is for a reader.
+function saveQuoteRecord(d, id, fields) {
+  openQuoteRecord(d, id);
+  for (const [name, value] of Object.entries(fields)) d.doc.querySelector("#" + name).value = value;
+  d.doc.querySelector("#record-form").dispatchEvent(new d.w.Event("submit", { bubbles: true, cancelable: true }));
+  return JSON.parse(d.w.localStorage.getItem(KEY)).records[id];
+}
+function quoteHistoryText(d, id) {
+  openQuoteRecord(d, id);
+  return d.doc.querySelector("#detail-history").textContent.replace(/\s+/g, " ").trim();
+}
+function quotePulseRows(d, savedOnly = true) {
+  if (!d.doc.querySelector('[data-studio-tab="pulse"]')) {
+    d.doc.querySelector('[data-view="discover"]').click();
+    d.doc.querySelector("[data-open-studio]").click();
+  }
+  d.doc.querySelector('[data-studio-tab="pulse"]').click();
+  if (d.doc.querySelector("#pulse-saved").checked !== savedOnly) d.doc.querySelector("#pulse-saved").click();
+  return [...d.doc.querySelectorAll(".pulse-row")].map((row) => row.textContent.replace(/\s+/g, " ").trim());
+}
+const personalQuoteRows = (d) => quotePulseRows(d).filter((row) => /Your recorded quotes/.test(row));
+function quoteShortlistRow(d, id) {
+  d.doc.querySelector('[data-view="shortlist"]').click();
+  return d.doc.querySelector(`.saved-row[data-home="${id}"]`).textContent.replace(/\s+/g, " ");
+}
+test("an undated quote change keeps the amount, records no quote date, and manufactures no movement or freshness", async () => {
+  const d = await boot();
+  const id = d.doc.querySelector("[data-detail]").dataset.detail;
+  let r = saveQuoteRecord(d, id, { rentOverride: "2600", quoteDate: "2026-09-10" });
+  assert.deepEqual(r.quote_history.map((e) => [e.rent, e.date, e.date_basis]), [[2600, "2026-09-10", "entered"]]);
+  r = saveQuoteRecord(d, id, { rentOverride: "2500", quoteDate: "" });
+  assert.equal(r.rentOverride, 2500, "the amount is retained");
+  assert.equal(r.quoteDate, "", "and its date is unknown");
+  assert.equal(r.quote_history.length, 2);
+  const undated = r.quote_history[1];
+  assert.equal(undated.rent, 2500);
+  assert.equal(undated.date, null, "no quote date was entered and none is substituted");
+  assert.equal(undated.date_basis, "unknown");
+  const recorded = Date.parse(undated.recorded_at);
+  assert(Math.abs(recorded - testNow().getTime()) < 10000, "the recording instant is the page's own clock, kept as a recording instant");
+  assert.deepEqual(r.quote_history[0], { rent: 2600, date: "2026-09-10", date_basis: "entered", recorded_at: r.quote_history[0].recorded_at });
+  // No surface reads the save day as the quote day.
+  const saveDay = usDate(new Date(recorded).toISOString().slice(0, 10));
+  assert.deepEqual(personalQuoteRows(d), [], "no dated decrease is derived from a day nobody entered");
+  assert.match(d.doc.querySelector(".studio-method").textContent, /1 such quote in this view/);
+  const history = quoteHistoryText(d, id);
+  assert.match(history, /\$2,500 · quote date unknown — none entered, none assumed/);
+  assert.match(history, /\$2,600 · quoted Sep 10, 2026, a date you entered/);
+  assert.match(history, /1 of 2 dated by you · 1 with no quote date/);
+  assert.doesNotMatch(history, new RegExp("quoted " + saveDay), "the save day is never printed as a quote day");
+  assert.match(history, /Recorded [A-Z][a-z]{2} \d{1,2}, \d{4}, \d{1,2}:\d{2} [AP]M Chicago time/, "the recording instant is printed as a time, in the notebook's own zone");
+  assert.equal(d.doc.querySelectorAll("#detail-history .history-chart").length, 0, "one established day is no series");
+  assert.match(quoteShortlistRow(d, id), /No dated quote on record/, "an unknown day earns no freshness");
+  d.close();
+});
+test("correcting only the quote date corrects the active quote's entry: one observation with a history, one movement between the reader's own days", async () => {
+  const d = await boot();
+  const id = d.doc.querySelector("[data-detail]").dataset.detail;
+  saveQuoteRecord(d, id, { rentOverride: "2600", quoteDate: "2026-09-10" });
+  const before = saveQuoteRecord(d, id, { rentOverride: "2500", quoteDate: "" });
+  let r = saveQuoteRecord(d, id, { quoteDate: "2026-09-11" });
+  assert.equal(r.quoteDate, "2026-09-11");
+  assert.equal(r.quote_history.length, 2, "a date-only edit adds no observation");
+  assert.equal(r.quote_history[1].date, "2026-09-11");
+  assert.equal(r.quote_history[1].date_basis, "entered");
+  assert.equal(r.quote_history[1].recorded_at, before.quote_history[1].recorded_at, "the entry keeps its own recording instant");
+  assert.deepEqual(r.quote_history[1].date_corrections.map((c) => [c.from, c.basis]), [[null, "unknown"]], "what it replaced is kept beside it");
+  assert.deepEqual(r.quote_history[0], before.quote_history[0]);
+  const rows = personalQuoteRows(d);
+  assert.equal(rows.length, 1);
+  assert.match(rows[0], /\$2,600 on Sep 10, 2026 → \$2,500 on Sep 11, 2026/);
+  assert.match(rows[0], /Your recorded quotes, on days you entered · Last observation Sep 11, 2026/);
+  assert.doesNotMatch(d.doc.querySelector(".studio-method").textContent, /such quote/);
+  // Inspect history reaches the evidence the row is drawn from.
+  d.doc.querySelector('.pulse-row [data-studio-task][data-task-target="detail-history"]').click();
+  assert(d.doc.querySelector("#detail-dialog").open);
+  assert.equal(d.doc.activeElement.id, "detail-history");
+  const history = d.doc.querySelector("#detail-history").textContent.replace(/\s+/g, " ");
+  assert.match(history, /\$2,500 · quoted Sep 11, 2026, a date you entered · Recorded .* · Date corrected .* \(was unknown\)/);
+  assert.match(history, /2 of 2 dated by you\./);
+  const series = d.doc.querySelector("#detail-history .quote-log").previousElementSibling;
+  assert.equal(series?.classList.contains("history-chart"), true, "the reader's own dated series is drawn");
+  assert.match(series.getAttribute("aria-label"), /from \$2,600 on Sep 10, 2026 to \$2,500 on Sep 11, 2026/);
+  // Clearing the date is the same correction back to unknown; the day it replaced is kept.
+  r = saveQuoteRecord(d, id, { quoteDate: "" });
+  assert.equal(r.quote_history.length, 2);
+  assert.equal(r.quote_history[1].date, null);
+  assert.deepEqual(r.quote_history[1].date_corrections.map((c) => [c.from, c.basis]), [[null, "unknown"], ["2026-09-11", "entered"]]);
+  assert.deepEqual(personalQuoteRows(d), []);
+  assert.match(quoteHistoryText(d, id), /quote date unknown .* Date corrected .*\(was unknown\); .*\(was Sep 11, 2026\)/);
+  const events = JSON.parse(d.w.localStorage.getItem(KEY)).events.map((e) => e.description);
+  assert.match(events[0], /Corrected that quote's date to unknown\./);
+  assert.match(events[1], /Corrected that quote's date to Sep 11, 2026\./);
+  assert.match(events[2], /Recorded a \$2,500 base-rent quote, quote date unknown\./);
+  assert.match(events[3], /Recorded a \$2,600 base-rent quote, quoted Sep 10, 2026\./);
+  d.close();
+});
+test("notes, stage, tour and unchanged saves record no quote and re-date none; an amount-only save is an observation on the day still entered", async () => {
+  const d = await boot();
+  const id = d.doc.querySelector("[data-detail]").dataset.detail;
+  saveQuoteRecord(d, id, { rentOverride: "2600", quoteDate: "2026-09-10" });
+  let r = saveQuoteRecord(d, id, { rentOverride: "2500", quoteDate: "2026-09-11" });
+  const frozen = JSON.stringify(r.quote_history);
+  for (const fields of [{ notes: "Ask about the bike room" }, { status: "toured" }, { tourDate: "2026-09-21T10:00" }, {}]) {
+    r = saveQuoteRecord(d, id, fields);
+    assert.equal(JSON.stringify(r.quote_history), frozen, `${JSON.stringify(fields)} leaves the quote history as it was`);
+    assert.equal(r.quoteDate, "2026-09-11");
+    assert.equal(r.rentOverride, 2500);
+  }
+  assert.match(r.notes, /bike room/);
+  assert.equal(r.status, "toured");
+  assert.equal(JSON.parse(d.w.localStorage.getItem(KEY)).events.filter((e) => /Recorded a|Corrected that/.test(e.description)).length, 2);
+  // Amount only: the new amount is an observation on the day the field still holds,
+  // and two amounts on one day conflict rather than move.
+  r = saveQuoteRecord(d, id, { rentOverride: "2450" });
+  assert.equal(r.quote_history.length, 3);
+  assert.deepEqual([r.quote_history[2].rent, r.quote_history[2].date, r.quote_history[2].date_basis], [2450, "2026-09-11", "entered"]);
+  assert.deepEqual(personalQuoteRows(d), [], "conflicting amounts on one day are not a movement");
+  assert.match(quoteHistoryText(d, id), /\$2,450 · quoted Sep 11, 2026.*\$2,500 · quoted Sep 11, 2026.*\$2,600 · quoted Sep 10, 2026/);
+  // Clearing the amount withdraws the active quote and observes nothing.
+  r = saveQuoteRecord(d, id, { rentOverride: "" });
+  assert.equal(r.rentOverride, null);
+  assert.equal(r.quote_history.length, 3);
+  const row = quoteShortlistRow(d, id);
+  assert.match(row, /Base rent from/, "the source's own amount is what is left");
+  assert.doesNotMatch(row, /Your base-rent quote/);
+  d.close();
+});
+test("a recording instant just past a UTC midnight is a time in the notebook's zone, never the quote's day", async () => {
+  // Carried through the coordinated clock: the page's Date and the expectations
+  // below move together, by the suite-wide skew plus this step.
+  const midnight = new Date(testNow());
+  midnight.setUTCHours(24, 0, 0, 500);
+  const step = midnight.getTime() - testNow().getTime();
+  const d = await boot({ clockOffsetMs: step });
+  const pageNow = () => new Date(testNow().getTime() + step);
+  const id = d.doc.querySelector("[data-detail]").dataset.detail;
+  const r = saveQuoteRecord(d, id, { rentOverride: "2500", quoteDate: "" });
+  const entry = r.quote_history[0];
+  assert.equal(entry.date, null);
+  assert.equal(entry.date_basis, "unknown");
+  const recorded = Date.parse(entry.recorded_at);
+  assert(Math.abs(recorded - pageNow().getTime()) < 10000, `recorded ${entry.recorded_at} against the page's ${pageNow().toISOString()}`);
+  const utcDay = new Date(recorded).toISOString().slice(0, 10);
+  assert.equal(utcDay, midnight.toISOString().slice(0, 10), "the instant is on the far side of the UTC midnight");
+  const chicago = new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(recorded));
+  assert.notEqual(chicago.slice(0, chicago.indexOf(",")), usDate(utcDay).slice(0, usDate(utcDay).indexOf(",")), "in Chicago that instant is still the evening before");
+  const history = quoteHistoryText(d, id);
+  assert.match(history, /quote date unknown — none entered, none assumed/);
+  assert(history.includes("Recorded " + chicago + " Chicago time"), history);
+  for (const day of [utcDay, new Date(recorded - 86400000).toISOString().slice(0, 10)])
+    assert.doesNotMatch(history, new RegExp("quoted " + usDate(day)), `${day} is not printed as the quote's day`);
+  assert.deepEqual(personalQuoteRows(d), []);
+  assert.match(quoteShortlistRow(d, id), /No dated quote on record/);
+  d.close();
+});
+test("a legacy notebook keeps its quote days as written, says their provenance is unrecorded, and forms no movement until the reader dates one", async () => {
+  const id = seed.homes[0].id;
+  const legacy = [{ date: "2026-09-05", rent: 2600 }, { date: "2026-09-12", rent: 2500 }];
+  const notebook = { version: 1, records: { [id]: { saved: true, status: "contacted", rentOverride: 2500, quoteDate: "", snapshot: seed.homes[0], quote_history: legacy } }, manual: [], events: [], preferences: {} };
+  const d = await boot({ notebook });
+  assert.deepEqual(JSON.parse(d.w.localStorage.getItem(KEY)).records[id].quote_history, legacy, "loading rewrites nothing");
+  let history = quoteHistoryText(d, id);
+  assert.match(history, /\$2,500 · dated Sep 12, 2026 — recorded before this notebook kept quote-date provenance, so the day may be when it was saved rather than when you were quoted; it forms no dated movement · Recording time not kept/);
+  assert.match(history, /\$2,600 · dated Sep 5, 2026 — recorded before/);
+  assert.match(history, /0 of 2 dated by you · 2 without date provenance/);
+  assert.deepEqual(personalQuoteRows(d), []);
+  assert.match(d.doc.querySelector(".studio-method").textContent, /2 such quotes in this view/);
+  assert.match(quoteShortlistRow(d, id), /No dated quote on record/);
+  // The reader dates the active quote: that entry is established, the earlier one is not, and nothing is invented between them.
+  const r = saveQuoteRecord(d, id, { quoteDate: "2026-09-12" });
+  assert.deepEqual(r.quote_history[0], legacy[0], "the earlier entry is untouched");
+  assert.equal(r.quote_history[1].date, "2026-09-12");
+  assert.equal(r.quote_history[1].date_basis, "entered");
+  assert.deepEqual(r.quote_history[1].date_corrections.map((c) => [c.from, c.basis]), [["2026-09-12", null]]);
+  assert.equal(r.quote_history[1].recorded_at, undefined, "no recording instant is invented for an old entry");
+  history = quoteHistoryText(d, id);
+  assert.match(history, /\$2,500 · quoted Sep 12, 2026, a date you entered · Recording time not kept · Date corrected .* \(was Sep 12, 2026\)/);
+  assert.match(history, /1 of 2 dated by you · 1 without date provenance/);
+  assert.deepEqual(personalQuoteRows(d), [], "one established day is no movement");
+  assert.match(d.doc.querySelector(".studio-method").textContent, /1 such quote in this view/);
+  d.close();
+});
+test("a quote history with unknown days and corrections survives a reload, an export and an import, and an invalid import is refused whole", async () => {
+  const d = await boot();
+  const id = d.doc.querySelector("[data-detail]").dataset.detail;
+  saveQuoteRecord(d, id, { rentOverride: "2600", quoteDate: "2026-09-10" });
+  saveQuoteRecord(d, id, { rentOverride: "2500", quoteDate: "" });
+  const r = saveQuoteRecord(d, id, { quoteDate: "2026-09-11" });
+  const text = JSON.stringify(JSON.parse(d.w.localStorage.getItem(KEY)), null, 2);
+  d.close();
+  const again = await boot({ notebook: JSON.parse(text) });
+  assert.deepEqual(JSON.parse(again.w.localStorage.getItem(KEY)).records[id].quote_history, r.quote_history);
+  assert.match(quoteHistoryText(again, id), /quoted Sep 11, 2026, a date you entered .* Date corrected .* \(was unknown\)/);
+  again.close();
+  const fresh = await boot();
+  await fresh.doc.querySelector("#import-file").onchange({ target: { files: [{ size: text.length, text: async () => text }], value: "" } });
+  assert.deepEqual(JSON.parse(fresh.w.localStorage.getItem(KEY)).records[id].quote_history, r.quote_history);
+  assert.equal(personalQuoteRows(fresh).length, 1);
+  const before = fresh.w.localStorage.getItem(KEY);
+  const parsed = JSON.parse(text);
+  const bad = JSON.stringify({ ...parsed, records: { [id]: { ...parsed.records[id], notes: "would replace", quote_history: [{ rent: 2500, date: null }] } } });
+  await fresh.doc.querySelector("#import-file").onchange({ target: { files: [{ size: bad.length, text: async () => bad }], value: "" } });
+  assert.match(fresh.doc.querySelector("#toast").textContent, /invalid saved home or quote/);
+  assert.equal(fresh.w.localStorage.getItem(KEY), before, "nothing of the refused file is kept");
+  fresh.close();
+});
+test("an archived record keeps its quotes and their evidence when the feed no longer carries it, and the notebook's conflict guard covers a quote save", async () => {
+  const gone = seed.homes[0];
+  const feed = { ...seed, homes: seed.homes.filter((h) => h.id !== gone.id) };
+  const history = [
+    { rent: 2600, date: "2026-09-10", date_basis: "entered", recorded_at: "2026-09-12T15:00:00Z" },
+    { rent: 2500, date: null, date_basis: "unknown", recorded_at: "2026-09-13T15:00:00Z" },
+  ];
+  const notebook = { version: 1, records: { [gone.id]: { saved: true, status: "contacted", rentOverride: 2500, quoteDate: "", snapshot: gone, quote_history: history } }, manual: [], events: [], preferences: {} };
+  const d = await boot({ remote: feed, packaged: feed, notebook });
+  assert.equal(d.doc.querySelector(`.home-card[data-home="${gone.id}"]`), null, "the feed does not carry it");
+  const row = quoteShortlistRow(d, gone.id);
+  assert.match(row, /Archived notebook entry/);
+  assert.match(row, /No dated quote on record/);
+  d.doc.querySelector(`.saved-row[data-home="${gone.id}"] [data-detail]`).click();
+  assert(d.doc.querySelector("#detail-dialog").open);
+  assert.equal(d.doc.querySelector("#detail-title").textContent, gone.title);
+  const text = d.doc.querySelector("#detail-history").textContent.replace(/\s+/g, " ");
+  assert.match(text, /\$2,500 · quote date unknown/);
+  assert.match(text, /\$2,600 · quoted Sep 10, 2026, a date you entered/);
+  assert.match(d.doc.querySelector("#detail-content .callout").textContent, /Not in this area’s latest capped snapshot; current availability is unverified/, "absent from a capped feed is unverified, not unavailable");
+  // Dating it through the archived record works the same way, and Inspect history reaches it.
+  const r = saveQuoteRecord(d, gone.id, { quoteDate: "2026-09-11" });
+  assert.equal(r.quote_history[1].date, "2026-09-11");
+  // The snapshot is what it was. (A save through the form has always re-read the
+  // home through allHomes(), which marks an archived one notebook_only and
+  // seen_in_latest: false; both are derived again on every load.)
+  const { notebook_only, seen_in_latest, ...snapshot } = r.snapshot;
+  assert.deepEqual(snapshot, gone);
+  const rows = personalQuoteRows(d);
+  assert.equal(rows.length, 1);
+  assert.match(rows[0], /historical or availability needs rechecking/);
+  d.doc.querySelector('.pulse-row [data-studio-task][data-task-target="detail-history"]').click();
+  assert.equal(d.doc.activeElement.id, "detail-history");
+  assert.equal(d.doc.querySelector("#detail-title").textContent, gone.title);
+  // Another tab moved the notebook on: this tab's quote save is kept in memory and refused to overwrite it.
+  const other = JSON.stringify({ version: 1, records: {}, manual: [], events: [], preferences: {} });
+  d.w.localStorage.setItem(KEY, other);
+  saveQuoteRecord(d, gone.id, { quoteDate: "2026-09-12" });
+  assert.equal(d.w.localStorage.getItem(KEY), other, "the other tab's notebook stands");
+  assert.match(d.doc.querySelector("#storage-warning").textContent, /changed in another tab/);
+  assert.match(d.doc.querySelector("#toast").textContent, /memory only/);
   d.close();
 });

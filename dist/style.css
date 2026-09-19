@@ -816,6 +816,19 @@ textarea {
   fill: var(--muted);
   font: 10px "IBM Plex Mono";
 }
+.quote-log {
+  padding-left: 19px;
+  margin: 10px 0 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.quote-log li {
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+.quote-log strong {
+  color: var(--ink);
+}
 .matrix-wrap {
   overflow-x: auto;
 }

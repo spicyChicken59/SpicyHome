@@ -622,6 +622,15 @@ footer { max-width: 1536px; margin: 64px auto 0; padding: 28px clamp(20px,4.4vw,
 }
 
 #detail-title:focus { outline: none; }
+.eligibility-note { margin: 16px 0; color: var(--ink); font-size: .875rem; line-height: 1.6; overflow-wrap: anywhere; }
+.eligibility-note .text-button { display: inline; min-height: 44px; white-space: normal; text-align: left; }
+.eligibility-detail { scroll-margin-top: calc(var(--tour-head-top, 98px) + 20px); overflow-wrap: anywhere; }
+.eligibility-detail>summary { cursor: pointer; padding-block: 16px; font-size: 1rem; }
+.eligibility-detail>summary span { display: block; color: var(--muted); font-size: .8125rem; }
+.eligibility-source { padding-block: 12px; }
+.eligibility-source+.eligibility-source { border-top: 1px solid var(--line); }
+.eligibility-source a { display: inline-block; padding-block: 10px; }
+.home-card>.eligibility-note { grid-column: 1/-1; }
 .research-picks { margin-bottom: 20px; border-block: 1px solid var(--line); }
 .research-picks>summary { cursor: pointer; padding: 16px 0; font-size: 1.25rem; font-family: var(--display); }
 .research-picks>summary>span:last-child { display: inline-block; font: .8125rem var(--body); color: var(--muted); margin-left: 16px; }

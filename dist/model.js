@@ -613,6 +613,25 @@ function eventsOk(v) {
     )
   );
 }
+// A source annotation, never a household eligibility verdict. Observation is
+// a calendar day: do not synthesize a time or borrow the provider's clock.
+export function validEligibilityEvidence(e) {
+  const keys = (o, expected) => isObj(o) && Object.keys(o).length === expected.length && expected.every(k => Object.hasOwn(o, k));
+  const text = (s, max) => textOk(s, max) && !!s.trim();
+  if (!keys(e, ["condition", "scope", "note", "source"]) || e.condition !== "income_restricted" || !["address", "offer"].includes(e.scope) || !text(e.note, 600)) return false;
+  const s = e.source;
+  if (!keys(s, ["name", "url", "observed_at", "supports"]) || !text(s.name, 160) || !text(s.supports, 1200) || !text(s.url, 2000) || !/^https?:\/\//i.test(s.url) || !safeUrl(s.url) || /[\s\\]/.test(s.url)) return false;
+  const url = new URL(s.url);
+  if (!url.hostname || url.username || url.password) return false;
+  return typeof s.observed_at === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s.observed_at) && dateOk(s.observed_at) && new Date(s.observed_at).toISOString().slice(0, 10) === s.observed_at;
+}
+export function eligibilityReading(home, record = {}) {
+  const current = home.notebook_only ? null : home.eligibility_evidence ?? null;
+  const original = record.snapshot?.eligibility_evidence ?? null;
+  const saved = record.eligibility_update?.evidence ?? original;
+  return { current, original, saved, evidence: current ?? saved ?? home.eligibility_evidence ?? null,
+    context: current ? "Current source evidence" : "Saved source evidence" };
+}
 export function validateHome(h) {
   if (
     !isObj(h) ||
@@ -641,6 +660,7 @@ export function validateHome(h) {
     if (h[key] !== undefined && h[key] !== null && !textOk(h[key], 2000)) return false;
   if (!dateOk(h.observed_at) || !historyOk(h.history)) return false;
   if (h.source_url != null && !textOk(h.source_url, 4000)) return false;
+  if (h.eligibility_evidence !== undefined && !validEligibilityEvidence(h.eligibility_evidence)) return false;
   if (
     (h.lat != null && (!Number.isFinite(h.lat) || Math.abs(h.lat) > 90)) ||
     (h.lng != null && (!Number.isFinite(h.lng) || Math.abs(h.lng) > 180))
@@ -788,6 +808,8 @@ export function validateWorkspace(w) {
       throw Error("The backup contains an invalid saved home or quote.");
     if (r.scan !== undefined && !savedScanOk(r.scan))
       throw Error("The backup contains invalid saved source context.");
+    if (r.eligibility_update !== undefined && (!isObj(r.eligibility_update) || Object.keys(r.eligibility_update).length !== 2 || !validEligibilityEvidence(r.eligibility_update.evidence) || !dateOk(r.eligibility_update.recorded_at) || !r.snapshot || r.snapshot.id !== key))
+      throw Error("The backup contains invalid saved eligibility evidence.");
   }
   if (Object.values(w.records).filter((r) => r.finalist).length > 3)
     throw Error("A notebook can pin at most three finalists. Unpin one before combining these notebooks.");

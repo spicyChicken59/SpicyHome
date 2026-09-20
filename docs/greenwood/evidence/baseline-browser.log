@@ -1,0 +1,2 @@
+PASS baseline exact $1,271 record omits the sourced condition
+1/1 passed

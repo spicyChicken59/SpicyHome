@@ -3,6 +3,7 @@ No scraping, scoring service, email, or secrets in browser outputs.
 """
 from __future__ import annotations
 import argparse, copy, datetime as dt, hashlib, json, math, os, pathlib, re, sys, urllib.error, urllib.parse, urllib.request
+from eligibility import annotate_home, load_evidence, retain_evidence
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 UTC=dt.timezone.utc
 ENDPOINT='https://api.rentcast.io/v1/listings/rental/long-term'
@@ -146,7 +147,8 @@ def normalize(rows,config,at):
     homes=[h for h in homes if h['id'] not in excluded['layout_corrections']]
     return homes,excluded
 
-def combine(previous,seed,homes,excluded,total,returned,at,query,evidence=None):
+def combine(previous,seed,homes,excluded,total,returned,at,query,evidence=None,eligibility=None):
+    if eligibility is None:eligibility=load_evidence()
     scanned_city=query.get('city','Chicago')
     if evidence is None:evidence={}
     def remember(ident,layout):
@@ -172,6 +174,7 @@ def combine(previous,seed,homes,excluded,total,returned,at,query,evidence=None):
         prior=old.pop(h['id'],None)
         if h['id'] in evidence:h=preserve_layout_evidence(evidence[h['id']],h)
         if prior:
+            h=retain_evidence(prior,h)
             h=preserve_layout_evidence(prior,h)
             history=list(prior.get('history',[]))
             # Same UTC day's price is the latest observed quote, never a fake extra day.
@@ -214,6 +217,7 @@ def combine(previous,seed,homes,excluded,total,returned,at,query,evidence=None):
         for group in buckets.values():
             if index<len(group):balanced.append(group[index])
     result['homes']=copy.deepcopy(seed['homes'])+balanced[:max(0,1000-len(seed['homes']))]
+    result['homes']=[annotate_home(home,eligibility) for home in result['homes']]
     result['provider']['archived_from_current_view']=len(current)+len(seed['homes'])-len(result['homes'])
     for key in ['charging_stations','transit_stops','city_context']:
         if key in previous: result[key]=previous[key]
@@ -235,6 +239,7 @@ def run_command(args):
     if not entry or entry['status']!='reserved': raise ValueError('No unused request reservation; refusing provider call')
     cfg={**cfg,'city':entry.get('city',cfg['city'])};query=build_query(cfg)
     evidence=read_json(ROOT/'data/layout-evidence.json')
+    eligibility=load_evidence(ROOT/'data/eligibility-evidence.json')
     if evidence.get('schema_version')!=1 or not isinstance(evidence.get('records'),dict):raise ValueError('Invalid layout evidence ledger; refusing a provider request')
     reserved=dt.datetime.fromisoformat(entry['at'].replace('Z','+00:00'))
     if now_utc()-reserved>dt.timedelta(hours=1): raise ValueError('Reservation expired; refusing provider call')
@@ -245,7 +250,7 @@ def run_command(args):
     homes,excluded=normalize(rows,cfg,at)
     if rows and not homes and excluded['missing_coordinates']==len(rows): raise ValueError('Every listing lacks usable coordinates; retaining the last snapshot')
     previous=read_json(ROOT/'dist/data.json');seed=read_json(ROOT/'data/seed.json')
-    result=combine(previous,seed,homes,excluded,total,len(rows),at,query,evidence['records'])
+    result=combine(previous,seed,homes,excluded,total,len(rows),at,query,evidence['records'],eligibility)
     write_json(ROOT/'data/layout-evidence.json',evidence)
     write_json(ROOT/'dist/data.json',result)
     write_json(ROOT/'dist/status.json',{'schema_version':1,'attempted_at':at,'status':'success','message':result['provider']['coverage']})

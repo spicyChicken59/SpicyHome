@@ -1,0 +1,8 @@
+PASS exact base: 7d05766d18301c83b2672dbf5b13fe9334c1d5fa
+PASS annotated identity: rentcast:2030-Greenwood-St,-Unit-1BR,-Evanston,-IL-60201
+PASS current feed differs only by this one eligibility annotation
+PASS original provider rent, basis, dates, history, order and events unchanged
+PASS source observation remains 2026-09-19
+PASS all 14 tested file fingerprints match the final material files
+PASS workflows, shared design, historical feeds, seeds, search, usage, layout evidence, status and dependencies unchanged
+PASS git diff --check

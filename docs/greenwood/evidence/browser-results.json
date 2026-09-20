@@ -1,0 +1,515 @@
+{
+  "baseline": false,
+  "results": [
+    {
+      "name": "1280-light Discover shows condition beside retained price",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-light condition wraps without clipping",
+      "ok": true,
+      "detail": "[{\"text\":\"Income-restricted housing advertised at this address; confirm this off\",\"left\":654,\"right\":1196.6875,\"width\":1280,\"extra\":0}]"
+    },
+    {
+      "name": "1280-light source/date control opens the scoped evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-light actual source day and offer uncertainty are accessible",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-light safe source link is reachable",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-light dossier evidence fits",
+      "ok": true,
+      "detail": "[{\"text\":\"Eligibility evidence Source, date & scopeCurrent source evidenceIncome\",\"left\":135,\"right\":1145,\"width\":1280,\"extra\":0}]"
+    },
+    {
+      "name": "1280-light comparison separates annotated from unknown evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-light saved summary retains the condition",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-light finalist retains condition",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-light saved snapshot has exact annotation",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-light reload preserves snapshot and save dates",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-light export retains the exact saved record",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-light separate empty profile imports exact snapshot",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-light archived fixture keeps sourced condition",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-light archived evidence retains its source day",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-light archived evidence fits",
+      "ok": true,
+      "detail": "[{\"text\":\"Eligibility evidence Source, date & scopeSaved source evidenceIncome-r\",\"left\":135,\"right\":1145,\"width\":1280,\"extra\":0}]"
+    },
+    {
+      "name": "1280-light neither isolated profile has page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-dark Discover shows condition beside retained price",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-dark condition wraps without clipping",
+      "ok": true,
+      "detail": "[{\"text\":\"Income-restricted housing advertised at this address; confirm this off\",\"left\":654,\"right\":1196.6875,\"width\":1280,\"extra\":0}]"
+    },
+    {
+      "name": "1280-dark source/date control opens the scoped evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-dark actual source day and offer uncertainty are accessible",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-dark safe source link is reachable",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-dark dossier evidence fits",
+      "ok": true,
+      "detail": "[{\"text\":\"Eligibility evidence Source, date & scopeCurrent source evidenceIncome\",\"left\":135,\"right\":1145,\"width\":1280,\"extra\":0}]"
+    },
+    {
+      "name": "1280-dark comparison separates annotated from unknown evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-dark saved summary retains the condition",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-dark finalist retains condition",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-dark saved snapshot has exact annotation",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-dark reload preserves snapshot and save dates",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-dark export retains the exact saved record",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-dark separate empty profile imports exact snapshot",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-dark archived fixture keeps sourced condition",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-dark archived evidence retains its source day",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-dark archived evidence fits",
+      "ok": true,
+      "detail": "[{\"text\":\"Eligibility evidence Source, date & scopeSaved source evidenceIncome-r\",\"left\":135,\"right\":1145,\"width\":1280,\"extra\":0}]"
+    },
+    {
+      "name": "1280-dark neither isolated profile has page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-light Discover shows condition beside retained price",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-light condition wraps without clipping",
+      "ok": true,
+      "detail": "[{\"text\":\"Income-restricted housing advertised at this address; confirm this off\",\"left\":20,\"right\":370,\"width\":390,\"extra\":0}]"
+    },
+    {
+      "name": "390-light source/date control opens the scoped evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-light actual source day and offer uncertainty are accessible",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-light safe source link is reachable",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-light dossier evidence fits",
+      "ok": true,
+      "detail": "[{\"text\":\"Eligibility evidence Source, date & scopeCurrent source evidenceIncome\",\"left\":20,\"right\":370,\"width\":390,\"extra\":0}]"
+    },
+    {
+      "name": "390-light comparison separates annotated from unknown evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-light saved summary retains the condition",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-light finalist retains condition",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-light saved snapshot has exact annotation",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-light reload preserves snapshot and save dates",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-light export retains the exact saved record",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-light separate empty profile imports exact snapshot",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-light archived fixture keeps sourced condition",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-light archived evidence retains its source day",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-light archived evidence fits",
+      "ok": true,
+      "detail": "[{\"text\":\"Eligibility evidence Source, date & scopeSaved source evidenceIncome-r\",\"left\":20,\"right\":370,\"width\":390,\"extra\":0}]"
+    },
+    {
+      "name": "390-light neither isolated profile has page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-dark Discover shows condition beside retained price",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-dark condition wraps without clipping",
+      "ok": true,
+      "detail": "[{\"text\":\"Income-restricted housing advertised at this address; confirm this off\",\"left\":20,\"right\":370,\"width\":390,\"extra\":0}]"
+    },
+    {
+      "name": "390-dark source/date control opens the scoped evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-dark actual source day and offer uncertainty are accessible",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-dark safe source link is reachable",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-dark dossier evidence fits",
+      "ok": true,
+      "detail": "[{\"text\":\"Eligibility evidence Source, date & scopeCurrent source evidenceIncome\",\"left\":20,\"right\":370,\"width\":390,\"extra\":0}]"
+    },
+    {
+      "name": "390-dark comparison separates annotated from unknown evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-dark saved summary retains the condition",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-dark finalist retains condition",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-dark saved snapshot has exact annotation",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-dark reload preserves snapshot and save dates",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-dark export retains the exact saved record",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-dark separate empty profile imports exact snapshot",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-dark archived fixture keeps sourced condition",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-dark archived evidence retains its source day",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "390-dark archived evidence fits",
+      "ok": true,
+      "detail": "[{\"text\":\"Eligibility evidence Source, date & scopeSaved source evidenceIncome-r\",\"left\":20,\"right\":370,\"width\":390,\"extra\":0}]"
+    },
+    {
+      "name": "390-dark neither isolated profile has page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-light Discover shows condition beside retained price",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-light condition wraps without clipping",
+      "ok": true,
+      "detail": "[{\"text\":\"Income-restricted housing advertised at this address; confirm this off\",\"left\":16,\"right\":304,\"width\":320,\"extra\":0}]"
+    },
+    {
+      "name": "320-light source/date control opens the scoped evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-light actual source day and offer uncertainty are accessible",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-light safe source link is reachable",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-light dossier evidence fits",
+      "ok": true,
+      "detail": "[{\"text\":\"Eligibility evidence Source, date & scopeCurrent source evidenceIncome\",\"left\":16,\"right\":304,\"width\":320,\"extra\":0}]"
+    },
+    {
+      "name": "320-light comparison separates annotated from unknown evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-light saved summary retains the condition",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-light finalist retains condition",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-light saved snapshot has exact annotation",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-light reload preserves snapshot and save dates",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-light export retains the exact saved record",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-light separate empty profile imports exact snapshot",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-light archived fixture keeps sourced condition",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-light archived evidence retains its source day",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-light archived evidence fits",
+      "ok": true,
+      "detail": "[{\"text\":\"Eligibility evidence Source, date & scopeSaved source evidenceIncome-r\",\"left\":16,\"right\":304,\"width\":320,\"extra\":0}]"
+    },
+    {
+      "name": "320-light neither isolated profile has page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-dark Discover shows condition beside retained price",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-dark condition wraps without clipping",
+      "ok": true,
+      "detail": "[{\"text\":\"Income-restricted housing advertised at this address; confirm this off\",\"left\":16,\"right\":304,\"width\":320,\"extra\":0}]"
+    },
+    {
+      "name": "320-dark source/date control opens the scoped evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-dark actual source day and offer uncertainty are accessible",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-dark safe source link is reachable",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-dark dossier evidence fits",
+      "ok": true,
+      "detail": "[{\"text\":\"Eligibility evidence Source, date & scopeCurrent source evidenceIncome\",\"left\":16,\"right\":304,\"width\":320,\"extra\":0}]"
+    },
+    {
+      "name": "320-dark comparison separates annotated from unknown evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-dark saved summary retains the condition",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-dark finalist retains condition",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-dark saved snapshot has exact annotation",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-dark reload preserves snapshot and save dates",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-dark export retains the exact saved record",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-dark separate empty profile imports exact snapshot",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-dark archived fixture keeps sourced condition",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-dark archived evidence retains its source day",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-dark archived evidence fits",
+      "ok": true,
+      "detail": "[{\"text\":\"Eligibility evidence Source, date & scopeSaved source evidenceIncome-r\",\"left\":16,\"right\":304,\"width\":320,\"extra\":0}]"
+    },
+    {
+      "name": "320-dark neither isolated profile has page errors",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

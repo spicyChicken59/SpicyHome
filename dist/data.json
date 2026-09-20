@@ -2718,7 +2718,18 @@
       "layout_declaration": null,
       "layout_note": "Provider bedroom/bathroom fields: 1/1. Separate bedroom not independently checked.",
       "unit_label": "Unit 1BR",
-      "property_type": "Apartment"
+      "property_type": "Apartment",
+      "eligibility_evidence": {
+        "condition": "income_restricted",
+        "scope": "address",
+        "note": "Income-restricted housing advertised at this address; confirm this offer\u2019s terms and your eligibility.",
+        "source": {
+          "name": "Community Partners for Affordable Housing (CPAH)",
+          "url": "https://cpahousing.org/rental-housing/available-rentals/",
+          "observed_at": "2026-09-19",
+          "supports": "CPAH lists a one-bedroom at 2030 Greenwood St., Evanston under Inclusionary Housing, with eligibility based on income, household size and program rules. This establishes an address/program relationship, not a match to a numbered unit or the retained provider offer\u2019s rent or availability."
+        }
+      }
     },
     {
       "id": "rentcast:333-E-Ontario-St,-Unit-2-301,-Chicago,-IL-60611",

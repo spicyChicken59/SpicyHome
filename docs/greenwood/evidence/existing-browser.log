@@ -1,0 +1,475 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> spicyhome@1.0.0 browser-check
+> node tools/browser_check.mjs
+
+  ok   390px the map draws separable marks for 999 places — 15 marks for 999 places
+  ok   390px every mark sits where its coordinates put it — worst 0.0px off the pane origin
+  ok   390px no mark hides another mark's centre — 0 overlapping
+  ok   390px every press at a mark's own centre is resolved by distance — {"tested":1,"asked":1,"taken":0,"wrong":0}
+  ok   390px a mark is a circle, not a box — radius 50%, square true
+  ok   390px a metro-wide map degrades to circles rather than stacking boxes — 1 printed of 1 that had a figure, 15 marks
+  ok   390px no price label covers another mark — 0 covering, 1 had a figure
+  ok   390px no price label is cut off by the map's edge — 0 cut off, 1 had a figure
+  ok   390px a printed price is its own record's figure, rounded — 0 malformed, 0 not its own figure, 1 had a figure
+  ok   390px no page errors while pressing the map
+  ok   1280px the map draws separable marks for 999 places — 15 marks for 999 places
+  ok   1280px every mark sits where its coordinates put it — worst 0.0px off the pane origin
+  ok   1280px no mark hides another mark's centre — 0 overlapping
+  ok   1280px every press at a mark's own centre is resolved by distance — {"tested":1,"asked":1,"taken":0,"wrong":0}
+  ok   1280px a mark is a circle, not a box — radius 50%, square true
+  ok   1280px a metro-wide map degrades to circles rather than stacking boxes — 1 printed of 1 that had a figure, 15 marks
+  ok   1280px no price label covers another mark — 0 covering, 1 had a figure
+  ok   1280px no price label is cut off by the map's edge — 0 cut off, 1 had a figure
+  ok   1280px a printed price is its own record's figure, rounded — 0 malformed, 0 not its own figure, 1 had a figure
+  ok   1280px no page errors while pressing the map
+  ok   390px a map with room prints every price it honestly can — 1 printed of 2 that had a figure, 0 had the room and went without, 0 not its own figure
+  ok   390px a printed price touches no other mark, no edge, and little of the map — 1 printed, 0 misplaced, 0.7% of the pane
+  ok   390px a saved mark and a Final Three mark are told apart from a plain one — {"marks":3,"saved":2,"finalist":1,"savedDiffers":true,"finalistDiffers":true,"says":2}
+  ok   390px the mark the reader chose is the one that wears the ring — {"selected":1,"mine":true,"outline":3}
+  ok   390px a press anywhere on a price answers for that mark, past a dot's reach — {"found":true,"reach":25,"answered":2,"tried":2}
+  ok   390px no page errors on a map that prints prices
+  ok   1280px a map with room prints every price it honestly can — 1 printed of 2 that had a figure, 0 had the room and went without, 0 not its own figure
+  ok   1280px a printed price touches no other mark, no edge, and little of the map — 1 printed, 0 misplaced, 0.3% of the pane
+  ok   1280px a saved mark and a Final Three mark are told apart from a plain one — {"marks":3,"saved":2,"finalist":1,"savedDiffers":true,"finalistDiffers":true,"says":2}
+  ok   1280px the mark the reader chose is the one that wears the ring — {"selected":1,"mine":true,"outline":3}
+  ok   1280px a press anywhere on a price answers for that mark, past a dot's reach — {"found":true,"reach":25,"answered":2,"tried":2}
+  ok   1280px no page errors on a map that prints prices
+  ok   390px a pick says why it is here without opening anything — 2 reasons
+  ok   390px a pick names one thing that is still open — Still open Layout not checked by you
+  ok   390px a reason stays inside the card it explains — 2 reasons
+  ok   390px the explanation is neither a verdict nor a score — Why it’s here$1,650 under your $3,000 base-rent cap · unquoted costs still applyObserved 2
+  ok   390px an area the reader chooses is named on every pick that matched it — {"skipped":false,"value":"Oak Park","named":[true,true,true],"left":false,"chipsWhileOn":3,"chips":0}
+  ok   390px a reason does not outlive the filter that produced it — {"skipped":false,"value":"Oak Park","named":[true,true,true],"left":false,"chipsWhileOn":3,"chips":0}
+  ok   390px Focus explains the one place it shows, and the sticky bar does not bury it — {"block":true,"reasons":2,"open":true,"covered":0}
+  ok   390px no page errors while the explanation follows the filters
+  ok   1280px a pick says why it is here without opening anything — 2 reasons
+  ok   1280px a pick names one thing that is still open — Still open Layout not checked by you
+  ok   1280px a reason stays inside the card it explains — 2 reasons
+  ok   1280px the explanation is neither a verdict nor a score — Why it’s here$1,650 under your $3,000 base-rent cap · unquoted costs still applyObserved 2
+  ok   1280px an area the reader chooses is named on every pick that matched it — {"skipped":false,"value":"Oak Park","named":[true,true,true],"left":false,"chipsWhileOn":3,"chips":0}
+  ok   1280px a reason does not outlive the filter that produced it — {"skipped":false,"value":"Oak Park","named":[true,true,true],"left":false,"chipsWhileOn":3,"chips":0}
+  ok   1280px Focus explains the one place it shows, and the sticky bar does not bury it — {"block":true,"reasons":2,"open":true,"covered":0}
+  ok   1280px no page errors while the explanation follows the filters
+  ok   390px: the lens says what it can see, before anything is opened — What this lens can see120 retained records within 3 straight-line miles of central Chicago
+  ok   390px: missing evidence is an absence of evidence, never of buildings — What this lens can see120 retained records within 3 straight-line miles of central Chicago
+  ok   390px: the lens panel and the page do not scroll sideways — panel true page true
+  ok   390px: a target band stays inside the card it belongs to — $900 under your $2,700 targetBase rent only · parking, monthly fees, u
+  ok   390px: the band says what it measured, and never claims an all-in cost — $900 under your $2,700 targetBase rent only · parking, monthly fees, u
+  ok   390px: the band costs the card less than a fifth of its height — 51 of 711px
+  ok   390px: a recorded high-rise is readable on its card without opening it — true High-rise recorded
+  ok   390px: a building nobody described carries no form mark at all — 1 marks
+  ok   390px: the lens never prints a verdict, a score or a confidence — What this lens can see120 retained records within 3 straight-line miles of centr
+  ok   390px: every lens control takes keyboard focus — [true,true,true]
+  ok   390px: a lens sentence leaves with the preference that produced it — off true back true
+  ok   390px: one press starts the lens and says what it will do — Downtown value9 places now · Near downtown, around a target you can change, with recorded high-rises and advertised parking called out.
+  ok   390px: the preset merges onto what the reader already chose — bedrooms 2
+  ok   390px: every value it set is visible in the control it came from — near|2700|true|true
+  ok   390px: the press keeps focus where the reader put it — downtown-value
+  ok   390px: asking for parking adds reasons rather than removing places — 1 reasons, 120 of 120 places
+  ok   390px: turning parking importance off takes its reasons with it — 1 -> 0
+  ok   390px: a target nothing reaches is said about the snapshot, not the area — 1 have nothing recorded either way, and 0 report none. Advertised is not a reserved space.
+  ok   390px: an empty lens explains itself and offers one way out — all
+  ok   390px: no page errors while the lens is driven
+  ok   1280px: the lens says what it can see, before anything is opened — What this lens can see120 retained records within 3 straight-line miles of central Chicago
+  ok   1280px: missing evidence is an absence of evidence, never of buildings — What this lens can see120 retained records within 3 straight-line miles of central Chicago
+  ok   1280px: the lens panel and the page do not scroll sideways — panel true page true
+  ok   1280px: a target band stays inside the card it belongs to — $900 under your $2,700 targetBase rent only · parking, monthly fees, u
+  ok   1280px: the band says what it measured, and never claims an all-in cost — $900 under your $2,700 targetBase rent only · parking, monthly fees, u
+  ok   1280px: the band costs the card less than a fifth of its height — 55 of 626px
+  ok   1280px: a recorded high-rise is readable on its card without opening it — true High-rise recorded
+  ok   1280px: a building nobody described carries no form mark at all — 1 marks
+  ok   1280px: the lens never prints a verdict, a score or a confidence — What this lens can see120 retained records within 3 straight-line miles of centr
+  ok   1280px: every lens control takes keyboard focus — [true,true,true]
+  ok   1280px: a lens sentence leaves with the preference that produced it — off true back true
+  ok   1280px: one press starts the lens and says what it will do — Downtown value9 places now · Near downtown, around a target you can change, with recorded high-rises and advertised parking called out.
+  ok   1280px: the preset merges onto what the reader already chose — bedrooms 2
+  ok   1280px: every value it set is visible in the control it came from — near|2700|true|true
+  ok   1280px: the press keeps focus where the reader put it — downtown-value
+  ok   1280px: asking for parking adds reasons rather than removing places — 1 reasons, 120 of 120 places
+  ok   1280px: turning parking importance off takes its reasons with it — 1 -> 0
+  ok   1280px: a target nothing reaches is said about the snapshot, not the area — 1 have nothing recorded either way, and 0 report none. Advertised is not a reserved space.
+  ok   1280px: an empty lens explains itself and offers one way out — all
+  ok   1280px: no page errors while the lens is driven
+  ok   a crowded press asks instead of opening a popup — 231 places within a finger of this press
+  ok   the panel is a popover, not a modal
+  ok   the nearest place takes the focus — sc-pick__item
+  ok   options keep a 44px target — 78px
+  ok   the panel stays inside the map
+  ok   a crowd too large to name offers the zoom that separates it — Zoom in to separate the other 228
+  ok   the zoom separates the crowd and closes the panel — 15 marks -> 80
+  ok   the zoomed map offers a crowd small enough to name one by one — 2 places
+  ok   a crowd small enough to name lists the rest instead of zooming — {"open":true,"zoom":"no","text":null,"items":2,"claimed":2}
+  ok   Escape closes and never lands on a map mark — map-fit
+  ok   a redrawn map keeps exactly one panel — 1
+  ok   a press after a redraw still opens one panel with one heading — {"open":true,"heads":1,"items":3}
+  ok   the list reaches a named place without aiming — 721-27 Austin St -> 721-27 Austin St · Unit not identified by source
+  ok   390px no-preference · map reaches the first screen — top 12
+  ok   390px no-preference · map keeps the pressed control focused
+  ok   390px no-preference · list reaches the first screen — top 12
+  ok   390px no-preference · list keeps the pressed control focused
+  ok   390px no-preference · focus reaches the first screen — top 12
+  ok   390px no-preference · focus keeps the pressed control focused
+  ok   390px no-preference · atlas reaches the first screen — top 12
+  ok   390px no-preference · atlas keeps the pressed control focused
+  ok   390px no-preference · split reaches the first screen — top 12
+  ok   390px no-preference · split keeps the pressed control focused
+  ok   390px reduce · map reaches the first screen — top 12
+  ok   390px reduce · map keeps the pressed control focused
+  ok   390px reduce · list reaches the first screen — top 12
+  ok   390px reduce · list keeps the pressed control focused
+  ok   390px reduce · focus reaches the first screen — top 12
+  ok   390px reduce · focus keeps the pressed control focused
+  ok   390px reduce · atlas reaches the first screen — top 12
+  ok   390px reduce · atlas keeps the pressed control focused
+  ok   390px reduce · split reaches the first screen — top 12
+  ok   390px reduce · split keeps the pressed control focused
+  ok   1280px no-preference · map reaches the first screen — top 12
+  ok   1280px no-preference · map keeps the pressed control focused
+  ok   1280px no-preference · list reaches the first screen — top 12
+  ok   1280px no-preference · list keeps the pressed control focused
+  ok   1280px no-preference · focus reaches the first screen — top 12
+  ok   1280px no-preference · focus keeps the pressed control focused
+  ok   1280px no-preference · atlas reaches the first screen — top 12
+  ok   1280px no-preference · atlas keeps the pressed control focused
+  ok   1280px no-preference · split reaches the first screen — top 12
+  ok   1280px no-preference · split keeps the pressed control focused
+  ok   1280px reduce · map reaches the first screen — top 12
+  ok   1280px reduce · map keeps the pressed control focused
+  ok   1280px reduce · list reaches the first screen — top 12
+  ok   1280px reduce · list keeps the pressed control focused
+  ok   1280px reduce · focus reaches the first screen — top 12
+  ok   1280px reduce · focus keeps the pressed control focused
+  ok   1280px reduce · atlas reaches the first screen — top 12
+  ok   1280px reduce · atlas keeps the pressed control focused
+  ok   1280px reduce · split reaches the first screen — top 12
+  ok   1280px reduce · split keeps the pressed control focused
+  ok   390px the dock stays within two rows — 2 rows
+  ok   390px the record's own sentence comes before the links away from it
+  ok   390px the layout evidence starts on the first dialog screen — section at 831 of 844px
+  ok   390px every external link and the dock's save survive — 3 links
+  ok   1280px the dock stays within two rows — 1 rows
+  ok   1280px the record's own sentence comes before the links away from it
+  ok   1280px the layout evidence starts on the first dialog screen — section at 639 of 852px
+  ok   1280px every external link and the dock's save survive — 3 links
+  ok   missing tiles leave every mark and every listed place — {"marks":15,"list":999}
+  ok   missing tiles raise no page error
+  ok   a stale feed still says where it stands — Listing scan Sep 19, 2026 · coverage & sources
+  ok   a stale feed prints no undefined or NaN — 0
+  ok   a stale feed raises no page error
+  ok   a fail feed still says where it stands — Data needs attention · retained observations are available
+  ok   a fail feed prints no undefined or NaN — 0
+  ok   a fail feed raises no page error
+  ok   a empty feed still says where it stands — Listing scan Sep 19, 2026 · coverage & sources
+  ok   a empty feed prints no undefined or NaN — 0
+  ok   a empty feed raises no page error
+  ok   320px the page does not scroll sideways
+  ok   200% zoom the page does not scroll sideways
+  ok   the map directory is reachable by keyboard
+  ok   a saved shortlist survives a reload — 2 -> 2
+  ok   an unreadable notebook still renders the apartments and offers recovery — {"body":true,"results":999}
+  ok   an unreadable notebook raises no page error
+  ok   1280px both presentation controls sit in one band — 0px apart
+  ok   1280px the bedroom filter is not in the presentation band — 99px from the view switch
+  ok   1280px every control group carries a caption a reader can see — beds,view,rows
+  ok   1280px the tray names all three, removes one at a time and offers the next action — {"names":3,"removes":3}
+  ok   1280px the tray clears the navigation — 334px of 900px, nav clear
+  ok   1280px a folded tray is a compact bar — 158px folded, 334px as it opens
+  ok   1280px a folded tray draws no box for what it is hiding — 0 still laid out
+  ok   1280px on a phone it opens folded and stays under a third of the screen — 334px of 900px
+  ok   1280px a full tray does not push the page sideways
+  ok   1280px the explore deck and the tray raise no page error
+  ok   390px both presentation controls sit in one band — 58px apart
+  ok   390px the bedroom filter is not in the presentation band — 99px from the view switch
+  ok   390px every control group carries a caption a reader can see — beds,view,rows
+  ok   390px the tray names all three, removes one at a time and offers the next action — {"names":3,"removes":3}
+  ok   390px the tray clears the navigation — 195px of 844px, nav clear
+  ok   390px a folded tray is a compact bar — 195px folded, 195px as it opens
+  ok   390px a folded tray draws no box for what it is hiding — 0 still laid out
+  ok   390px on a phone it opens folded and stays under a third of the screen — 195px of 844px
+  ok   390px a full tray does not push the page sideways
+  ok   390px the explore deck and the tray raise no page error
+  ok   320px both presentation controls sit in one band — 80px apart
+  ok   320px the bedroom filter is not in the presentation band — 121px from the view switch
+  ok   320px every control group carries a caption a reader can see — beds,view,rows
+  ok   320px the tray names all three, removes one at a time and offers the next action — {"names":3,"removes":3}
+  ok   320px the tray clears the navigation — 195px of 640px, nav clear
+  ok   320px a folded tray is a compact bar — 195px folded, 195px as it opens
+  ok   320px a folded tray draws no box for what it is hiding — 0 still laid out
+  ok   320px on a phone it opens folded and stays under a third of the screen — 195px of 640px
+  ok   320px a full tray does not push the page sideways
+  ok   320px the explore deck and the tray raise no page error
+  ok   the atlas prints no axis label twice — $1,500 $2,000 $2,500 $3,000 0 25000 50000 75000 100000
+  ok   every atlas axis label is a round number — $1,500 $2,000 $2,500 $3,000 0 25000 50000 75000 100000
+  ok   the atlas rings exactly one selected point — 1
+  ok   the atlas says how many matches it could not place — 762 of 999 matches plotted · 237 without both figures
+  ok   390px the phone gets the pair view and not the matrix
+  ok   390px both values get equal room — 20 measures
+  ok   390px the difference is marked on labels only, and nothing is called best — 8 labels, 0 values
+  ok   390px a third selected place is a choice, not a truncation — 2 choosers
+  ok   390px the comparison does not scroll sideways
+  ok   390px both identities stay on screen at the last measure — A · 721-27 Austin St | B · 3859 S Vincennes Ave
+  ok   390px the identities keep their own casing — none, none
+  ok   390px the comparison raises no page error
+  ok   320px the phone gets the pair view and not the matrix
+  ok   320px both values get equal room — 20 measures
+  ok   320px the difference is marked on labels only, and nothing is called best — 8 labels, 0 values
+  ok   320px a third selected place is a choice, not a truncation — 2 choosers
+  ok   320px the comparison does not scroll sideways
+  ok   320px both identities stay on screen at the last measure — A · 721-27 Austin St | B · 3859 S Vincennes Ave
+  ok   320px the identities keep their own casing — none, none
+  ok   320px the comparison raises no page error
+  ok   1280px dark each read opened the record it named — amli-lofts | rentcast:6700-S-South-Constance-Ave,-Unit-1,-Chicago,-IL-60649
+  ok   1280px dark a curated plan's source is labelled as a plan page and reachable — Open the building / plan source ↗ 46px · Search this building & plan ↗ 46px · Map & directions ↗ 46px · Check resident reviews ↗ 46px
+  ok   1280px dark a provider row offers a labelled search and no invented listing link — Search this address & unit ↗ · Map & directions ↗ · Check resident reviews ↗
+  ok   1280px dark the sentence about the source is on screen and inside the record — 46px
+  ok   1280px dark the incomplete provider query is readable beside the home's own date — 43px
+  ok   1280px dark every source reference prints a date or says it is not recorded — 3 references
+  ok   1280px dark building charging and public charging context stay apart — Building charging advertised. Building advertises electric car charging stations. An adver
+  ok   1280px dark the charging cost is named outside the subtotal
+  ok   1280px dark an open record does not push the page sideways
+  ok   1280px dark the record raises no page error
+  ok   1280px light each read opened the record it named — amli-lofts | rentcast:6700-S-South-Constance-Ave,-Unit-1,-Chicago,-IL-60649
+  ok   1280px light a curated plan's source is labelled as a plan page and reachable — Open the building / plan source ↗ 46px · Search this building & plan ↗ 46px · Map & directions ↗ 46px · Check resident reviews ↗ 46px
+  ok   1280px light a provider row offers a labelled search and no invented listing link — Search this address & unit ↗ · Map & directions ↗ · Check resident reviews ↗
+  ok   1280px light the sentence about the source is on screen and inside the record — 46px
+  ok   1280px light the incomplete provider query is readable beside the home's own date — 43px
+  ok   1280px light every source reference prints a date or says it is not recorded — 3 references
+  ok   1280px light building charging and public charging context stay apart — Building charging advertised. Building advertises electric car charging stations. An adver
+  ok   1280px light the charging cost is named outside the subtotal
+  ok   1280px light an open record does not push the page sideways
+  ok   1280px light the record raises no page error
+  ok   390px dark each read opened the record it named — amli-lofts | rentcast:6700-S-South-Constance-Ave,-Unit-1,-Chicago,-IL-60649
+  ok   390px dark a curated plan's source is labelled as a plan page and reachable — Open the building / plan source ↗ 44px · Search this building & plan ↗ 44px · Map & directions ↗ 44px · Check resident reviews ↗ 44px
+  ok   390px dark a provider row offers a labelled search and no invented listing link — Search this address & unit ↗ · Map & directions ↗ · Check resident reviews ↗
+  ok   390px dark the sentence about the source is on screen and inside the record — 92px
+  ok   390px dark the incomplete provider query is readable beside the home's own date — 108px
+  ok   390px dark every source reference prints a date or says it is not recorded — 3 references
+  ok   390px dark building charging and public charging context stay apart — Building charging advertised. Building advertises electric car charging stations. An adver
+  ok   390px dark the charging cost is named outside the subtotal
+  ok   390px dark an open record does not push the page sideways
+  ok   390px dark the record raises no page error
+  ok   390px light each read opened the record it named — amli-lofts | rentcast:6700-S-South-Constance-Ave,-Unit-1,-Chicago,-IL-60649
+  ok   390px light a curated plan's source is labelled as a plan page and reachable — Open the building / plan source ↗ 44px · Search this building & plan ↗ 44px · Map & directions ↗ 44px · Check resident reviews ↗ 44px
+  ok   390px light a provider row offers a labelled search and no invented listing link — Search this address & unit ↗ · Map & directions ↗ · Check resident reviews ↗
+  ok   390px light the sentence about the source is on screen and inside the record — 92px
+  ok   390px light the incomplete provider query is readable beside the home's own date — 108px
+  ok   390px light every source reference prints a date or says it is not recorded — 3 references
+  ok   390px light building charging and public charging context stay apart — Building charging advertised. Building advertises electric car charging stations. An adver
+  ok   390px light the charging cost is named outside the subtotal
+  ok   390px light an open record does not push the page sideways
+  ok   390px light the record raises no page error
+  ok   1280px the reopened record is the saved one — rentcast:6700-S-South-Constance-Ave,-Unit-1,-Chicago,-IL-60649-archived
+  ok   1280px a saved home the feed dropped is archived, never called leased —  AveUnit 1 · Chicago$1,750Provider asking rent · verify the exact unit
+  ok   1280px its own recorded query is shown, and today's beside it as separate context — 65px + 43px
+  ok   1280px the saved evidence is readable inside the record
+  ok   1280px the notes and the labelled search survive with it — Search this address & unit ↗ · Map & directions ↗ · Check resident reviews ↗
+  ok   1280px the reopened saved record raises no page error
+  ok   390px the reopened record is the saved one — rentcast:6700-S-South-Constance-Ave,-Unit-1,-Chicago,-IL-60649-archived
+  ok   390px a saved home the feed dropped is archived, never called leased —  AveUnit 1 · Chicago$1,750Provider asking rent · verify the exact unit
+  ok   390px its own recorded query is shown, and today's beside it as separate context — 152px + 108px
+  ok   390px the saved evidence is readable inside the record
+  ok   390px the notes and the labelled search survive with it — Search this address & unit ↗ · Map & directions ↗ · Check resident reviews ↗
+  ok   390px the reopened saved record raises no page error
+  ok   1280px dark a saved home is one compact decision, not a discovery card again — 409px per home
+  ok   1280px dark it faces the reader with a handful of controls, not a wall — 4 controls
+  ok   1280px dark the unresolved list and the ruled-out homes start folded — 5 lists
+  ok   1280px dark a ruled-out home is out of the contenders' reading order and quieter — opacity 0.88
+  ok   1280px dark a ruled-out home stays readable while it is demoted — 11.4:1 at 0.88 opacity
+  ok   1280px dark a pinned home's name is not squeezed by the money beside it — AMLI Lofts: name 332px of the 141px it wants, money 332px stacked, rank 119x19 · AMLI 900: name 332px of the 121px it wants, money 332px stacked, rank 119x19 · 108 Fellows Ct: name 333px of the 178px it wants, money 333px stacked, rank 119x19
+  ok   1280px dark a pinned home says so on its own row — 3 pinned rows
+  ok   1280px dark the desk does not push the page sideways
+  ok   1280px dark every control a reader faces is a 44px target
+  ok   1280px dark the first screen carries a decision fact, not just a masthead — money true, difference true
+  ok   1280px dark the desk raises no page error
+  ok   1280px dark every unresolved item is a control that opens the field that settles it — 8 items, 1 marked next
+  ok   1280px dark moving a home to ruled out keeps the reader on its own control — focus on SELECT, 0 closed disclosures around it
+  ok   1280px light a saved home is one compact decision, not a discovery card again — 409px per home
+  ok   1280px light it faces the reader with a handful of controls, not a wall — 4 controls
+  ok   1280px light the unresolved list and the ruled-out homes start folded — 5 lists
+  ok   1280px light a ruled-out home is out of the contenders' reading order and quieter — opacity 0.88
+  ok   1280px light a ruled-out home stays readable while it is demoted — 8.2:1 at 0.88 opacity
+  ok   1280px light a pinned home's name is not squeezed by the money beside it — AMLI Lofts: name 332px of the 141px it wants, money 332px stacked, rank 119x19 · AMLI 900: name 332px of the 121px it wants, money 332px stacked, rank 119x19 · 108 Fellows Ct: name 333px of the 178px it wants, money 333px stacked, rank 119x19
+  ok   1280px light a pinned home says so on its own row — 3 pinned rows
+  ok   1280px light the desk does not push the page sideways
+  ok   1280px light every control a reader faces is a 44px target
+  ok   1280px light the first screen carries a decision fact, not just a masthead — money true, difference true
+  ok   1280px light the desk raises no page error
+  ok   1280px light every unresolved item is a control that opens the field that settles it — 8 items, 1 marked next
+  ok   1280px light moving a home to ruled out keeps the reader on its own control — focus on SELECT, 0 closed disclosures around it
+  ok   390px dark a saved home is one compact decision, not a discovery card again — 623px per home
+  ok   390px dark it faces the reader with a handful of controls, not a wall — 4 controls
+  ok   390px dark the unresolved list and the ruled-out homes start folded — 5 lists
+  ok   390px dark a ruled-out home is out of the contenders' reading order and quieter — opacity 0.88
+  ok   390px dark a ruled-out home stays readable while it is demoted — 11.4:1 at 0.88 opacity
+  ok   390px dark a pinned home's name is not squeezed by the money beside it — AMLI Lofts: name 300px of the 178px it wants, money 302px stacked, rank 119x19 · AMLI 900: name 300px of the 152px it wants, money 302px stacked, rank 119x19 · 108 Fellows Ct: name 300px of the 223px it wants, money 302px stacked, rank 119x19
+  ok   390px dark a pinned home says so on its own row — 3 pinned rows
+  ok   390px dark the desk does not push the page sideways
+  ok   390px dark every control a reader faces is a 44px target
+  ok   390px dark the first screen carries a decision fact, not just a masthead — money true, difference true
+  ok   390px dark the desk raises no page error
+  ok   390px dark every unresolved item is a control that opens the field that settles it — 8 items, 1 marked next
+  ok   390px dark moving a home to ruled out keeps the reader on its own control — focus on SELECT, 0 closed disclosures around it
+  ok   390px light a saved home is one compact decision, not a discovery card again — 623px per home
+  ok   390px light it faces the reader with a handful of controls, not a wall — 4 controls
+  ok   390px light the unresolved list and the ruled-out homes start folded — 5 lists
+  ok   390px light a ruled-out home is out of the contenders' reading order and quieter — opacity 0.88
+  ok   390px light a ruled-out home stays readable while it is demoted — 8.2:1 at 0.88 opacity
+  ok   390px light a pinned home's name is not squeezed by the money beside it — AMLI Lofts: name 300px of the 178px it wants, money 302px stacked, rank 119x19 · AMLI 900: name 300px of the 152px it wants, money 302px stacked, rank 119x19 · 108 Fellows Ct: name 300px of the 223px it wants, money 302px stacked, rank 119x19
+  ok   390px light a pinned home says so on its own row — 3 pinned rows
+  ok   390px light the desk does not push the page sideways
+  ok   390px light every control a reader faces is a 44px target
+  ok   390px light the first screen carries a decision fact, not just a masthead — money true, difference true
+  ok   390px light the desk raises no page error
+  ok   390px light every unresolved item is a control that opens the field that settles it — 8 items, 1 marked next
+  ok   390px light moving a home to ruled out keeps the reader on its own control — focus on SELECT, 0 closed disclosures around it
+  ok   320px dark a saved home is one compact decision, not a discovery card again — 736px per home
+  ok   320px dark it faces the reader with a handful of controls, not a wall — 4 controls
+  ok   320px dark the unresolved list and the ruled-out homes start folded — 5 lists
+  ok   320px dark a ruled-out home is out of the contenders' reading order and quieter — opacity 0.88
+  ok   320px dark a ruled-out home stays readable while it is demoted — 11.4:1 at 0.88 opacity
+  ok   320px dark a pinned home's name is not squeezed by the money beside it — AMLI Lofts: name 252px of the 156px it wants, money 252px stacked, rank 119x17 · AMLI 900: name 252px of the 136px it wants, money 252px stacked, rank 119x17 · 108 Fellows Ct: name 252px of the 197px it wants, money 252px stacked, rank 119x17
+  ok   320px dark a pinned home says so on its own row — 3 pinned rows
+  ok   320px dark the desk does not push the page sideways
+  ok   320px dark every control a reader faces is a 44px target
+  ok   320px dark the first screen carries a decision fact, not just a masthead — money false, difference true
+  ok   320px dark the desk raises no page error
+  ok   320px dark every unresolved item is a control that opens the field that settles it — 8 items, 1 marked next
+  ok   320px dark moving a home to ruled out keeps the reader on its own control — focus on SELECT, 0 closed disclosures around it
+  ok   1280px dark the walkthrough opens on the apartment it belongs to — 108 Fellows Ct# 493H · 108 Fellows Ct, # 493H, Elmhurst, IL 60126Sep 2
+  ok   1280px dark the reader can see which apartment they are standing in — on screen: true
+  ok   1280px dark the identity rests below the record's dock, not behind it — dock 62px, overlap 0px
+  ok   1280px dark the checks run straight into the fields that record them — 24px between them
+  ok   1280px dark a finger lands on the check, not only near it — box 28px, row 154px
+  ok   1280px dark the checks the record knows something about say what it knows — 4 evidence lines
+  ok   1280px dark the walkthrough says what is left, not only what is done — 2/8 reviewed · 6 left
+  ok   1280px dark the walkthrough does not push anything sideways
+  ok   1280px dark the walkthrough raises no page error
+  ok   1280px dark a lookup from the walkthrough saves nothing and keeps unsaved text — ticked true
+  ok   1280px dark the live count follows the walk — 3/8 reviewed · 5 left · save changes to keep
+  ok   1280px dark a field jumped to is not left under the sticky bars — focus notes, clear true
+  ok   1280px light the walkthrough opens on the apartment it belongs to — 108 Fellows Ct# 493H · 108 Fellows Ct, # 493H, Elmhurst, IL 60126Sep 2
+  ok   1280px light the reader can see which apartment they are standing in — on screen: true
+  ok   1280px light the identity rests below the record's dock, not behind it — dock 62px, overlap 0px
+  ok   1280px light the checks run straight into the fields that record them — 24px between them
+  ok   1280px light a finger lands on the check, not only near it — box 28px, row 154px
+  ok   1280px light the checks the record knows something about say what it knows — 4 evidence lines
+  ok   1280px light the walkthrough says what is left, not only what is done — 2/8 reviewed · 6 left
+  ok   1280px light the walkthrough does not push anything sideways
+  ok   1280px light the walkthrough raises no page error
+  ok   1280px light a lookup from the walkthrough saves nothing and keeps unsaved text — ticked true
+  ok   1280px light the live count follows the walk — 3/8 reviewed · 5 left · save changes to keep
+  ok   1280px light a field jumped to is not left under the sticky bars — focus notes, clear true
+  ok   390px dark the walkthrough opens on the apartment it belongs to — 108 Fellows Ct# 493H · 108 Fellows Ct, # 493H, Elmhurst, IL 60126Sep 2
+  ok   390px dark the reader can see which apartment they are standing in — on screen: true
+  ok   390px dark the identity rests below the record's dock, not behind it — dock 98px, overlap 0px
+  ok   390px dark the checks run straight into the fields that record them — 24px between them
+  ok   390px dark a finger lands on the check, not only near it — box 28px, row 112px
+  ok   390px dark the checks the record knows something about say what it knows — 4 evidence lines
+  ok   390px dark the walkthrough says what is left, not only what is done — 2/8 reviewed · 6 left
+  ok   390px dark the walkthrough does not push anything sideways
+  ok   390px dark the walkthrough raises no page error
+  ok   390px dark a lookup from the walkthrough saves nothing and keeps unsaved text — ticked true
+  ok   390px dark the live count follows the walk — 3/8 reviewed · 5 left · save changes to keep
+  ok   390px dark a field jumped to is not left under the sticky bars — focus notes, clear true
+  ok   390px light the walkthrough opens on the apartment it belongs to — 108 Fellows Ct# 493H · 108 Fellows Ct, # 493H, Elmhurst, IL 60126Sep 2
+  ok   390px light the reader can see which apartment they are standing in — on screen: true
+  ok   390px light the identity rests below the record's dock, not behind it — dock 98px, overlap 0px
+  ok   390px light the checks run straight into the fields that record them — 24px between them
+  ok   390px light a finger lands on the check, not only near it — box 28px, row 112px
+  ok   390px light the checks the record knows something about say what it knows — 4 evidence lines
+  ok   390px light the walkthrough says what is left, not only what is done — 2/8 reviewed · 6 left
+  ok   390px light the walkthrough does not push anything sideways
+  ok   390px light the walkthrough raises no page error
+  ok   390px light a lookup from the walkthrough saves nothing and keeps unsaved text — ticked true
+  ok   390px light the live count follows the walk — 3/8 reviewed · 5 left · save changes to keep
+  ok   390px light a field jumped to is not left under the sticky bars — focus notes, clear true
+  ok   320px dark the walkthrough opens on the apartment it belongs to — 108 Fellows Ct# 493H · 108 Fellows Ct, # 493H, Elmhurst, IL 60126Sep 2
+  ok   320px dark the reader can see which apartment they are standing in — on screen: true
+  ok   320px dark the identity rests below the record's dock, not behind it — dock 98px, overlap 0px
+  ok   320px dark the checks run straight into the fields that record them — 24px between them
+  ok   320px dark a finger lands on the check, not only near it — box 28px, row 112px
+  ok   320px dark the checks the record knows something about say what it knows — 4 evidence lines
+  ok   320px dark the walkthrough says what is left, not only what is done — 2/8 reviewed · 6 left
+  ok   320px dark the walkthrough does not push anything sideways
+  ok   320px dark the walkthrough raises no page error
+  ok   320px dark a lookup from the walkthrough saves nothing and keeps unsaved text — ticked true
+  ok   320px dark the live count follows the walk — 3/8 reviewed · 5 left · save changes to keep
+  ok   320px dark a field jumped to is not left under the sticky bars — focus notes, clear true
+  ok   1280px dark the record opens from Discover
+  ok   1280px dark a dated quote is observed on the day entered — [{"rent":2600,"date":"2026-09-10","date_basis":"entered","recorded_at":"2026-09-20T00:27:33.784Z"}]
+  ok   1280px dark an undated change keeps the amount and invents no day — [{"rent":2600,"date":"2026-09-10","date_basis":"entered","recorded_at":"2026-09-20T00:27:33.784Z"},{"rent":2500,"date":null,"date_basis":"unknown","recorded_at":"2026-09-20T00:27:37.154Z"}]
+  ok   1280px dark the shortlist keeps the amount as the reader's quote and gives it no dated freshness — 108 Fellows Ct# 493H · Elmhurst$2,500Your base-rent quoteKnown monthly subtotal$2,500+Layout evidenc
+  ok   1280px dark the comparison shows the same amount and prints no quote day — Base rent$2,500
+  ok   1280px dark Price Pulse derives no personal movement from the undated change — the day it was saved (3 such quotes in this view). No background alerts or provider requests are started by this screen.
+  ok   1280px dark History lands on screen under the dock — top 155, dock 87
+  ok   1280px dark the undated quote is listed as unknown, the dated one as entered, and one day is no series — $2,500 · quote date unknown — none entered, none assumed · Recorded Se | $2,600 · quoted Sep 10, 2026, a date you entered · Recorded Sep 19, 20
+  ok   1280px dark the quote log fits the screen — rights 1145,1145 of 1280
+  ok   1280px dark a date-only edit corrects the active quote's entry and keeps what it replaced — {"rent":2500,"date":"2026-09-11","date_basis":"entered","recorded_at":"2026-09-20T00:27:37.154Z","date_corrections":[{"from":null,"basis":"unknown","at":"2026-09-20T00:27:48.175Z"}]}
+  ok   1280px dark Price Pulse shows one movement, between the reader's two days and on no save day — −$1003.8% lower base108 Fellows Ct# 493H$2,600 on Sep 10, 2026 → $2,500 on Sep 11, 2026Your recorded quotes, on days you
+  ok   1280px dark Inspect history reaches the corrected entry, on screen under the dock — $2,500 · quoted Sep 11, 2026, a date you entered · Recorded Sep 19, 2026, 7:27 PM Chicago time · Dat | top 155
+  ok   1280px dark a notes-only save records no quote and re-dates none
+  ok   1280px dark the quote history survives a reload
+  ok   1280px dark no page errors through the quote journey
+  ok   1280px dark an export imports with its unknown day and its correction intact — [{"rent":2600,"date":"2026-09-10","date_basis":"entered","recorded_at":"2026-09-20T00:27:33.784Z"},{
+  ok   1280px dark an archived record the feed no longer carries opens with its own quotes — Archived Court | Listing snapshot · Sep 18, 2026 · Provider documen
+  ok   1280px dark legacy days are kept, said to be of unrecorded provenance, and form no series — $2,350 · dated Sep 12, 2026 — recorded before this | $2,450 · dated Sep 5, 2026 — recorded before this
+  ok   1280px dark no page errors after the import
+  ok   390px dark the record opens from Discover
+  ok   390px dark a dated quote is observed on the day entered — [{"rent":2600,"date":"2026-09-10","date_basis":"entered","recorded_at":"2026-09-20T00:28:10.970Z"}]
+  ok   390px dark an undated change keeps the amount and invents no day — [{"rent":2600,"date":"2026-09-10","date_basis":"entered","recorded_at":"2026-09-20T00:28:10.970Z"},{"rent":2500,"date":null,"date_basis":"unknown","recorded_at":"2026-09-20T00:28:14.448Z"}]
+  ok   390px dark the shortlist keeps the amount as the reader's quote and gives it no dated freshness — 108 Fellows Ct# 493H · Elmhurst$2,500Your base-rent quoteKnown monthly subtotal$2,500+Layout evidenc
+  ok   390px dark the comparison shows the same amount and prints no quote day — Base rent$2,500
+  ok   390px dark Price Pulse derives no personal movement from the undated change — the day it was saved (3 such quotes in this view). No background alerts or provider requests are started by this screen.
+  ok   390px dark History lands on screen under the dock — top 190, dock 98
+  ok   390px dark the undated quote is listed as unknown, the dated one as entered, and one day is no series — $2,500 · quote date unknown — none entered, none assumed · Recorded Se | $2,600 · quoted Sep 10, 2026, a date you entered · Recorded Sep 19, 20
+  ok   390px dark the quote log fits the screen — rights 370,370 of 390
+  ok   390px dark a date-only edit corrects the active quote's entry and keeps what it replaced — {"rent":2500,"date":"2026-09-11","date_basis":"entered","recorded_at":"2026-09-20T00:28:14.448Z","date_corrections":[{"from":null,"basis":"unknown","at":"2026-09-20T00:28:25.598Z"}]}
+  ok   390px dark Price Pulse shows one movement, between the reader's two days and on no save day — −$1003.8% lower base108 Fellows Ct# 493H$2,600 on Sep 10, 2026 → $2,500 on Sep 11, 2026Your recorded quotes, on days you
+  ok   390px dark Inspect history reaches the corrected entry, on screen under the dock — $2,500 · quoted Sep 11, 2026, a date you entered · Recorded Sep 19, 2026, 7:28 PM Chicago time · Dat | top 190
+  ok   390px dark a notes-only save records no quote and re-dates none
+  ok   390px dark the quote history survives a reload
+  ok   390px dark no page errors through the quote journey
+  ok   390px dark an export imports with its unknown day and its correction intact — [{"rent":2600,"date":"2026-09-10","date_basis":"entered","recorded_at":"2026-09-20T00:28:10.970Z"},{
+  ok   390px dark an archived record the feed no longer carries opens with its own quotes — Archived Court | Listing snapshot · Sep 18, 2026 · Provider documen
+  ok   390px dark legacy days are kept, said to be of unrecorded provenance, and form no series — $2,350 · dated Sep 12, 2026 — recorded before this | $2,450 · dated Sep 5, 2026 — recorded before this
+  ok   390px dark no page errors after the import
+  ok   390px light the record opens from Discover
+  ok   390px light a dated quote is observed on the day entered — [{"rent":2600,"date":"2026-09-10","date_basis":"entered","recorded_at":"2026-09-20T00:28:47.856Z"}]
+  ok   390px light an undated change keeps the amount and invents no day — [{"rent":2600,"date":"2026-09-10","date_basis":"entered","recorded_at":"2026-09-20T00:28:47.856Z"},{"rent":2500,"date":null,"date_basis":"unknown","recorded_at":"2026-09-20T00:28:51.342Z"}]
+  ok   390px light the shortlist keeps the amount as the reader's quote and gives it no dated freshness — 108 Fellows Ct# 493H · Elmhurst$2,500Your base-rent quoteKnown monthly subtotal$2,500+Layout evidenc
+  ok   390px light the comparison shows the same amount and prints no quote day — Base rent$2,500
+  ok   390px light Price Pulse derives no personal movement from the undated change — the day it was saved (3 such quotes in this view). No background alerts or provider requests are started by this screen.
+  ok   390px light History lands on screen under the dock — top 190, dock 98
+  ok   390px light the undated quote is listed as unknown, the dated one as entered, and one day is no series — $2,500 · quote date unknown — none entered, none assumed · Recorded Se | $2,600 · quoted Sep 10, 2026, a date you entered · Recorded Sep 19, 20
+  ok   390px light the quote log fits the screen — rights 370,370 of 390
+  ok   390px light a date-only edit corrects the active quote's entry and keeps what it replaced — {"rent":2500,"date":"2026-09-11","date_basis":"entered","recorded_at":"2026-09-20T00:28:51.342Z","date_corrections":[{"from":null,"basis":"unknown","at":"2026-09-20T00:29:02.631Z"}]}
+  ok   390px light Price Pulse shows one movement, between the reader's two days and on no save day — −$1003.8% lower base108 Fellows Ct# 493H$2,600 on Sep 10, 2026 → $2,500 on Sep 11, 2026Your recorded quotes, on days you
+  ok   390px light Inspect history reaches the corrected entry, on screen under the dock — $2,500 · quoted Sep 11, 2026, a date you entered · Recorded Sep 19, 2026, 7:28 PM Chicago time · Dat | top 190
+  ok   390px light a notes-only save records no quote and re-dates none
+  ok   390px light the quote history survives a reload
+  ok   390px light no page errors through the quote journey
+  ok   390px light an export imports with its unknown day and its correction intact — [{"rent":2600,"date":"2026-09-10","date_basis":"entered","recorded_at":"2026-09-20T00:28:47.856Z"},{
+  ok   390px light an archived record the feed no longer carries opens with its own quotes — Archived Court | Listing snapshot · Sep 18, 2026 · Provider documen
+  ok   390px light legacy days are kept, said to be of unrecorded provenance, and form no series — $2,350 · dated Sep 12, 2026 — recorded before this | $2,450 · dated Sep 5, 2026 — recorded before this
+  ok   390px light no page errors after the import
+  ok   320px dark the record opens from Discover
+  ok   320px dark a dated quote is observed on the day entered — [{"rent":2600,"date":"2026-09-10","date_basis":"entered","recorded_at":"2026-09-20T00:29:25.018Z"}]
+  ok   320px dark an undated change keeps the amount and invents no day — [{"rent":2600,"date":"2026-09-10","date_basis":"entered","recorded_at":"2026-09-20T00:29:25.018Z"},{"rent":2500,"date":null,"date_basis":"unknown","recorded_at":"2026-09-20T00:29:28.455Z"}]
+  ok   320px dark the shortlist keeps the amount as the reader's quote and gives it no dated freshness — 108 Fellows Ct# 493H · Elmhurst$2,500Your base-rent quoteKnown monthly subtotal$2,500+Layout evidenc
+  ok   320px dark the comparison shows the same amount and prints no quote day — Base rent$2,500
+  ok   320px dark Price Pulse derives no personal movement from the undated change — the day it was saved (3 such quotes in this view). No background alerts or provider requests are started by this screen.
+  ok   320px dark History lands on screen under the dock — top 190, dock 98
+  ok   320px dark the undated quote is listed as unknown, the dated one as entered, and one day is no series — $2,500 · quote date unknown — none entered, none assumed · Recorded Se | $2,600 · quoted Sep 10, 2026, a date you entered · Recorded Sep 19, 20
+  ok   320px dark the quote log fits the screen — rights 304,304 of 320
+  ok   320px dark a date-only edit corrects the active quote's entry and keeps what it replaced — {"rent":2500,"date":"2026-09-11","date_basis":"entered","recorded_at":"2026-09-20T00:29:28.455Z","date_corrections":[{"from":null,"basis":"unknown","at":"2026-09-20T00:29:39.741Z"}]}
+  ok   320px dark Price Pulse shows one movement, between the reader's two days and on no save day — −$1003.8% lower base108 Fellows Ct# 493H$2,600 on Sep 10, 2026 → $2,500 on Sep 11, 2026Your recorded quotes, on days you
+  ok   320px dark Inspect history reaches the corrected entry, on screen under the dock — $2,500 · quoted Sep 11, 2026, a date you entered · Recorded Sep 19, 2026, 7:29 PM Chicago time · Dat | top 190
+  ok   320px dark a notes-only save records no quote and re-dates none
+  ok   320px dark the quote history survives a reload
+  ok   320px dark no page errors through the quote journey
+  ok   320px dark an export imports with its unknown day and its correction intact — [{"rent":2600,"date":"2026-09-10","date_basis":"entered","recorded_at":"2026-09-20T00:29:25.018Z"},{
+  ok   320px dark an archived record the feed no longer carries opens with its own quotes — Archived Court | Listing snapshot · Sep 18, 2026 · Provider documen
+  ok   320px dark legacy days are kept, said to be of unrecorded provenance, and form no series — $2,350 · dated Sep 12, 2026 — recorded before this | $2,450 · dated Sep 5, 2026 — recorded before this
+  ok   320px dark no page errors after the import
+browser-check: 469/469 scenarios passed

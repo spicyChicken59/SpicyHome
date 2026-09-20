@@ -1405,8 +1405,10 @@ try {
         dialogSideways: dialog.scrollWidth > dialog.clientWidth + 1,
       };
     }, { id: TOUR_HOME.id, fold });
+    // Provider unit labels may use "#"; verify this fixture's actual identity.
     check(`${label} the walkthrough opens on the apartment it belongs to`,
-      tour.ran && tour.open && /Unit/.test(tour.identity), tour.identity.slice(0, 70));
+      tour.ran && tour.open && [TOUR_HOME.title, TOUR_HOME.address, TOUR_HOME.unit_label].every((part) => tour.identity.includes(part)),
+      tour.identity.slice(0, 70));
     check(`${label} the reader can see which apartment they are standing in`,
       tour.identityOnScreen && /Sep 20, 2026/.test(tour.identity), `on screen: ${tour.identityOnScreen}`);
     check(`${label} the identity rests below the record's dock, not behind it`,

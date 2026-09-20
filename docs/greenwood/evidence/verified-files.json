@@ -1,0 +1,22 @@
+{
+  "base": "7d05766d18301c83b2672dbf5b13fe9334c1d5fa",
+  "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+  "python": "3.12.14",
+  "node": "v24.19.0",
+  "sha256": {
+    "dist/app.js": "e25b830a02cef10a2ffadfe71dd31bace18c28e45d60d0ce8c21f4dba21a9717",
+    "dist/model.js": "97682809c273411e297f59ea1d5b3e487935766233263ea685d4d6a6f3c2fdb6",
+    "dist/flagship.css": "a5c3e615b16462ddc62d18b5f57f7526b1ef9bc6490044f8ae67c6e7bef28e30",
+    "dist/index.html": "0fe646700732ce48235452faf0c962f36f6aa3e7a3c79b855e8fe7afb14b02c2",
+    "dist/data.json": "8d6e47faf5577ebaa9691548caad6b2773ea0590507d132e9cd3dc7693ee5f9a",
+    "src/tracker.py": "24789a70769b5dba4dacfcd9136e5843e114f85ab3b3feda533caf1413dd8b9a",
+    "src/eligibility.py": "98d337f174948604863227e5259b513c04054b646caec6b36d468d2ad0bd9212",
+    "data/eligibility-evidence.json": "be7e4bec1f5fbdcb3accf0fa409a981b250b36f624d7d8cecf6bb7f4dfe5e8c2",
+    "tools/amend_eligibility.py": "bea9d92d9b00f27140c9322ba687409e05de237122d7f1e7185a15bca91e2837",
+    "tools/eligibility_check.mjs": "e488e9dd05d4efbfd1f8b404c7a19d197d813d244cf3510d5f726c08859e2128",
+    "tools/check_site.py": "f2c9b25af05df387e9af2c041d51f4b48067b01335c44375df06549843194ac3",
+    "tests/eligibility.test.mjs": "11605f0bb8aad03230abb6852bfa33f13066699ebef7eee7b93cb53ff2d481b5",
+    "tests/test_eligibility.py": "c5de3cff56ff94e07d5ad395aceafd6eb6e8dc391aa3594d97dfa99732f6bd77",
+    "tools/browser_check.mjs": "09b0d315c1a3db315c13c2246393547574201c4cec55a79e2a3523ef9f4155d1"
+  }
+}

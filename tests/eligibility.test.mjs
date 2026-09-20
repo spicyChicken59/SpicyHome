@@ -36,6 +36,14 @@ async function boot(data = fixture(), notebook = null) {
 }
 const importText = (d, text) => d.doc.querySelector('#import-file').onchange({ target: { files: [{ size: text.length, text: async () => text }], value: '' } });
 const save = d => d.doc.querySelector(`#results [data-save="${ID}"]`).click();
+const syntheticEvidence = (note, observed_at) => ({ ...structuredClone(source), note,
+  source: { name: 'Synthetic preservation fixture', url: 'https://example.invalid/evidence', observed_at,
+    supports: 'Synthetic evidence for preservation tests only.' } });
+const A = syntheticEvidence('Synthetic original source evidence.', '2026-09-19');
+const B = syntheticEvidence('Synthetic later source clarification.', '2026-09-20');
+const withEvidence = evidence => {
+  const data = fixture(); data.homes[0].eligibility_evidence = structuredClone(evidence); return data;
+};
 
 test('eligibility: all accepting boundaries reject malformed source annotations', () => {
   const variants = [null, [], {}, { ...source, scope: 'unrestricted' }, { ...source, note: 'x'.repeat(601) },
@@ -117,6 +125,12 @@ test('eligibility: save reload export import archive and reappearance keep the o
   assert.match(archived.querySelector('.dossier-subtotal').textContent, /Incomplete/);
   assert.match(archived.querySelector('#detail-history').textContent, /quote date unknown/);
   assert.deepEqual(fresh.notebook().records[ID].snapshot, notebook.records[ID].snapshot);
+  archived.querySelector('#notes').value = 'Synthetic archived note';
+  archived.querySelector('#record-form').dispatchEvent(new fresh.w.Event('submit'));
+  assert.deepEqual(fresh.notebook().records[ID].snapshot, notebook.records[ID].snapshot);
+  assert.deepEqual(fresh.notebook().records[ID].scan, notebook.records[ID].scan);
+  assert.equal(fresh.notebook().records[ID].eligibility_update, undefined, 'an original annotation needs no later update on archived save');
+  assert.deepEqual(fresh.notebook().records[ID].quote_history, notebook.records[ID].quote_history);
   const retained = fresh.notebook(); fresh.close();
   const changed = fixture(); changed.homes[0].rent = 1450; changed.homes[0].observed_at = '2026-09-26T12:00:00Z';
   const back = await boot(changed, retained);
@@ -158,7 +172,101 @@ test('eligibility: older snapshots stay frozen and explicitly saved later eviden
   archive.doc.querySelector('[data-view="shortlist"]').click();
   assert.match(archive.detail().querySelector('#detail-eligibility').textContent, /Later source evidence recorded in this notebook/);
   assert.deepEqual(archive.notebook().records[ID].snapshot, legacy);
+  archive.doc.querySelector('#notes').value = 'Synthetic archived legacy note';
+  archive.doc.querySelector('#record-form').dispatchEvent(new archive.w.Event('submit'));
+  assert.deepEqual(archive.notebook().records[ID].eligibility_update, saved.eligibility_update);
+  assert.deepEqual(archive.notebook().records[ID].snapshot, legacy);
+  assert.deepEqual(archive.notebook().records[ID].scan, scan);
   archive.close();
+});
+
+test('eligibility: archived later evidence survives notes, reload, backup and current-source updates', async () => {
+  const first = await boot(withEvidence(A));
+  save(first);
+  const form = first.detail();
+  form.querySelector('#notes').value = 'Synthetic original personal note';
+  form.querySelector('#parkingCost').value = '0';
+  form.querySelector('#rentOverride').value = '1300';
+  form.querySelector('#quoteDate').value = '2026-09-18';
+  form.querySelector('#record-form').dispatchEvent(new first.w.Event('submit'));
+  const initial = first.notebook(); first.close();
+
+  const current = await boot(withEvidence(B), initial);
+  current.detail().querySelector('#record-form').dispatchEvent(new current.w.Event('submit'));
+  const retained = current.notebook(), before = retained.records[ID];
+  assert.deepEqual(before.snapshot, initial.records[ID].snapshot);
+  assert.deepEqual(before.scan, initial.records[ID].scan);
+  assert.deepEqual(before.eligibility_update.evidence, B);
+  assert.deepEqual(before.quote_history, initial.records[ID].quote_history);
+  current.close();
+
+  const absent = fixture(); absent.homes = [other];
+  const archived = await boot(absent, retained);
+  archived.doc.querySelector('[data-view="shortlist"]').click();
+  const dossier = archived.detail();
+  assert.match(dossier.querySelector('#detail-eligibility').textContent, /Synthetic later source clarification/);
+  assert.equal(dossier.querySelector('#parkingCost').value, '0');
+  assert.equal(dossier.querySelector('#utilities').value, '');
+  assert.match(dossier.querySelector('.dossier-subtotal').textContent, /Incomplete/);
+  dossier.querySelector('#notes').value = 'Synthetic notes-only archived edit';
+  dossier.querySelector('#record-form').dispatchEvent(new archived.w.Event('submit'));
+  const after = archived.notebook();
+  assert.deepEqual(after.records[ID].eligibility_update, before.eligibility_update, 'archived snapshot A cannot replace or re-date separately saved B');
+  assert.deepEqual(after.records[ID], { ...before, notes: 'Synthetic notes-only archived edit' }, 'only the intended personal notes change');
+  archived.close();
+
+  const reloaded = await boot(absent, after);
+  assert.deepEqual(reloaded.notebook().records[ID], after.records[ID]);
+  let exported;
+  reloaded.w.Blob = class { constructor(parts) { exported = parts[0]; } };
+  reloaded.doc.querySelector('[data-view="setup"]').click();
+  reloaded.doc.querySelector('#export-notebook').click(); reloaded.close();
+  const imported = await boot(absent); await importText(imported, exported);
+  assert.deepEqual(imported.notebook().records[ID], after.records[ID]);
+  const backup = imported.notebook(); imported.close();
+  const returned = await boot(withEvidence(B), backup);
+  returned.doc.querySelector('[data-view="shortlist"]').click();
+  assert.equal(returned.doc.querySelectorAll(`.saved-row[data-home="${ID}"]`).length, 1);
+  returned.detail().querySelector('#record-form').dispatchEvent(new returned.w.Event('submit'));
+  assert.deepEqual(returned.notebook().records[ID], after.records[ID], 'reappearance does not re-date unchanged B');
+  returned.close();
+
+  const C = syntheticEvidence('Synthetic current source revision.', '2026-09-21');
+  const revised = await boot(withEvidence(C), backup);
+  assert.deepEqual(revised.notebook().records[ID], after.records[ID], 'viewing new evidence cannot silently save it');
+  revised.detail().querySelector('#record-form').dispatchEvent(new revised.w.Event('submit'));
+  const latest = revised.notebook().records[ID];
+  assert.deepEqual(latest.eligibility_update.evidence, C, 'explicit retention of current evidence remains possible');
+  assert.notEqual(latest.eligibility_update.recorded_at, before.eligibility_update.recorded_at);
+  assert.deepEqual(latest.snapshot, before.snapshot);
+  assert.deepEqual(latest.scan, before.scan);
+  assert.deepEqual(latest.quote_history, before.quote_history);
+  revised.close();
+});
+
+for (const action of ['stage', 'finalist', 'save']) test(`eligibility: archived later evidence survives ${action} actions`, async () => {
+  const snapshot = withEvidence(A).homes[0];
+  const scan = { basis: 'provider_query', city: 'Evanston', saved_at: '2026-09-19T12:00:00Z', observed_at: snapshot.observed_at };
+  const prior = { saved: true, status: 'shortlisted', snapshot, scan, notes: 'Synthetic personal note',
+    eligibility_update: { evidence: B, recorded_at: '2026-09-20T00:00:00Z' } };
+  const absent = fixture(); absent.homes = [other];
+  const d = await boot(absent, { ...emptyWorkspace(), records: { [ID]: prior } });
+  d.doc.querySelector('[data-view="shortlist"]').click();
+  if (action === 'stage') {
+    const field = d.doc.querySelector(`[data-stage="${ID}"]`); field.value = 'contacted'; field.dispatchEvent(new d.w.Event('change'));
+  } else if (action === 'finalist') d.doc.querySelector(`.saved-row [data-finalist="${ID}"]`).click();
+  else {
+    const button = d.detail().querySelector('[data-save]');
+    button.click();
+    assert.deepEqual(d.notebook().records[ID].eligibility_update, prior.eligibility_update, 'unsaving must preserve B');
+    button.click();
+  }
+  const next = d.notebook().records[ID];
+  assert.deepEqual(next.eligibility_update, prior.eligibility_update, `${action} cannot replace or re-date B`);
+  assert.deepEqual(next.snapshot, snapshot);
+  assert.deepEqual(next.scan, scan);
+  assert.equal(next.notes, prior.notes);
+  d.close();
 });
 
 test('eligibility: invalid imports fail atomically before confirmation; text cannot inject HTML', async () => {

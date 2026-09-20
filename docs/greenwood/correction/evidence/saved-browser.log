@@ -1,0 +1,137 @@
+  ok   1280px dark the walkthrough opens on the apartment it belongs to — 108 Fellows Ct# 493H · 108 Fellows Ct, # 493H, Elmhurst, IL 60126Sep 2
+  ok   1280px dark the reader can see which apartment they are standing in — on screen: true
+  ok   1280px dark the identity rests below the record's dock, not behind it — dock 62px, overlap 0px
+  ok   1280px dark the checks run straight into the fields that record them — 24px between them
+  ok   1280px dark a finger lands on the check, not only near it — box 28px, row 154px
+  ok   1280px dark the checks the record knows something about say what it knows — 4 evidence lines
+  ok   1280px dark the walkthrough says what is left, not only what is done — 2/8 reviewed · 6 left
+  ok   1280px dark the walkthrough does not push anything sideways
+  ok   1280px dark the walkthrough raises no page error
+  ok   1280px dark a lookup from the walkthrough saves nothing and keeps unsaved text — ticked true
+  ok   1280px dark the live count follows the walk — 3/8 reviewed · 5 left · save changes to keep
+  ok   1280px dark a field jumped to is not left under the sticky bars — focus notes, clear true
+  ok   1280px light the walkthrough opens on the apartment it belongs to — 108 Fellows Ct# 493H · 108 Fellows Ct, # 493H, Elmhurst, IL 60126Sep 2
+  ok   1280px light the reader can see which apartment they are standing in — on screen: true
+  ok   1280px light the identity rests below the record's dock, not behind it — dock 62px, overlap 0px
+  ok   1280px light the checks run straight into the fields that record them — 24px between them
+  ok   1280px light a finger lands on the check, not only near it — box 28px, row 154px
+  ok   1280px light the checks the record knows something about say what it knows — 4 evidence lines
+  ok   1280px light the walkthrough says what is left, not only what is done — 2/8 reviewed · 6 left
+  ok   1280px light the walkthrough does not push anything sideways
+  ok   1280px light the walkthrough raises no page error
+  ok   1280px light a lookup from the walkthrough saves nothing and keeps unsaved text — ticked true
+  ok   1280px light the live count follows the walk — 3/8 reviewed · 5 left · save changes to keep
+  ok   1280px light a field jumped to is not left under the sticky bars — focus notes, clear true
+  ok   390px dark the walkthrough opens on the apartment it belongs to — 108 Fellows Ct# 493H · 108 Fellows Ct, # 493H, Elmhurst, IL 60126Sep 2
+  ok   390px dark the reader can see which apartment they are standing in — on screen: true
+  ok   390px dark the identity rests below the record's dock, not behind it — dock 98px, overlap 0px
+  ok   390px dark the checks run straight into the fields that record them — 24px between them
+  ok   390px dark a finger lands on the check, not only near it — box 28px, row 112px
+  ok   390px dark the checks the record knows something about say what it knows — 4 evidence lines
+  ok   390px dark the walkthrough says what is left, not only what is done — 2/8 reviewed · 6 left
+  ok   390px dark the walkthrough does not push anything sideways
+  ok   390px dark the walkthrough raises no page error
+  ok   390px dark a lookup from the walkthrough saves nothing and keeps unsaved text — ticked true
+  ok   390px dark the live count follows the walk — 3/8 reviewed · 5 left · save changes to keep
+  ok   390px dark a field jumped to is not left under the sticky bars — focus notes, clear true
+  ok   390px light the walkthrough opens on the apartment it belongs to — 108 Fellows Ct# 493H · 108 Fellows Ct, # 493H, Elmhurst, IL 60126Sep 2
+  ok   390px light the reader can see which apartment they are standing in — on screen: true
+  ok   390px light the identity rests below the record's dock, not behind it — dock 98px, overlap 0px
+  ok   390px light the checks run straight into the fields that record them — 24px between them
+  ok   390px light a finger lands on the check, not only near it — box 28px, row 112px
+  ok   390px light the checks the record knows something about say what it knows — 4 evidence lines
+  ok   390px light the walkthrough says what is left, not only what is done — 2/8 reviewed · 6 left
+  ok   390px light the walkthrough does not push anything sideways
+  ok   390px light the walkthrough raises no page error
+  ok   390px light a lookup from the walkthrough saves nothing and keeps unsaved text — ticked true
+  ok   390px light the live count follows the walk — 3/8 reviewed · 5 left · save changes to keep
+  ok   390px light a field jumped to is not left under the sticky bars — focus notes, clear true
+  ok   320px dark the walkthrough opens on the apartment it belongs to — 108 Fellows Ct# 493H · 108 Fellows Ct, # 493H, Elmhurst, IL 60126Sep 2
+  ok   320px dark the reader can see which apartment they are standing in — on screen: true
+  ok   320px dark the identity rests below the record's dock, not behind it — dock 98px, overlap 0px
+  ok   320px dark the checks run straight into the fields that record them — 24px between them
+  ok   320px dark a finger lands on the check, not only near it — box 28px, row 112px
+  ok   320px dark the checks the record knows something about say what it knows — 4 evidence lines
+  ok   320px dark the walkthrough says what is left, not only what is done — 2/8 reviewed · 6 left
+  ok   320px dark the walkthrough does not push anything sideways
+  ok   320px dark the walkthrough raises no page error
+  ok   320px dark a lookup from the walkthrough saves nothing and keeps unsaved text — ticked true
+  ok   320px dark the live count follows the walk — 3/8 reviewed · 5 left · save changes to keep
+  ok   320px dark a field jumped to is not left under the sticky bars — focus notes, clear true
+  ok   1280px dark the record opens from Discover
+  ok   1280px dark a dated quote is observed on the day entered — [{"rent":2600,"date":"2026-09-10","date_basis":"entered","recorded_at":"2026-09-20T14:07:24.881Z"}]
+  ok   1280px dark an undated change keeps the amount and invents no day — [{"rent":2600,"date":"2026-09-10","date_basis":"entered","recorded_at":"2026-09-20T14:07:24.881Z"},{"rent":2500,"date":null,"date_basis":"unknown","recorded_at":"2026-09-20T14:07:29.151Z"}]
+  ok   1280px dark the shortlist keeps the amount as the reader's quote and gives it no dated freshness — 108 Fellows Ct# 493H · Elmhurst$2,500Your base-rent quoteKnown monthly subtotal$2,500+Layout evidenc
+  ok   1280px dark the comparison shows the same amount and prints no quote day — Base rent$2,500
+  ok   1280px dark Price Pulse derives no personal movement from the undated change — the day it was saved (3 such quotes in this view). No background alerts or provider requests are started by this screen.
+  ok   1280px dark History lands on screen under the dock — top 155, dock 87
+  ok   1280px dark the undated quote is listed as unknown, the dated one as entered, and one day is no series — $2,500 · quote date unknown — none entered, none assumed · Recorded Se | $2,600 · quoted Sep 10, 2026, a date you entered · Recorded Sep 20, 20
+  ok   1280px dark the quote log fits the screen — rights 1145,1145 of 1280
+  ok   1280px dark a date-only edit corrects the active quote's entry and keeps what it replaced — {"rent":2500,"date":"2026-09-11","date_basis":"entered","recorded_at":"2026-09-20T14:07:29.151Z","date_corrections":[{"from":null,"basis":"unknown","at":"2026-09-20T14:07:41.848Z"}]}
+  ok   1280px dark Price Pulse shows one movement, between the reader's two days and on no save day — −$1003.8% lower base108 Fellows Ct# 493H$2,600 on Sep 10, 2026 → $2,500 on Sep 11, 2026Your recorded quotes, on days you
+  ok   1280px dark Inspect history reaches the corrected entry, on screen under the dock — $2,500 · quoted Sep 11, 2026, a date you entered · Recorded Sep 20, 2026, 9:07 AM Chicago time · Dat | top 155
+  ok   1280px dark a notes-only save records no quote and re-dates none
+  ok   1280px dark the quote history survives a reload
+  ok   1280px dark no page errors through the quote journey
+  ok   1280px dark an export imports with its unknown day and its correction intact — [{"rent":2600,"date":"2026-09-10","date_basis":"entered","recorded_at":"2026-09-20T14:07:24.881Z"},{
+  ok   1280px dark an archived record the feed no longer carries opens with its own quotes — Archived Court | Listing snapshot · Sep 18, 2026 · Provider documen
+  ok   1280px dark legacy days are kept, said to be of unrecorded provenance, and form no series — $2,350 · dated Sep 12, 2026 — recorded before this | $2,450 · dated Sep 5, 2026 — recorded before this
+  ok   1280px dark no page errors after the import
+  ok   390px dark the record opens from Discover
+  ok   390px dark a dated quote is observed on the day entered — [{"rent":2600,"date":"2026-09-10","date_basis":"entered","recorded_at":"2026-09-20T14:08:06.005Z"}]
+  ok   390px dark an undated change keeps the amount and invents no day — [{"rent":2600,"date":"2026-09-10","date_basis":"entered","recorded_at":"2026-09-20T14:08:06.005Z"},{"rent":2500,"date":null,"date_basis":"unknown","recorded_at":"2026-09-20T14:08:09.766Z"}]
+  ok   390px dark the shortlist keeps the amount as the reader's quote and gives it no dated freshness — 108 Fellows Ct# 493H · Elmhurst$2,500Your base-rent quoteKnown monthly subtotal$2,500+Layout evidenc
+  ok   390px dark the comparison shows the same amount and prints no quote day — Base rent$2,500
+  ok   390px dark Price Pulse derives no personal movement from the undated change — the day it was saved (3 such quotes in this view). No background alerts or provider requests are started by this screen.
+  ok   390px dark History lands on screen under the dock — top 190, dock 98
+  ok   390px dark the undated quote is listed as unknown, the dated one as entered, and one day is no series — $2,500 · quote date unknown — none entered, none assumed · Recorded Se | $2,600 · quoted Sep 10, 2026, a date you entered · Recorded Sep 20, 20
+  ok   390px dark the quote log fits the screen — rights 370,370 of 390
+  ok   390px dark a date-only edit corrects the active quote's entry and keeps what it replaced — {"rent":2500,"date":"2026-09-11","date_basis":"entered","recorded_at":"2026-09-20T14:08:09.766Z","date_corrections":[{"from":null,"basis":"unknown","at":"2026-09-20T14:08:21.644Z"}]}
+  ok   390px dark Price Pulse shows one movement, between the reader's two days and on no save day — −$1003.8% lower base108 Fellows Ct# 493H$2,600 on Sep 10, 2026 → $2,500 on Sep 11, 2026Your recorded quotes, on days you
+  ok   390px dark Inspect history reaches the corrected entry, on screen under the dock — $2,500 · quoted Sep 11, 2026, a date you entered · Recorded Sep 20, 2026, 9:08 AM Chicago time · Dat | top 190
+  ok   390px dark a notes-only save records no quote and re-dates none
+  ok   390px dark the quote history survives a reload
+  ok   390px dark no page errors through the quote journey
+  ok   390px dark an export imports with its unknown day and its correction intact — [{"rent":2600,"date":"2026-09-10","date_basis":"entered","recorded_at":"2026-09-20T14:08:06.005Z"},{
+  ok   390px dark an archived record the feed no longer carries opens with its own quotes — Archived Court | Listing snapshot · Sep 18, 2026 · Provider documen
+  ok   390px dark legacy days are kept, said to be of unrecorded provenance, and form no series — $2,350 · dated Sep 12, 2026 — recorded before this | $2,450 · dated Sep 5, 2026 — recorded before this
+  ok   390px dark no page errors after the import
+  ok   390px light the record opens from Discover
+  ok   390px light a dated quote is observed on the day entered — [{"rent":2600,"date":"2026-09-10","date_basis":"entered","recorded_at":"2026-09-20T14:08:45.851Z"}]
+  ok   390px light an undated change keeps the amount and invents no day — [{"rent":2600,"date":"2026-09-10","date_basis":"entered","recorded_at":"2026-09-20T14:08:45.851Z"},{"rent":2500,"date":null,"date_basis":"unknown","recorded_at":"2026-09-20T14:08:49.425Z"}]
+  ok   390px light the shortlist keeps the amount as the reader's quote and gives it no dated freshness — 108 Fellows Ct# 493H · Elmhurst$2,500Your base-rent quoteKnown monthly subtotal$2,500+Layout evidenc
+  ok   390px light the comparison shows the same amount and prints no quote day — Base rent$2,500
+  ok   390px light Price Pulse derives no personal movement from the undated change — the day it was saved (3 such quotes in this view). No background alerts or provider requests are started by this screen.
+  ok   390px light History lands on screen under the dock — top 190, dock 98
+  ok   390px light the undated quote is listed as unknown, the dated one as entered, and one day is no series — $2,500 · quote date unknown — none entered, none assumed · Recorded Se | $2,600 · quoted Sep 10, 2026, a date you entered · Recorded Sep 20, 20
+  ok   390px light the quote log fits the screen — rights 370,370 of 390
+  ok   390px light a date-only edit corrects the active quote's entry and keeps what it replaced — {"rent":2500,"date":"2026-09-11","date_basis":"entered","recorded_at":"2026-09-20T14:08:49.425Z","date_corrections":[{"from":null,"basis":"unknown","at":"2026-09-20T14:09:00.709Z"}]}
+  ok   390px light Price Pulse shows one movement, between the reader's two days and on no save day — −$1003.8% lower base108 Fellows Ct# 493H$2,600 on Sep 10, 2026 → $2,500 on Sep 11, 2026Your recorded quotes, on days you
+  ok   390px light Inspect history reaches the corrected entry, on screen under the dock — $2,500 · quoted Sep 11, 2026, a date you entered · Recorded Sep 20, 2026, 9:08 AM Chicago time · Dat | top 190
+  ok   390px light a notes-only save records no quote and re-dates none
+  ok   390px light the quote history survives a reload
+  ok   390px light no page errors through the quote journey
+  ok   390px light an export imports with its unknown day and its correction intact — [{"rent":2600,"date":"2026-09-10","date_basis":"entered","recorded_at":"2026-09-20T14:08:45.851Z"},{
+  ok   390px light an archived record the feed no longer carries opens with its own quotes — Archived Court | Listing snapshot · Sep 18, 2026 · Provider documen
+  ok   390px light legacy days are kept, said to be of unrecorded provenance, and form no series — $2,350 · dated Sep 12, 2026 — recorded before this | $2,450 · dated Sep 5, 2026 — recorded before this
+  ok   390px light no page errors after the import
+  ok   320px dark the record opens from Discover
+  ok   320px dark a dated quote is observed on the day entered — [{"rent":2600,"date":"2026-09-10","date_basis":"entered","recorded_at":"2026-09-20T14:09:23.748Z"}]
+  ok   320px dark an undated change keeps the amount and invents no day — [{"rent":2600,"date":"2026-09-10","date_basis":"entered","recorded_at":"2026-09-20T14:09:23.748Z"},{"rent":2500,"date":null,"date_basis":"unknown","recorded_at":"2026-09-20T14:09:27.681Z"}]
+  ok   320px dark the shortlist keeps the amount as the reader's quote and gives it no dated freshness — 108 Fellows Ct# 493H · Elmhurst$2,500Your base-rent quoteKnown monthly subtotal$2,500+Layout evidenc
+  ok   320px dark the comparison shows the same amount and prints no quote day — Base rent$2,500
+  ok   320px dark Price Pulse derives no personal movement from the undated change — the day it was saved (3 such quotes in this view). No background alerts or provider requests are started by this screen.
+  ok   320px dark History lands on screen under the dock — top 190, dock 98
+  ok   320px dark the undated quote is listed as unknown, the dated one as entered, and one day is no series — $2,500 · quote date unknown — none entered, none assumed · Recorded Se | $2,600 · quoted Sep 10, 2026, a date you entered · Recorded Sep 20, 20
+  ok   320px dark the quote log fits the screen — rights 304,304 of 320
+  ok   320px dark a date-only edit corrects the active quote's entry and keeps what it replaced — {"rent":2500,"date":"2026-09-11","date_basis":"entered","recorded_at":"2026-09-20T14:09:27.681Z","date_corrections":[{"from":null,"basis":"unknown","at":"2026-09-20T14:09:39.192Z"}]}
+  ok   320px dark Price Pulse shows one movement, between the reader's two days and on no save day — −$1003.8% lower base108 Fellows Ct# 493H$2,600 on Sep 10, 2026 → $2,500 on Sep 11, 2026Your recorded quotes, on days you
+  ok   320px dark Inspect history reaches the corrected entry, on screen under the dock — $2,500 · quoted Sep 11, 2026, a date you entered · Recorded Sep 20, 2026, 9:09 AM Chicago time · Dat | top 190
+  ok   320px dark a notes-only save records no quote and re-dates none
+  ok   320px dark the quote history survives a reload
+  ok   320px dark no page errors through the quote journey
+  ok   320px dark an export imports with its unknown day and its correction intact — [{"rent":2600,"date":"2026-09-10","date_basis":"entered","recorded_at":"2026-09-20T14:09:23.748Z"},{
+  ok   320px dark an archived record the feed no longer carries opens with its own quotes — Archived Court | Listing snapshot · Sep 18, 2026 · Provider documen
+  ok   320px dark legacy days are kept, said to be of unrecorded provenance, and form no series — $2,350 · dated Sep 12, 2026 — recorded before this | $2,450 · dated Sep 5, 2026 — recorded before this
+  ok   320px dark no page errors after the import
+browser-check: 136/136 scenarios passed

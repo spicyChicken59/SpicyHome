@@ -1,14 +1,17 @@
 // Focused real-browser acceptance. Every remote request is intercepted.
-// node tools/eligibility_check.mjs [output-directory] [--baseline]
+// node tools/eligibility_check.mjs [output-directory] [--baseline | --archived-updates]
 // --baseline serves BASE_DIST and verifies the omission before this correction.
+// ELIGIBILITY_DIST optionally serves a reviewed revision for a failing regression.
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { resolve, join, extname, sep } from 'node:path';
 import { chromium } from 'playwright';
+import { isDeepStrictEqual as same } from 'node:util';
 
 const baseline = process.argv.includes('--baseline');
-const dist = resolve(baseline ? process.env.BASE_DIST : 'dist');
+const archivedUpdates = process.argv.includes('--archived-updates');
+const dist = resolve(process.env.ELIGIBILITY_DIST || (baseline ? process.env.BASE_DIST : 'dist'));
 const out = resolve(process.argv[2] || 'scratchpad/eligibility-check');
 await mkdir(out, { recursive: true });
 const feed = JSON.parse(await readFile(join(dist, 'data.json'), 'utf8'));
@@ -35,10 +38,10 @@ const check = (name, ok, detail = '') => {
   assert(ok, name);
 };
 let origin;
-async function open(width, theme) {
+async function open(width, theme, data = feed) {
   const context = await browser.newContext({ viewport: { width, height: width < 600 ? 844 : 900 },
     isMobile: width < 600, hasTouch: width < 600, colorScheme: theme, reducedMotion: 'reduce', acceptDownloads: true });
-  const fixture = { data: feed };
+  const fixture = { data };
   await context.route('**/*', async route => {
     const url = route.request().url();
     if (url.startsWith(origin) && !/\/(data|status)\.json/.test(url)) return route.continue();
@@ -74,13 +77,98 @@ async function fit(page, label, selector) {
   }));
   check(label, measured.length > 0 && measured.every(x => x.left >= -1 && x.right <= x.width + 1 && x.extra <= 1), JSON.stringify(measured));
 }
+const syntheticEvidence = (note, observed_at) => ({ ...structuredClone(home.eligibility_evidence), note,
+  source: { name: 'Synthetic preservation fixture', url: 'https://example.invalid/evidence', observed_at,
+    supports: 'Synthetic evidence for preservation tests only.' } });
+const originalEvidence = syntheticEvidence('Synthetic original source evidence.', '2026-09-19');
+const laterEvidence = syntheticEvidence('Synthetic later source clarification.', '2026-09-20');
+function withEvidence(evidence) {
+  const data = structuredClone(feed); data.homes.find(h => h.id === id).eligibility_evidence = evidence; return data;
+}
+async function archivedUpdateJourney(d, tag, width, theme) {
+  const p = d.page;
+  const readRecord = page => page.evaluate(({ key, id }) => JSON.parse(localStorage.getItem(key)).records[id], { key, id });
+  const submit = () => p.locator('.detail-dock [type="submit"]').click();
+  const openSaved = async page => {
+    await page.locator('button[data-view="shortlist"]').click();
+    await page.locator(`.saved-row[data-home="${id}"] [data-detail]`).click();
+  };
+  const showEvidence = async name => {
+    await p.locator('#detail-eligibility > summary').click();
+    await p.locator('#detail-eligibility').scrollIntoViewIfNeeded();
+    await shot(p, `${tag}-${name}`);
+  };
+  await find(p, '2030 Greenwood');
+  await p.locator(`#results [data-home="${id}"] [data-detail]`).click();
+  await p.locator(`#detail-content [data-save="${id}"]`).click();
+  await p.locator('#notes').fill('Synthetic original personal note');
+  await p.locator('#parkingCost').fill('0');
+  await p.locator('#rentOverride').fill('1300');
+  await p.locator('#quoteDate').fill('2026-09-18');
+  await submit();
+  const initial = await readRecord(p);
+  check(`${tag} original snapshot contains synthetic A`, same(initial.snapshot.eligibility_evidence, originalEvidence));
+  d.fixture.data = withEvidence(laterEvidence);
+  await p.reload(); await p.locator('#result-count').waitFor();
+  await openSaved(p); await submit();
+  const before = await readRecord(p);
+  check(`${tag} current B is retained separately from A`, same(before.eligibility_update.evidence, laterEvidence) && same(before.snapshot, initial.snapshot) && same(before.scan, initial.scan));
+  d.fixture.data = { ...feed, homes: feed.homes.filter(h => h.id !== id) };
+  await p.reload(); await p.locator('#result-count').waitFor();
+  await openSaved(p); await showEvidence('before-notes');
+  await p.locator('#notes').fill('Synthetic notes-only archived edit');
+  await submit();
+  const after = await readRecord(p);
+  await openSaved(p); await showEvidence('after-notes');
+  await writeFile(join(out, `${tag}-records.json`), JSON.stringify({ initial, before, after }, null, 2) + '\n');
+  check(`${tag} archived notes retain B and its original recording time`, same(after.eligibility_update, before.eligibility_update));
+  check(`${tag} only personal notes change`, same(after, { ...before, notes: 'Synthetic notes-only archived edit' }));
+  await fit(p, `${tag} archived source evidence remains readable`, '#detail-eligibility');
+  await p.locator('#detail-dialog .dock-close').click();
+  const row = p.locator(`.saved-row[data-home="${id}"]`);
+  const openMore = async () => {
+    if (await row.locator('.saved-more').getAttribute('open') === null) await row.locator('.saved-more > summary').click();
+  };
+  await openMore();
+  await row.locator('[data-stage]').selectOption('contacted');
+  check(`${tag} archived stage change retains B`, same((await readRecord(p)).eligibility_update, before.eligibility_update));
+  await openMore();
+  await row.locator('[data-finalist]').click();
+  check(`${tag} archived finalist action retains B`, same((await readRecord(p)).eligibility_update, before.eligibility_update));
+  await row.locator('[data-detail]').click();
+  const saveButton = p.locator(`#detail-content [data-save="${id}"]`);
+  await saveButton.click();
+  check(`${tag} archived unsave retains B`, same((await readRecord(p)).eligibility_update, before.eligibility_update));
+  await saveButton.click();
+  const saved = await readRecord(p);
+  check(`${tag} archived resave keeps source and personal evidence`, same(saved.eligibility_update, before.eligibility_update) && same(saved.snapshot, before.snapshot) && same(saved.scan, before.scan) && same(saved.quote_history, before.quote_history) && saved.parkingCost === 0 && saved.utilities === null);
+  await p.reload(); await p.locator('#result-count').waitFor();
+  check(`${tag} reload retains exact record`, same(await readRecord(p), saved));
+  await p.locator('[data-view="setup"]').click();
+  const pendingDownload = p.waitForEvent('download'); await p.locator('#export-notebook').click();
+  const download = await pendingDownload, backup = await readFile(await download.path(), 'utf8');
+  check(`${tag} export retains exact record`, same(JSON.parse(backup).records[id], saved));
+  const fresh = await open(width, theme, d.fixture.data);
+  try {
+    await fresh.page.locator('#import-file').setInputFiles({ name: 'synthetic-later-evidence.json', mimeType: 'application/json', buffer: Buffer.from(backup) });
+    await fresh.page.waitForFunction(({ key, id }) => JSON.parse(localStorage.getItem(key))?.records[id]?.saved, { key, id });
+    check(`${tag} empty-profile import retains exact record`, same(await readRecord(fresh.page), saved));
+    fresh.fixture.data = withEvidence(laterEvidence);
+    await fresh.page.reload(); await fresh.page.locator('#result-count').waitFor();
+    await fresh.page.locator('button[data-view="shortlist"]').click();
+    check(`${tag} reappearance keeps one record and the same evidence`, await fresh.page.locator(`.saved-row[data-home="${id}"]`).count() === 1 && same(await readRecord(fresh.page), saved));
+    check(`${tag} isolated journeys have no page errors`, d.errors.length === 0 && fresh.errors.length === 0, [...d.errors, ...fresh.errors].join('; '));
+  } finally { await fresh.context.close(); }
+}
 try {
   await new Promise((done, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', done); });
   origin = `http://127.0.0.1:${server.address().port}`;
   browser = await chromium.launch();
-  for (const width of baseline ? [390] : [1280, 390, 320]) for (const theme of baseline ? ['light'] : ['light', 'dark']) {
-    const tag = `${width}-${theme}`, d = await open(width, theme), p = d.page;
+  const cases = archivedUpdates ? [[1280, 'light'], [320, 'dark']] : baseline ? [[390, 'light']] : [1280, 390, 320].flatMap(width => ['light', 'dark'].map(theme => [width, theme]));
+  for (const [width, theme] of cases) {
+    const tag = `${width}-${theme}`, d = await open(width, theme, archivedUpdates ? withEvidence(originalEvidence) : feed), p = d.page;
     try {
+      if (archivedUpdates) { await archivedUpdateJourney(d, tag, width, theme); continue; }
       await find(p, '2030 Greenwood');
       const card = p.locator(`#results [data-home="${id}"]`);
       await card.waitFor({ state: 'visible' });
@@ -147,6 +235,10 @@ try {
         await shot(fresh.page, `${tag}-archived`);
         check(`${tag} neither isolated profile has page errors`, d.errors.length === 0 && fresh.errors.length === 0, [...d.errors, ...fresh.errors].join('; '));
       } finally { await fresh.context.close(); }
+    } catch (error) {
+      if (!archivedUpdates) throw error;
+      console.error(error); process.exitCode = 1;
+      results.push({ name: `${tag} archived update journey completion`, ok: false, detail: String(error.stack || error) });
     } finally { await d.context.close(); }
   }
 } catch (error) {
@@ -155,6 +247,6 @@ try {
   process.exitCode = 1;
 } finally {
   await browser?.close(); server.close();
-  await writeFile(join(out, 'results.json'), JSON.stringify({ baseline, results }, null, 2) + '\n');
+  await writeFile(join(out, 'results.json'), JSON.stringify({ baseline, archivedUpdates, results }, null, 2) + '\n');
 }
 console.log(`${results.filter(x => x.ok).length}/${results.length} passed`);

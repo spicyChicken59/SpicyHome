@@ -1,5 +1,9 @@
 # Greenwood eligibility evidence
 
+The original implementation below was reviewed at `86028437e2467b4cf6d6e6341c75e6a5367f4a1c`.
+That review found an archived-save rollback missed by its tests. See the
+[focused correction and current acceptance evidence](correction/README.md).
+
 This correction preserves a dated source annotation for one existing provider
 record. It does not determine anyone’s eligibility or verify current availability.
 

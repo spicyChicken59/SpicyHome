@@ -1,0 +1,29 @@
+PASS 1280-light original snapshot contains synthetic A
+PASS 1280-light current B is retained separately from A
+PASS 1280-light archived notes retain B and its original recording time
+PASS 1280-light only personal notes change
+PASS 1280-light archived source evidence remains readable — [{"text":"Eligibility evidence Source, date & scopeSaved source evidenceSyntheti","left":135,"right":1145,"width":1280,"extra":0}]
+PASS 1280-light archived stage change retains B
+PASS 1280-light archived finalist action retains B
+PASS 1280-light archived unsave retains B
+PASS 1280-light archived resave keeps source and personal evidence
+PASS 1280-light reload retains exact record
+PASS 1280-light export retains exact record
+PASS 1280-light empty-profile import retains exact record
+PASS 1280-light reappearance keeps one record and the same evidence
+PASS 1280-light isolated journeys have no page errors
+PASS 320-dark original snapshot contains synthetic A
+PASS 320-dark current B is retained separately from A
+PASS 320-dark archived notes retain B and its original recording time
+PASS 320-dark only personal notes change
+PASS 320-dark archived source evidence remains readable — [{"text":"Eligibility evidence Source, date & scopeSaved source evidenceSyntheti","left":16,"right":304,"width":320,"extra":0}]
+PASS 320-dark archived stage change retains B
+PASS 320-dark archived finalist action retains B
+PASS 320-dark archived unsave retains B
+PASS 320-dark archived resave keeps source and personal evidence
+PASS 320-dark reload retains exact record
+PASS 320-dark export retains exact record
+PASS 320-dark empty-profile import retains exact record
+PASS 320-dark reappearance keeps one record and the same evidence
+PASS 320-dark isolated journeys have no page errors
+28/28 passed

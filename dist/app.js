@@ -135,7 +135,8 @@ function savedSource(id, home) {
   const keepOriginal = !!prior.snapshot && !!(home?.eligibility_evidence || prior.snapshot.eligibility_evidence || prior.eligibility_update);
   const result = { snapshot: keepOriginal ? prior.snapshot : home, scan: savedScan(id, home, keepOriginal),
     ...(prior.eligibility_update ? { eligibility_update: prior.eligibility_update } : {}) };
-  const evidence = home?.eligibility_evidence;
+  // A notebook-only home carries the original snapshot, not a new source update.
+  const evidence = home && eligibilityReading(home, prior).current;
   const retained = prior.eligibility_update?.evidence ?? prior.snapshot?.eligibility_evidence;
   if (prior.snapshot && evidence && JSON.stringify(evidence) !== JSON.stringify(retained))
     result.eligibility_update = { evidence, recorded_at: new Date().toISOString() };

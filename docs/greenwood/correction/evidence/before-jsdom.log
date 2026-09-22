@@ -1,0 +1,150 @@
+✖ eligibility: archived later evidence survives notes, reload, backup and current-source updates (901.30147ms)
+✖ eligibility: archived later evidence survives stage actions (196.359793ms)
+✖ eligibility: archived later evidence survives finalist actions (149.815937ms)
+✖ eligibility: archived later evidence survives save actions (182.154247ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 0
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6403.400129
+
+✖ failing tests:
+
+test at tests/eligibility.test.mjs:183:1
+✖ eligibility: archived later evidence survives notes, reload, backup and current-source updates (901.30147ms)
+  AssertionError [ERR_ASSERTION]: archived snapshot A cannot replace or re-date separately saved B
+  + actual - expected
+
+    {
+      evidence: {
+        condition: 'income_restricted',
+  +     note: 'Synthetic original source evidence.',
+  -     note: 'Synthetic later source clarification.',
+        scope: 'address',
+        source: {
+          name: 'Synthetic preservation fixture',
+  +       observed_at: '2026-09-19',
+  -       observed_at: '2026-09-20',
+          supports: 'Synthetic evidence for preservation tests only.',
+          url: 'https://example.invalid/evidence'
+        }
+      },
+  +   recorded_at: '2026-09-20T14:00:40.634Z'
+  -   recorded_at: '2026-09-20T14:00:40.419Z'
+    }
+
+      at TestContext.<anonymous> (file:///workspace/scratch/dfd42b0167d5/SpicyHome/tests/eligibility.test.mjs:214:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { evidence: { condition: 'income_restricted', scope: 'address', note: 'Synthetic original source evidence.', source: [Object] }, recorded_at: '2026-09-20T14:00:40.634Z' },
+    expected: { evidence: { condition: 'income_restricted', scope: 'address', note: 'Synthetic later source clarification.', source: [Object] }, recorded_at: '2026-09-20T14:00:40.419Z' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/eligibility.test.mjs:247:53
+✖ eligibility: archived later evidence survives stage actions (196.359793ms)
+  AssertionError [ERR_ASSERTION]: stage cannot replace or re-date B
+  + actual - expected
+
+    {
+      evidence: {
+        condition: 'income_restricted',
+  +     note: 'Synthetic original source evidence.',
+  -     note: 'Synthetic later source clarification.',
+        scope: 'address',
+        source: {
+          name: 'Synthetic preservation fixture',
+  +       observed_at: '2026-09-19',
+  -       observed_at: '2026-09-20',
+          supports: 'Synthetic evidence for preservation tests only.',
+          url: 'https://example.invalid/evidence'
+        }
+      },
+  +   recorded_at: '2026-09-20T14:00:40.821Z'
+  -   recorded_at: '2026-09-20T00:00:00Z'
+    }
+
+      at TestContext.<anonymous> (file:///workspace/scratch/dfd42b0167d5/SpicyHome/tests/eligibility.test.mjs:265:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { evidence: { condition: 'income_restricted', scope: 'address', note: 'Synthetic original source evidence.', source: [Object] }, recorded_at: '2026-09-20T14:00:40.821Z' },
+    expected: { evidence: { condition: 'income_restricted', scope: 'address', note: 'Synthetic later source clarification.', source: [Object] }, recorded_at: '2026-09-20T00:00:00Z' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/eligibility.test.mjs:247:53
+✖ eligibility: archived later evidence survives finalist actions (149.815937ms)
+  AssertionError [ERR_ASSERTION]: finalist cannot replace or re-date B
+  + actual - expected
+
+    {
+      evidence: {
+        condition: 'income_restricted',
+  +     note: 'Synthetic original source evidence.',
+  -     note: 'Synthetic later source clarification.',
+        scope: 'address',
+        source: {
+          name: 'Synthetic preservation fixture',
+  +       observed_at: '2026-09-19',
+  -       observed_at: '2026-09-20',
+          supports: 'Synthetic evidence for preservation tests only.',
+          url: 'https://example.invalid/evidence'
+        }
+      },
+  +   recorded_at: '2026-09-20T14:00:40.963Z'
+  -   recorded_at: '2026-09-20T00:00:00Z'
+    }
+
+      at TestContext.<anonymous> (file:///workspace/scratch/dfd42b0167d5/SpicyHome/tests/eligibility.test.mjs:265:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { evidence: { condition: 'income_restricted', scope: 'address', note: 'Synthetic original source evidence.', source: [Object] }, recorded_at: '2026-09-20T14:00:40.963Z' },
+    expected: { evidence: { condition: 'income_restricted', scope: 'address', note: 'Synthetic later source clarification.', source: [Object] }, recorded_at: '2026-09-20T00:00:00Z' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/eligibility.test.mjs:247:53
+✖ eligibility: archived later evidence survives save actions (182.154247ms)
+  AssertionError [ERR_ASSERTION]: unsaving must preserve B
+  + actual - expected
+
+    {
+      evidence: {
+        condition: 'income_restricted',
+  +     note: 'Synthetic original source evidence.',
+  -     note: 'Synthetic later source clarification.',
+        scope: 'address',
+        source: {
+          name: 'Synthetic preservation fixture',
+  +       observed_at: '2026-09-19',
+  -       observed_at: '2026-09-20',
+          supports: 'Synthetic evidence for preservation tests only.',
+          url: 'https://example.invalid/evidence'
+        }
+      },
+  +   recorded_at: '2026-09-20T14:00:41.179Z'
+  -   recorded_at: '2026-09-20T00:00:00Z'
+    }
+
+      at TestContext.<anonymous> (file:///workspace/scratch/dfd42b0167d5/SpicyHome/tests/eligibility.test.mjs:261:12)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { evidence: { condition: 'income_restricted', scope: 'address', note: 'Synthetic original source evidence.', source: [Object] }, recorded_at: '2026-09-20T14:00:41.179Z' },
+    expected: { evidence: { condition: 'income_restricted', scope: 'address', note: 'Synthetic later source clarification.', source: [Object] }, recorded_at: '2026-09-20T00:00:00Z' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

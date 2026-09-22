@@ -1,0 +1,18 @@
+{
+  "reviewed_head": "86028437e2467b4cf6d6e6341c75e6a5367f4a1c",
+  "base": "7d05766d18301c83b2672dbf5b13fe9334c1d5fa",
+  "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+  "python": "3.12.14",
+  "node": "v24.19.0",
+  "sha256": {
+    "dist/app.js": "345bfd09d411a8725fbb7fe27e12a8d28aabacbf20c2a9e9207291b274b5f5cb",
+    "dist/model.js": "97682809c273411e297f59ea1d5b3e487935766233263ea685d4d6a6f3c2fdb6",
+    "tests/eligibility.test.mjs": "37656bb11dde261bc4557cc45a92ac2cc93f5f27770ac020d3d17c0f95a377ee",
+    "tools/eligibility_check.mjs": "ba89906dc023221f68dc0328332a89670692cfa51d4a7155984af1d034b8081e",
+    "tools/browser_check.mjs": "09b0d315c1a3db315c13c2246393547574201c4cec55a79e2a3523ef9f4155d1",
+    "docs/greenwood/correction/extract_saved_checks.py": "635d4960a8f7ebe23b54f9d22eea9fa1722f2b040454d7c9da50b2fadc4f2633",
+    "dist/data.json": "8d6e47faf5577ebaa9691548caad6b2773ea0590507d132e9cd3dc7693ee5f9a",
+    "data/eligibility-evidence.json": "be7e4bec1f5fbdcb3accf0fa409a981b250b36f624d7d8cecf6bb7f4dfe5e8c2",
+    "dist/design-system/provenance.json": "adadd2be64f8ee4480acfdccc91d524c6650ae41e4fd77552af800fe4ff0cec9"
+  }
+}

@@ -1,0 +1,12 @@
+test_amendment_is_annotation_only_idempotent_and_does_not_mutate_input (test_eligibility.EligibilityTests.test_amendment_is_annotation_only_idempotent_and_does_not_mutate_input) ... ok
+test_exact_identity_only_not_a_name_or_cheap_price_rule (test_eligibility.EligibilityTests.test_exact_identity_only_not_a_name_or_cheap_price_rule) ... ok
+test_invalid_annotation_and_ledger_are_rejected (test_eligibility.EligibilityTests.test_invalid_annotation_and_ledger_are_rejected) ... ok
+test_mocked_failed_request_cannot_rewrite_feed_or_annotation (test_eligibility.EligibilityTests.test_mocked_failed_request_cannot_rewrite_feed_or_annotation) ... ok
+test_mocked_refresh_preserves_source_day_while_provider_price_and_date_change (test_eligibility.EligibilityTests.test_mocked_refresh_preserves_source_day_while_provider_price_and_date_change) ... ok
+test_omission_and_reappearance_keep_evidence_without_duplicate_records (test_eligibility.EligibilityTests.test_omission_and_reappearance_keep_evidence_without_duplicate_records) ... ok
+test_retained_evidence_is_not_erased_if_enrichment_is_omitted (test_eligibility.EligibilityTests.test_retained_evidence_is_not_erased_if_enrichment_is_omitted) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.261s
+
+OK

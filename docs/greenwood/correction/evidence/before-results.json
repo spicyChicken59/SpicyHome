@@ -1,0 +1,46 @@
+{
+  "baseline": false,
+  "archivedUpdates": true,
+  "results": [
+    {
+      "name": "1280-light original snapshot contains synthetic A",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-light current B is retained separately from A",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "1280-light archived notes retain B and its original recording time",
+      "ok": false,
+      "detail": ""
+    },
+    {
+      "name": "1280-light archived update journey completion",
+      "ok": false,
+      "detail": "AssertionError [ERR_ASSERTION]: 1280-light archived notes retain B and its original recording time\n    at check (file:///workspace/scratch/dfd42b0167d5/SpicyHome/tools/eligibility_check.mjs:38:3)\n    at archivedUpdateJourney (file:///workspace/scratch/dfd42b0167d5/SpicyHome/tools/eligibility_check.mjs:124:3)\n    at async file:///workspace/scratch/dfd42b0167d5/SpicyHome/tools/eligibility_check.mjs:167:30"
+    },
+    {
+      "name": "320-dark original snapshot contains synthetic A",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-dark current B is retained separately from A",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "320-dark archived notes retain B and its original recording time",
+      "ok": false,
+      "detail": ""
+    },
+    {
+      "name": "320-dark archived update journey completion",
+      "ok": false,
+      "detail": "AssertionError [ERR_ASSERTION]: 320-dark archived notes retain B and its original recording time\n    at check (file:///workspace/scratch/dfd42b0167d5/SpicyHome/tools/eligibility_check.mjs:38:3)\n    at archivedUpdateJourney (file:///workspace/scratch/dfd42b0167d5/SpicyHome/tools/eligibility_check.mjs:124:3)\n    at async file:///workspace/scratch/dfd42b0167d5/SpicyHome/tools/eligibility_check.mjs:167:30"
+    }
+  ]
+}

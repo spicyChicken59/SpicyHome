@@ -1,0 +1,369 @@
+{
+  "initial": {
+    "saved": true,
+    "status": "researching",
+    "tourDate": "",
+    "quoteDate": "2026-09-18",
+    "notes": "Synthetic original personal note",
+    "layoutReview": "unverified",
+    "tourChecks": {
+      "layout": false,
+      "light": false,
+      "noise": false,
+      "parking": false,
+      "charging": false,
+      "access": false,
+      "condition": false,
+      "lease": false
+    },
+    "rentOverride": 1300,
+    "parkingCost": 0,
+    "monthlyFees": null,
+    "utilities": null,
+    "oneTimeFees": null,
+    "snapshot": {
+      "id": "rentcast:2030-Greenwood-St,-Unit-1BR,-Evanston,-IL-60201",
+      "kind": "listing",
+      "title": "2030 Greenwood St",
+      "address": "2030 Greenwood St, Unit 1BR, Evanston, IL 60201",
+      "city": "Evanston",
+      "neighborhood": "Evanston",
+      "rent": 1271,
+      "sqft": 750,
+      "lat": 42.04248,
+      "lng": -87.702042,
+      "parking": {
+        "status": "unknown",
+        "note": "Not reported by the listing provider; confirm with leasing.",
+        "monthly": null
+      },
+      "charging": {
+        "status": "unknown",
+        "note": "Not reported by the listing provider; confirm with leasing."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Not reported by the listing provider; confirm with leasing."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [],
+      "source_url": null,
+      "sources": [
+        {
+          "url": "https://developers.rentcast.io/reference/property-listings",
+          "supports": "RentCast listing ID 2030-Greenwood-St,-Unit-1BR,-Evanston,-IL-60201; no direct listing URL supplied by the API.",
+          "observed_at": "2026-09-16T13:29:09.296160Z"
+        }
+      ],
+      "observed_at": "2026-09-16T13:29:09.296160Z",
+      "provider_last_seen": "2026-09-16T03:43:56.899Z",
+      "listed_date": "2026-08-31T00:00:00.000Z",
+      "seen_in_latest": true,
+      "history": [
+        {
+          "date": "2026-09-08T13:29:28.215967Z",
+          "rent": 1271
+        },
+        {
+          "date": "2026-09-16T13:29:09.296160Z",
+          "rent": 1271
+        }
+      ],
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "layout_status": "provider_reported",
+      "layout_declaration": null,
+      "layout_note": "Provider bedroom/bathroom fields: 1/1. Separate bedroom not independently checked.",
+      "unit_label": "Unit 1BR",
+      "property_type": "Apartment",
+      "eligibility_evidence": {
+        "condition": "income_restricted",
+        "scope": "address",
+        "note": "Synthetic original source evidence.",
+        "source": {
+          "name": "Synthetic preservation fixture",
+          "url": "https://example.invalid/evidence",
+          "observed_at": "2026-09-19",
+          "supports": "Synthetic evidence for preservation tests only."
+        }
+      }
+    },
+    "scan": {
+      "basis": "provider_query",
+      "city": "Evanston",
+      "saved_at": "2026-09-20T14:04:42.826Z",
+      "feed_generated_at": "2026-09-19T13:25:07.374014Z",
+      "observed_at": "2026-09-16T13:29:09.296160Z",
+      "last_success": "2026-09-16T13:29:09.296160Z",
+      "returned": 183,
+      "total": 183,
+      "truncated": false,
+      "accepted": 183
+    },
+    "quote_history": [
+      {
+        "rent": 1300,
+        "date": "2026-09-18",
+        "date_basis": "entered",
+        "recorded_at": "2026-09-20T14:04:42.876Z"
+      }
+    ]
+  },
+  "before": {
+    "saved": true,
+    "status": "researching",
+    "tourDate": "",
+    "quoteDate": "2026-09-18",
+    "notes": "Synthetic original personal note",
+    "layoutReview": "unverified",
+    "tourChecks": {
+      "layout": false,
+      "light": false,
+      "noise": false,
+      "parking": false,
+      "charging": false,
+      "access": false,
+      "condition": false,
+      "lease": false
+    },
+    "rentOverride": 1300,
+    "parkingCost": 0,
+    "monthlyFees": null,
+    "utilities": null,
+    "oneTimeFees": null,
+    "snapshot": {
+      "id": "rentcast:2030-Greenwood-St,-Unit-1BR,-Evanston,-IL-60201",
+      "kind": "listing",
+      "title": "2030 Greenwood St",
+      "address": "2030 Greenwood St, Unit 1BR, Evanston, IL 60201",
+      "city": "Evanston",
+      "neighborhood": "Evanston",
+      "rent": 1271,
+      "sqft": 750,
+      "lat": 42.04248,
+      "lng": -87.702042,
+      "parking": {
+        "status": "unknown",
+        "note": "Not reported by the listing provider; confirm with leasing.",
+        "monthly": null
+      },
+      "charging": {
+        "status": "unknown",
+        "note": "Not reported by the listing provider; confirm with leasing."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Not reported by the listing provider; confirm with leasing."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [],
+      "source_url": null,
+      "sources": [
+        {
+          "url": "https://developers.rentcast.io/reference/property-listings",
+          "supports": "RentCast listing ID 2030-Greenwood-St,-Unit-1BR,-Evanston,-IL-60201; no direct listing URL supplied by the API.",
+          "observed_at": "2026-09-16T13:29:09.296160Z"
+        }
+      ],
+      "observed_at": "2026-09-16T13:29:09.296160Z",
+      "provider_last_seen": "2026-09-16T03:43:56.899Z",
+      "listed_date": "2026-08-31T00:00:00.000Z",
+      "seen_in_latest": true,
+      "history": [
+        {
+          "date": "2026-09-08T13:29:28.215967Z",
+          "rent": 1271
+        },
+        {
+          "date": "2026-09-16T13:29:09.296160Z",
+          "rent": 1271
+        }
+      ],
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "layout_status": "provider_reported",
+      "layout_declaration": null,
+      "layout_note": "Provider bedroom/bathroom fields: 1/1. Separate bedroom not independently checked.",
+      "unit_label": "Unit 1BR",
+      "property_type": "Apartment",
+      "eligibility_evidence": {
+        "condition": "income_restricted",
+        "scope": "address",
+        "note": "Synthetic original source evidence.",
+        "source": {
+          "name": "Synthetic preservation fixture",
+          "url": "https://example.invalid/evidence",
+          "observed_at": "2026-09-19",
+          "supports": "Synthetic evidence for preservation tests only."
+        }
+      }
+    },
+    "scan": {
+      "basis": "provider_query",
+      "city": "Evanston",
+      "saved_at": "2026-09-20T14:04:42.826Z",
+      "feed_generated_at": "2026-09-19T13:25:07.374014Z",
+      "observed_at": "2026-09-16T13:29:09.296160Z",
+      "last_success": "2026-09-16T13:29:09.296160Z",
+      "returned": 183,
+      "total": 183,
+      "truncated": false,
+      "accepted": 183
+    },
+    "quote_history": [
+      {
+        "rent": 1300,
+        "date": "2026-09-18",
+        "date_basis": "entered",
+        "recorded_at": "2026-09-20T14:04:42.876Z"
+      }
+    ],
+    "eligibility_update": {
+      "evidence": {
+        "condition": "income_restricted",
+        "scope": "address",
+        "note": "Synthetic later source clarification.",
+        "source": {
+          "name": "Synthetic preservation fixture",
+          "url": "https://example.invalid/evidence",
+          "observed_at": "2026-09-20",
+          "supports": "Synthetic evidence for preservation tests only."
+        }
+      },
+      "recorded_at": "2026-09-20T14:04:44.675Z"
+    }
+  },
+  "after": {
+    "saved": true,
+    "status": "researching",
+    "tourDate": "",
+    "quoteDate": "2026-09-18",
+    "notes": "Synthetic notes-only archived edit",
+    "layoutReview": "unverified",
+    "tourChecks": {
+      "layout": false,
+      "light": false,
+      "noise": false,
+      "parking": false,
+      "charging": false,
+      "access": false,
+      "condition": false,
+      "lease": false
+    },
+    "rentOverride": 1300,
+    "parkingCost": 0,
+    "monthlyFees": null,
+    "utilities": null,
+    "oneTimeFees": null,
+    "snapshot": {
+      "id": "rentcast:2030-Greenwood-St,-Unit-1BR,-Evanston,-IL-60201",
+      "kind": "listing",
+      "title": "2030 Greenwood St",
+      "address": "2030 Greenwood St, Unit 1BR, Evanston, IL 60201",
+      "city": "Evanston",
+      "neighborhood": "Evanston",
+      "rent": 1271,
+      "sqft": 750,
+      "lat": 42.04248,
+      "lng": -87.702042,
+      "parking": {
+        "status": "unknown",
+        "note": "Not reported by the listing provider; confirm with leasing.",
+        "monthly": null
+      },
+      "charging": {
+        "status": "unknown",
+        "note": "Not reported by the listing provider; confirm with leasing."
+      },
+      "access": {
+        "status": "unknown",
+        "note": "Not reported by the listing provider; confirm with leasing."
+      },
+      "fees": {
+        "monthly": null,
+        "one_time": null
+      },
+      "amenities": [],
+      "source_url": null,
+      "sources": [
+        {
+          "url": "https://developers.rentcast.io/reference/property-listings",
+          "supports": "RentCast listing ID 2030-Greenwood-St,-Unit-1BR,-Evanston,-IL-60201; no direct listing URL supplied by the API.",
+          "observed_at": "2026-09-16T13:29:09.296160Z"
+        }
+      ],
+      "observed_at": "2026-09-16T13:29:09.296160Z",
+      "provider_last_seen": "2026-09-16T03:43:56.899Z",
+      "listed_date": "2026-08-31T00:00:00.000Z",
+      "seen_in_latest": true,
+      "history": [
+        {
+          "date": "2026-09-08T13:29:28.215967Z",
+          "rent": 1271
+        },
+        {
+          "date": "2026-09-16T13:29:09.296160Z",
+          "rent": 1271
+        }
+      ],
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "layout_status": "provider_reported",
+      "layout_declaration": null,
+      "layout_note": "Provider bedroom/bathroom fields: 1/1. Separate bedroom not independently checked.",
+      "unit_label": "Unit 1BR",
+      "property_type": "Apartment",
+      "eligibility_evidence": {
+        "condition": "income_restricted",
+        "scope": "address",
+        "note": "Synthetic original source evidence.",
+        "source": {
+          "name": "Synthetic preservation fixture",
+          "url": "https://example.invalid/evidence",
+          "observed_at": "2026-09-19",
+          "supports": "Synthetic evidence for preservation tests only."
+        }
+      }
+    },
+    "scan": {
+      "basis": "provider_query",
+      "city": "Evanston",
+      "saved_at": "2026-09-20T14:04:42.826Z",
+      "feed_generated_at": "2026-09-19T13:25:07.374014Z",
+      "observed_at": "2026-09-16T13:29:09.296160Z",
+      "last_success": "2026-09-16T13:29:09.296160Z",
+      "returned": 183,
+      "total": 183,
+      "truncated": false,
+      "accepted": 183
+    },
+    "quote_history": [
+      {
+        "rent": 1300,
+        "date": "2026-09-18",
+        "date_basis": "entered",
+        "recorded_at": "2026-09-20T14:04:42.876Z"
+      }
+    ],
+    "eligibility_update": {
+      "evidence": {
+        "condition": "income_restricted",
+        "scope": "address",
+        "note": "Synthetic original source evidence.",
+        "source": {
+          "name": "Synthetic preservation fixture",
+          "url": "https://example.invalid/evidence",
+          "observed_at": "2026-09-19",
+          "supports": "Synthetic evidence for preservation tests only."
+        }
+      },
+      "recorded_at": "2026-09-20T14:04:45.893Z"
+    }
+  }
+}

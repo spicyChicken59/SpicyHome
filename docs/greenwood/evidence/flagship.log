@@ -1,0 +1,90 @@
+PASS fresh profile explains source health
+PASS page heading survives the mobile composition
+PASS research picks begin as an optional section
+PASS an opened pick shows reasons and unresolved evidence together
+PASS list remains reachable after filtering
+PASS map remains reachable after filtering
+PASS focus remains reachable after filtering
+PASS list remains reachable after filtering
+PASS dossier opens at identity and meaningful money
+PASS subtotal says which costs are missing
+PASS three saved candidates become three unranked finalists
+PASS mobile finalists retain subtotal, layout and missing costs
+PASS comparison starts with visible identity choices on mobile
+PASS comparison close stays reachable while reading the last fact
+PASS source evidence lands clear of the dossier dock
+PASS missing costs lands clear of the dossier dock
+PASS source and quote histories lands clear of the dossier dock
+PASS tour review stays explicitly personal
+PASS $0 parking is saved as zero, with an entered quote day
+PASS answered layout and parking-cost questions leave the unresolved list
+PASS ruled out record stays recoverable
+PASS reload retains the quote, personal notes and literal zero
+PASS history labels recording time independently of quote day
+PASS Escape returns focus to the apartment opener
+PASS Cost Lab remains reachable
+PASS export carries personal evidence and snapshots
+PASS imported archived home keeps current availability unknown
+PASS fresh-profile journey raises no page errors
+PASS 1440-dark: long identity and unknown money wrap without horizontal overflow
+PASS 1440-dark: unknown base is not presented as an all-in total
+PASS 1440-dark: source disclosure opens at its visible title
+PASS 1440-dark: tour check targets meet 44px
+PASS 1440-dark: body, evidence, accent and action token contrast meet 4.5:1 — 14.38, 7.62, 8.09, 7.81
+PASS 1440-dark: reduced-motion preference suppresses entry motion
+PASS 1440-dark: every Price Pulse filter label has readable contrast — 14.38, 6.58, 6.58
+PASS 1440-dark: no fixture page error
+PASS 1280-dark: long identity and unknown money wrap without horizontal overflow
+PASS 1280-dark: unknown base is not presented as an all-in total
+PASS 1280-dark: source disclosure opens at its visible title
+PASS 1280-dark: tour check targets meet 44px
+PASS 1280-dark: body, evidence, accent and action token contrast meet 4.5:1 — 14.38, 7.62, 8.09, 7.81
+PASS 1280-dark: reduced-motion preference suppresses entry motion
+PASS 1280-dark: every Price Pulse filter label has readable contrast — 14.38, 6.58, 6.58
+PASS 1280-dark: no fixture page error
+PASS 1280-light: long identity and unknown money wrap without horizontal overflow
+PASS 1280-light: unknown base is not presented as an all-in total
+PASS 1280-light: source disclosure opens at its visible title
+PASS 1280-light: tour check targets meet 44px
+PASS 1280-light: body, evidence, accent and action token contrast meet 4.5:1 — 11.60, 5.69, 5.23, 5.48
+PASS 1280-light: reduced-motion preference suppresses entry motion
+PASS 1280-light: every Price Pulse filter label has readable contrast — 11.60, 4.73, 4.73
+PASS 1280-light: no fixture page error
+PASS 390-dark: long identity and unknown money wrap without horizontal overflow
+PASS 390-dark: unknown base is not presented as an all-in total
+PASS 390-dark: source disclosure opens at its visible title
+PASS 390-dark: tour check targets meet 44px
+PASS 390-dark: body, evidence, accent and action token contrast meet 4.5:1 — 14.38, 7.62, 8.09, 7.81
+PASS 390-dark: reduced-motion preference suppresses entry motion
+PASS 390-dark: every Price Pulse filter label has readable contrast — 14.38, 6.58, 6.58
+PASS 390-dark: no fixture page error
+PASS 390-light: long identity and unknown money wrap without horizontal overflow
+PASS 390-light: unknown base is not presented as an all-in total
+PASS 390-light: source disclosure opens at its visible title
+PASS 390-light: tour check targets meet 44px
+PASS 390-light: body, evidence, accent and action token contrast meet 4.5:1 — 11.60, 5.69, 5.23, 5.48
+PASS 390-light: reduced-motion preference suppresses entry motion
+PASS 390-light: every Price Pulse filter label has readable contrast — 11.60, 4.73, 4.73
+PASS 390-light: no fixture page error
+PASS 320-dark: long identity and unknown money wrap without horizontal overflow
+PASS 320-dark: unknown base is not presented as an all-in total
+PASS 320-dark: source disclosure opens at its visible title
+PASS 320-dark: tour check targets meet 44px
+PASS 320-dark: body, evidence, accent and action token contrast meet 4.5:1 — 14.38, 7.62, 8.09, 7.81
+PASS 320-dark: reduced-motion preference suppresses entry motion
+PASS 320-dark: every Price Pulse filter label has readable contrast — 14.38, 6.58, 6.58
+PASS 320-dark: no fixture page error
+PASS 1440-dark: comparison keeps all three identities readable below its Close bar
+PASS 1280-dark: comparison keeps all three identities readable below its Close bar
+PASS 1280-light: comparison keeps all three identities readable below its Close bar
+PASS 320px empty-search Reset receives visible keyboard focus above the comparison tray
+PASS 320px keyboard Reset restores results without discarding the comparison
+PASS keyboard starts at the skip link
+PASS keyboard jump announces the dossier identity
+PASS keyboard reaches Save with a visible focus ring
+PASS keyboard Save preserves the chosen home
+PASS keyboard Sources opens a visible, focused disclosure
+PASS keyboard dismissal returns to Jump to
+PASS keyboard journey raises no page errors
+PASS failed remote source still exposes fallback/source status
+89/89 passed

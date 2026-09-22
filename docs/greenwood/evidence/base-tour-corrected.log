@@ -1,0 +1,61 @@
+  ok   1280px dark the walkthrough opens on the apartment it belongs to — 108 Fellows Ct# 493H · 108 Fellows Ct, # 493H, Elmhurst, IL 60126Sep 2
+  ok   1280px dark the reader can see which apartment they are standing in — on screen: true
+  ok   1280px dark the identity rests below the record's dock, not behind it — dock 62px, overlap 0px
+  ok   1280px dark the checks run straight into the fields that record them — 24px between them
+  ok   1280px dark a finger lands on the check, not only near it — box 28px, row 154px
+  ok   1280px dark the checks the record knows something about say what it knows — 4 evidence lines
+  ok   1280px dark the walkthrough says what is left, not only what is done — 2/8 reviewed · 6 left
+  ok   1280px dark the walkthrough does not push anything sideways
+  ok   1280px dark the walkthrough raises no page error
+  ok   1280px dark a lookup from the walkthrough saves nothing and keeps unsaved text — ticked true
+  ok   1280px dark the live count follows the walk — 3/8 reviewed · 5 left · save changes to keep
+  ok   1280px dark a field jumped to is not left under the sticky bars — focus notes, clear true
+  ok   1280px light the walkthrough opens on the apartment it belongs to — 108 Fellows Ct# 493H · 108 Fellows Ct, # 493H, Elmhurst, IL 60126Sep 2
+  ok   1280px light the reader can see which apartment they are standing in — on screen: true
+  ok   1280px light the identity rests below the record's dock, not behind it — dock 62px, overlap 0px
+  ok   1280px light the checks run straight into the fields that record them — 24px between them
+  ok   1280px light a finger lands on the check, not only near it — box 28px, row 154px
+  ok   1280px light the checks the record knows something about say what it knows — 4 evidence lines
+  ok   1280px light the walkthrough says what is left, not only what is done — 2/8 reviewed · 6 left
+  ok   1280px light the walkthrough does not push anything sideways
+  ok   1280px light the walkthrough raises no page error
+  ok   1280px light a lookup from the walkthrough saves nothing and keeps unsaved text — ticked true
+  ok   1280px light the live count follows the walk — 3/8 reviewed · 5 left · save changes to keep
+  ok   1280px light a field jumped to is not left under the sticky bars — focus notes, clear true
+  ok   390px dark the walkthrough opens on the apartment it belongs to — 108 Fellows Ct# 493H · 108 Fellows Ct, # 493H, Elmhurst, IL 60126Sep 2
+  ok   390px dark the reader can see which apartment they are standing in — on screen: true
+  ok   390px dark the identity rests below the record's dock, not behind it — dock 98px, overlap 0px
+  ok   390px dark the checks run straight into the fields that record them — 24px between them
+  ok   390px dark a finger lands on the check, not only near it — box 28px, row 112px
+  ok   390px dark the checks the record knows something about say what it knows — 4 evidence lines
+  ok   390px dark the walkthrough says what is left, not only what is done — 2/8 reviewed · 6 left
+  ok   390px dark the walkthrough does not push anything sideways
+  ok   390px dark the walkthrough raises no page error
+  ok   390px dark a lookup from the walkthrough saves nothing and keeps unsaved text — ticked true
+  ok   390px dark the live count follows the walk — 3/8 reviewed · 5 left · save changes to keep
+  ok   390px dark a field jumped to is not left under the sticky bars — focus notes, clear true
+  ok   390px light the walkthrough opens on the apartment it belongs to — 108 Fellows Ct# 493H · 108 Fellows Ct, # 493H, Elmhurst, IL 60126Sep 2
+  ok   390px light the reader can see which apartment they are standing in — on screen: true
+  ok   390px light the identity rests below the record's dock, not behind it — dock 98px, overlap 0px
+  ok   390px light the checks run straight into the fields that record them — 24px between them
+  ok   390px light a finger lands on the check, not only near it — box 28px, row 112px
+  ok   390px light the checks the record knows something about say what it knows — 4 evidence lines
+  ok   390px light the walkthrough says what is left, not only what is done — 2/8 reviewed · 6 left
+  ok   390px light the walkthrough does not push anything sideways
+  ok   390px light the walkthrough raises no page error
+  ok   390px light a lookup from the walkthrough saves nothing and keeps unsaved text — ticked true
+  ok   390px light the live count follows the walk — 3/8 reviewed · 5 left · save changes to keep
+  ok   390px light a field jumped to is not left under the sticky bars — focus notes, clear true
+  ok   320px dark the walkthrough opens on the apartment it belongs to — 108 Fellows Ct# 493H · 108 Fellows Ct, # 493H, Elmhurst, IL 60126Sep 2
+  ok   320px dark the reader can see which apartment they are standing in — on screen: true
+  ok   320px dark the identity rests below the record's dock, not behind it — dock 98px, overlap 0px
+  ok   320px dark the checks run straight into the fields that record them — 24px between them
+  ok   320px dark a finger lands on the check, not only near it — box 28px, row 112px
+  ok   320px dark the checks the record knows something about say what it knows — 4 evidence lines
+  ok   320px dark the walkthrough says what is left, not only what is done — 2/8 reviewed · 6 left
+  ok   320px dark the walkthrough does not push anything sideways
+  ok   320px dark the walkthrough raises no page error
+  ok   320px dark a lookup from the walkthrough saves nothing and keeps unsaved text — ticked true
+  ok   320px dark the live count follows the walk — 3/8 reviewed · 5 left · save changes to keep
+  ok   320px dark a field jumped to is not left under the sticky bars — focus notes, clear true
+browser-check: 60/60 scenarios passed

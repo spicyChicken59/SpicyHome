@@ -1,0 +1,18 @@
+✔ eligibility: all accepting boundaries reject malformed source annotations (4.172208ms)
+✔ eligibility: Discover, dossier, saved/finalist and comparison show scoped evidence beside price (663.259305ms)
+✔ eligibility: save reload export import archive and reappearance keep the original evidence (608.286651ms)
+✔ eligibility: older snapshots stay frozen and explicitly saved later evidence travels separately (390.729828ms)
+✔ eligibility: archived later evidence survives notes, reload, backup and current-source updates (893.091858ms)
+✔ eligibility: archived later evidence survives stage actions (79.931957ms)
+✔ eligibility: archived later evidence survives finalist actions (94.734409ms)
+✔ eligibility: archived later evidence survives save actions (100.579443ms)
+✔ eligibility: invalid imports fail atomically before confirmation; text cannot inject HTML (209.470282ms)
+✔ eligibility: annotation alone cannot affect price movements, costs, filters or order (3.872296ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3380.209682

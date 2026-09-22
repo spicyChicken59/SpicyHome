@@ -1,0 +1,59 @@
+{
+  "id": "rentcast:2030-Greenwood-St,-Unit-1BR,-Evanston,-IL-60201",
+  "kind": "listing",
+  "title": "2030 Greenwood St",
+  "address": "2030 Greenwood St, Unit 1BR, Evanston, IL 60201",
+  "city": "Evanston",
+  "neighborhood": "Evanston",
+  "rent": 1271,
+  "sqft": 750,
+  "lat": 42.04248,
+  "lng": -87.702042,
+  "parking": {
+    "status": "unknown",
+    "note": "Not reported by the listing provider; confirm with leasing.",
+    "monthly": null
+  },
+  "charging": {
+    "status": "unknown",
+    "note": "Not reported by the listing provider; confirm with leasing."
+  },
+  "access": {
+    "status": "unknown",
+    "note": "Not reported by the listing provider; confirm with leasing."
+  },
+  "fees": {
+    "monthly": null,
+    "one_time": null
+  },
+  "amenities": [],
+  "source_url": null,
+  "sources": [
+    {
+      "url": "https://developers.rentcast.io/reference/property-listings",
+      "supports": "RentCast listing ID 2030-Greenwood-St,-Unit-1BR,-Evanston,-IL-60201; no direct listing URL supplied by the API.",
+      "observed_at": "2026-09-16T13:29:09.296160Z"
+    }
+  ],
+  "observed_at": "2026-09-16T13:29:09.296160Z",
+  "provider_last_seen": "2026-09-16T03:43:56.899Z",
+  "listed_date": "2026-08-31T00:00:00.000Z",
+  "seen_in_latest": true,
+  "history": [
+    {
+      "date": "2026-09-08T13:29:28.215967Z",
+      "rent": 1271
+    },
+    {
+      "date": "2026-09-16T13:29:09.296160Z",
+      "rent": 1271
+    }
+  ],
+  "bedrooms": 1,
+  "bathrooms": 1,
+  "layout_status": "provider_reported",
+  "layout_declaration": null,
+  "layout_note": "Provider bedroom/bathroom fields: 1/1. Separate bedroom not independently checked.",
+  "unit_label": "Unit 1BR",
+  "property_type": "Apartment"
+}

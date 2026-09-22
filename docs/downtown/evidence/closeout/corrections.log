@@ -1,0 +1,19 @@
+✔ correction A: repeated save of an incoming subset keeps the first effective research recording time (401.251239ms)
+✔ correction B: newer same-source unknown supersedes historical height (1.822526ms)
+✔ correction B: newer same-source conflicting supersedes historical height (0.565112ms)
+✔ correction A: notes, stage, finalist and save actions preserve effective history through subsets, reorder, archive and reappearance (2150.604851ms)
+✔ correction A: an empty incoming ledger does not create a dated empty update (118.923282ms)
+✔ correction B: latest same-source corrections replace the reading without removing history or depending on array order (1.455303ms)
+✔ correction B: independent current disagreements remain unresolved, including two different high-rise counts (0.569999ms)
+✔ correction B: scope and subject identity bound supersession; plan/unit claims never establish building height (0.266321ms)
+✔ correction B: applicable corrections supersede older same-source legacy text, preserving independent and uncorrected legacy evidence (0.384249ms)
+✔ correction B: cards, dossier, comparison and archived controls agree on unknown height (677.806412ms)
+✔ correction B: cards, dossier, comparison and archived controls agree on conflicting height (648.855833ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4423.776397

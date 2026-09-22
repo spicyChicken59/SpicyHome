@@ -6,6 +6,53 @@ Research observed: **2026-09-22**. No provider requests were made.
 
 The branch implements one Discover → dossier → save → compare → revisit journey. Browser visual acceptance is **BLOCKED**, so this is an implementation for review, not a claim that the requested visual gates passed.
 
+## PR #31 correction closeout — September 22, 2026
+
+The reviewed starting head was `7ece4842d83d10a3481e75c94b01c9d9f60ad74e`; the worktree was clean and both the remote PR branch and main matched the supplied revisions. Main/base remains `a427c4c0f591ed8800534c85a60bd7617232cc5b`. No intervening work was replaced.
+
+The corrected implementation and tests are committed at **`a422d99518a064a68c2b0da44db7662c9c7a258c`**, tree `1bf9e493cf4758ed3d2a147f470bdbd09f140a19`. This report and its logs are a documentation-only descendant of that source revision. [The PR's exact head and final-head CI](https://github.com/spicyChicken59/SpicyHome/pull/31) identify the published review revision. `evidence/closeout/revision.json` records the tested file hashes; the final documentation commit preserves those exact product/test blobs. The connected GitHub app is used for publication because shell Git has no push credential; it preserves the tested tree and advances only the existing branch without force.
+
+### Before and after
+
+Both defects were reproduced before modifying the reviewed product files, using the existing isolated application/jsdom harness and controlled notebook clocks. The reproduction command was:
+
+```sh
+node --test --test-name-pattern='correction [AB]:' tests/home-search.test.mjs
+```
+
+At that point the three initial regression cases all failed; `evidence/closeout/before.log` retains the actual assertions. The expanded correction suite now has eleven cases and passes with the same command (`evidence/closeout/corrections.log`). These synthetic observations are not apartment research.
+
+| Failure | Reviewed head, reproduced | Corrected behavior |
+| --- | --- | --- |
+| A — no-op research saves | After saving retained A plus incoming B at September 22 12:00 UTC, the same feed saved September 23 changed only `recorded_at` to September 23. | Merge first; change `recorded_at` only if the effective retained history changes. Omitted, reordered and empty incoming subsets preserve A+B and the first recording time. A genuinely new assertion is appended and recorded once. |
+| B — superseded height | A September 20 “20-story building” followed by September 22 unknown **or** conflicting evidence still returned `high_rise`, although the general attribute reader disagreed. | The building reader and attribute reader share latest-source/URL/scope/subject resolution. Superseded descriptions stay in history but cannot qualify the active criterion. Current conflicts remain unresolved; a genuine newer correction becomes the active reading. |
+
+Correction A changes only `savedSource()`'s effective-history comparison. Regressions exercise notes, stages, finalist controls and save toggles, reload with reordered/subset feeds, archive editing and reappearance. They verify original snapshots, saved query context, source observation dates, quote history, entered quote dates, known $0 values and PR #30's separately saved eligibility evidence remain unchanged.
+
+Correction B shares the existing attribute-resolution helper with `formSources()`; it retains the 12-storey threshold and legacy source-only behavior. A newer applicable assertion supersedes older or undated legacy text from that same URL, without erasing independent sources or later legacy observations. General building-height evidence describes the building itself; selected-home and plan/unit assertions do not establish building height, floor or view. Independent contradictory current assertions remain unresolved, including different explicit storey counts. Cards, dossier, comparison and search classification are checked together; original snapshots and archived records retain their own evidence contexts.
+
+### Correction validation and remaining browser gate
+
+Local environment: Linux; Node **v24.19.0**; Python **3.12.14**; jsdom **26.1.0**. The harness uses `https://downtown-fixture.test/`, stubbed local feed responses and isolated synthetic notebooks. It does not access Tahir's personal storage or make provider calls.
+
+| Command / gate | Corrected source result | Evidence |
+| --- | --- | --- |
+| Reproduce initial defects on reviewed product code | **FAIL — expected, 3/3** | `evidence/closeout/before.log`; actual timestamp and height mismatches above. |
+| `node --test --test-name-pattern='correction [AB]:' tests/home-search.test.mjs` | **PASS — 11/11** | `evidence/closeout/corrections.log`. |
+| `node --test tests/home-search.test.mjs` | **PASS — 28/28** | `evidence/closeout/home-search-tests.log`; includes the existing full synthetic notebook journey. |
+| `npm test` | **PASS — 284/284, zero skipped** | `evidence/closeout/npm-test.log`; filter, saved-search, comparison, quote and eligibility/archive model/jsdom regressions included. |
+| `npm run check` | **PASS — syntax and 56 Python tests** | `evidence/closeout/check.log`. |
+| `python tools/check_site.py` | **PASS** | `evidence/closeout/check-site.log`; 1,000 retained records and all 22 immutable shared design assets. |
+| `git diff --check` | **PASS** | No whitespace errors in the correction. |
+| Supported browser access, tested once at session start | **BLOCKED** | Cloud Chrome connected, but navigation to the checkout served at `http://127.0.0.1:8765/` returned `net::ERR_BLOCKED_BY_CLIENT`; exact attempt in `evidence/closeout/browser-access.txt`. |
+| Rendered corrected sequences and full notebook journey; desktop, 390px, 320px; both themes | **NOT RUN — BLOCKED** | No local implementation page loaded in the supported browser. |
+| Existing rendered filter/saved-search/comparison/quote/eligibility/archive suites | **NOT RUN — BLOCKED** | Same access restriction, including `tools/browser_check.mjs` and `tools/eligibility_check.mjs`. |
+| Discover, neighborhoods, dossier and comparison screenshots | **NOT PRODUCED — BLOCKED** | No old public-release or synthetic image is substituted for implementation screenshots. |
+
+The environment still required is **a supported browser permitted to reach the local HTTP server serving the checked-out PR head**, such as a permitted colocated execution/browser environment. The current cloud browser refuses that destination before loading the application. No repeated localhost navigation, tunnel, policy change, alternate browser mechanism or draft publication was attempted. The prior public-origin check is historical and is not PR #31 acceptance.
+
+The five researched properties, their source dates and all retained feed/seed data are unchanged in this correction. Full preset counts remain **0 supported matches, 5 known-area leads, 256 unresolved-neighborhood records and 739 excluded records**. All 22 immutable shared assets and v2.13.0 / `14a752dd0269bd6ebbb7080eb0d9e1922cd1ef2c` provenance remain unchanged. No criteria were relaxed and no new research scope was opened. **The PR remains draft because rendered acceptance and screenshots are still open.**
+
 ## Search behavior
 
 “Downtown home search” appears in Discover with a preview of all changes. Applying it explicitly selects River North, Streeterville, Lakeshore East, The Loop and West Loop / Fulton Market; excludes South Loop; keeps one- and two-bedroom choices; requests a private balcony, both in-unit laundry functions, strictly more than 600 sq ft, and documented high-rise form. Documented offer restrictions are excluded. Address/program evidence goes to verification. Ordinary records without a restriction remain investigable, with no claim of unrestricted eligibility.
@@ -47,7 +94,9 @@ The offline ledger checks stable ID, address, city and plan before annotation. R
 
 `evidence/integrity.json` confirms that stripping only `home_evidence` from seed/current data exactly reproduces the starting JSON. Historical feeds, source arrays, prices, dates, provider state, usage, acquisition configuration and workflows were unchanged. All 22 immutable design files match v2.13.0 / `14a752dd0269bd6ebbb7080eb0d9e1922cd1ef2c`.
 
-## Acceptance gates
+## Historical acceptance gates — reviewed head `7ece4842`
+
+These are the original implementation results, not the correction/final-head results. Use the correction closeout section above and the PR's final-head CI for the updated gates.
 
 | Gate | Result | Evidence / limitation |
 | --- | --- | --- |

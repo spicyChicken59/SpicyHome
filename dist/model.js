@@ -20,6 +20,20 @@ export const defaults = {
   parkingPreferred: false,
   surface: "split",
   density: "cards",
+  homeSearch: false,
+  includeAreas: [],
+  excludeAreas: [],
+  privateBalcony: false,
+  inUnitLaundry: false,
+  over600: false,
+  requireHighRise: false,
+  excludeRestricted: false,
+  budgetMode: "strict",
+  preferredMin: 2500,
+  preferredMax: 3000,
+  strictCap: null,
+  moveIn: "",
+  resultGroup: "matches",
 };
 export const tourChecks = [
   ["layout", "Walk the exact layout", "Check bedroom doors, dimensions and where your furniture fits."],
@@ -86,7 +100,7 @@ export function atlasPoints(homes, records = {}) {
       : [];
   });
 }
-export function leasingQuestions(home, record = {}, now = new Date()) {
+export function leasingQuestions(home, record = {}, now = new Date(), prefs = defaults) {
   const layout = layoutEvidence(home, record), c = costs(home, record, defaults);
   const exactMoney = (value) => value.toLocaleString("en-US", {style:"currency", currency:"USD", minimumFractionDigits: value % 1 ? 2 : 0, maximumFractionDigits:2});
   const questions = ["Is this exact unit or floor plan available for my move-in date, and for which lease lengths?"];
@@ -95,12 +109,13 @@ export function leasingQuestions(home, record = {}, now = new Date()) {
   else questions.push(`Is the ${exactMoney(c.rent)} base rent still current for this exact unit? What concessions or lease conditions apply?`);
   if (c.parking === null) questions.push("Is a resident parking space available, and what is its monthly cost?");
   else questions.push(`Can you confirm a resident parking space and the ${exactMoney(c.parking)} monthly parking amount?`);
-  questions.push("Is resident EV charging available now? Please confirm connector, access rules, waitlist, charging fees and whether those fees overlap parking or utilities.");
+  if (!homeSearchActive(prefs) || prefs.charging) questions.push("Is resident EV charging available now? Please confirm connector, access rules, waitlist, charging fees and whether those fees overlap parking or utilities.");
   if (c.fees === null || c.utilities === null) questions.push("Please itemize every recurring fee and utility charge, including anything billed separately or based on usage.");
   questions.push("What deposits, nonrefundable fees and prepaid rent are required, and when is each due?");
   if (home.access?.status !== "yes" || !record.tourChecks?.access) questions.push("Can you confirm the step-free route from the street and garage to this unit, including elevator access?");
   const quoteDate = amount(record.rentOverride) !== null ? record.quoteDate : home.observed_at;
   if (ageDays(quoteDate, now) === null || ageDays(quoteDate, now) > 7) questions.push("Please provide a fresh, dated written quote with its expiration date.");
+  if (homeSearchActive(prefs)) questions.unshift(...homeCriteriaQuestions(home, record, prefs));
   return questions;
 }
 // Keep the original one_bed review's exact 1/1 meaning in existing notebooks.
@@ -431,7 +446,7 @@ export function costs(home, record = {}, prefs = defaults) {
     chargingIncluded: false,
   };
 }
-export function visibleHomes(homes, workspace, prefs, feed = {}) {
+function baseVisibleHomes(homes, workspace, prefs, feed = {}) {
   // One anchor for every distance this function gates on, taken from the feed
   // the reader is looking at, so the mileage a card prints and the mileage that
   // filtered it cannot come from two different points. With no feed in hand it
@@ -461,7 +476,9 @@ export function visibleHomes(homes, workspace, prefs, feed = {}) {
       const p =
         prefs.basis === "total" ? (c.rent === null ? null : c.known) : c.rent;
       if (p === null && !prefs.unknown) return false;
-      if (p !== null && (p < prefs.min || p > prefs.max)) return false;
+      if (p !== null && (prefs.budgetMode === "flexible"
+        ? prefs.strictCap !== null && p > prefs.strictCap
+        : p < prefs.min || p > prefs.max)) return false;
       if (prefs.neighborhood !== "all" && h.neighborhood !== prefs.neighborhood)
         return false;
       if (prefs.parking && h.parking?.status !== "yes") return false;
@@ -660,6 +677,7 @@ export function validateHome(h) {
     if (h[key] !== undefined && h[key] !== null && !textOk(h[key], 2000)) return false;
   if (!dateOk(h.observed_at) || !historyOk(h.history)) return false;
   if (h.source_url != null && !textOk(h.source_url, 4000)) return false;
+  if (h.home_evidence !== undefined && !validHomeEvidence(h.home_evidence)) return false;
   if (h.eligibility_evidence !== undefined && !validEligibilityEvidence(h.eligibility_evidence)) return false;
   if (
     (h.lat != null && (!Number.isFinite(h.lat) || Math.abs(h.lat) > 90)) ||
@@ -808,18 +826,22 @@ export function validateWorkspace(w) {
       throw Error("The backup contains an invalid saved home or quote.");
     if (r.scan !== undefined && !savedScanOk(r.scan))
       throw Error("The backup contains invalid saved source context.");
+    if (r.home_evidence_update !== undefined && (!isObj(r.home_evidence_update) || Object.keys(r.home_evidence_update).length !== 2 || !validHomeEvidence(r.home_evidence_update.evidence) || !dateOk(r.home_evidence_update.recorded_at) || !r.snapshot || r.snapshot.id !== key))
+      throw Error("The backup contains invalid saved home evidence.");
     if (r.eligibility_update !== undefined && (!isObj(r.eligibility_update) || Object.keys(r.eligibility_update).length !== 2 || !validEligibilityEvidence(r.eligibility_update.evidence) || !dateOk(r.eligibility_update.recorded_at) || !r.snapshot || r.snapshot.id !== key))
       throw Error("The backup contains invalid saved eligibility evidence.");
   }
   if (Object.values(w.records).filter((r) => r.finalist).length > 3)
     throw Error("A notebook can pin at most three finalists. Unpin one before combining these notebooks.");
+  if (w.searchUndo !== undefined && w.searchUndo !== null) validatePreferences(w.searchUndo);
   const p = validatePreferences(w.preferences);
   const savedSearches = w.savedSearches === undefined ? [] : w.savedSearches;
   if (!Array.isArray(savedSearches) || savedSearches.length > 8 || savedSearches.some((s) => !isObj(s) || !textOk(s.name, 60) || !s.name.trim() || !isObj(s.preferences)) || new Set(savedSearches.map((s) => s.name.trim().toLowerCase())).size !== savedSearches.length)
     throw Error("The backup contains invalid saved searches (maximum eight unique names).");
-  return { ...w, preferences: p, savedSearches: savedSearches.map((s) => ({ name: s.name.trim(), preferences: validatePreferences(s.preferences) })) };
+  return { ...w, ...(w.searchUndo ? { searchUndo: validatePreferences(w.searchUndo) } : {}), preferences: p, savedSearches: savedSearches.map((s) => ({ name: s.name.trim(), preferences: validatePreferences(s.preferences) })) };
 }
 export function validatePreferences(preferences) {
+  if (preferences !== undefined && !isObj(preferences)) throw Error("The backup contains invalid search preferences.");
   const p = { ...defaults, ...(isObj(preferences) ? preferences : {}) };
   if (
     !Number.isFinite(p.min) ||
@@ -838,7 +860,13 @@ export function validatePreferences(preferences) {
     !textOk(p.search, 500) ||
     !textOk(p.neighborhood, 500) ||
     !["all", "core", "near"].includes(p.urbanScope) ||
-    !["parking", "charging", "unknown", "highRise", "parkingPreferred"].every(
+    !["strict", "flexible"].includes(p.budgetMode) ||
+    !["matches", "leads"].includes(p.resultGroup) ||
+    ![p.includeAreas, p.excludeAreas].every(a => Array.isArray(a) && a.length <= 30 && a.every(n => textOk(n, 100) && n.trim()) && new Set(a).size === a.length) ||
+    ![p.preferredMin, p.preferredMax].every(n => Number.isFinite(n) && n >= 0 && n <= 20000) || p.preferredMax < p.preferredMin ||
+    !(p.strictCap === null || Number.isFinite(p.strictCap) && p.strictCap >= 0 && p.strictCap <= 20000) ||
+    !(p.moveIn === "" || calendarDay(p.moveIn)) ||
+    !["parking", "charging", "unknown", "highRise", "parkingPreferred", "homeSearch", "privateBalcony", "inUnitLaundry", "over600", "requireHighRise", "excludeRestricted"].every(
       (k) => typeof p[k] === "boolean",
     ) ||
     !nullableAmount(p.utilityEstimate) ||
@@ -1128,7 +1156,7 @@ export function openQuestions(home = {}, record = {}, prefs = defaults, now = ne
   const access = sourceAccess(home);
   const quoteAge = ageDays(amount(record.rentOverride) !== null ? record.quoteDate : home.observed_at, now);
   const reviewed = tourProgress(record);
-  const items = [];
+  const items = homeSearchActive(prefs) ? criteriaReading(home, record, prefs).missing.map((label, i) => ({ key: "home-criterion-" + i, kind: "home", label, detail: label, target: "detail-home-evidence" })) : [];
   if (layout.status !== "confirmed")
     items.push({ key: "layout", kind: "layout", label: "Layout not checked by you",
       detail: layout.label, target: "layoutReview" });
@@ -1145,7 +1173,7 @@ export function openQuestions(home = {}, record = {}, prefs = defaults, now = ne
   if (home.parking?.status === "unknown")
     items.push({ key: "parking", kind: "amenity", label: "Parking not established by the source",
       detail: "Unknown is not none, and it is not free.", target: "leasing-draft" });
-  if (home.charging?.status === "unknown")
+  if ((!homeSearchActive(prefs) || prefs.charging) && home.charging?.status === "unknown")
     items.push({ key: "charging", kind: "amenity", label: "Resident charging not established",
       detail: "A nearby public station is not a resident amenity.", target: "leasing-draft" });
   if (reviewed < tourChecks.length)
@@ -1205,23 +1233,36 @@ const formLabels = {
 const formShort = { high_rise: "High-rise recorded", low_mid_rise: "Low/mid-rise recorded", unknown: "Height not recorded" };
 function formSources(home) {
   const url = safeUrl(home.source_url), at = home.observed_at;
-  const out = [];
+  // The caller supplies the current or archived evidence context. Use the same
+  // latest source/scope/subject reading as the general attribute reader.
+  const height = attributeEvidence(home, (home.home_evidence ?? []).filter(e => e.attribute === "height"));
+  const applicable = height.entries.filter(e => evidenceApplies(e, home));
+  const out = applicable.filter(e => e.status === "reported").map(e => ({
+    field: e.source.name, text: e.value, url: safeUrl(e.source.url), observed_at: e.source.observed_at,
+  }));
+  const addLegacy = entry => {
+    // A dated correction from this source also supersedes its older, unscoped
+    // description. Unrelated sources and later legacy observations stay readable.
+    if (!applicable.some(e => safeUrl(e.source.url) === entry.url &&
+      (!dateOk(entry.observed_at) || e.source.observed_at >= entry.observed_at.slice(0, 10)))) out.push(entry);
+  };
   if (typeof home.atmosphere === "string" && home.atmosphere.trim())
-    out.push({ field: "the building description", text: home.atmosphere.trim(), url, observed_at: at });
+    addLegacy({ field: "the building description", text: home.atmosphere.trim(), url, observed_at: at });
   for (const item of Array.isArray(home.amenities) ? home.amenities : [])
     if (typeof item === "string" && item.trim())
-      out.push({ field: "the advertised amenities", text: item.trim(), url, observed_at: at });
+      addLegacy({ field: "the advertised amenities", text: item.trim(), url, observed_at: at });
   for (const source of Array.isArray(home.sources) ? home.sources : [])
     if (source && typeof source.supports === "string" && source.supports.trim())
-      out.push({ field: "a cited source note", text: source.supports.trim(), url: safeUrl(source?.url) || url,
+      addLegacy({ field: "a cited source note", text: source.supports.trim(), url: safeUrl(source?.url) || url,
         observed_at: dateOk(source?.observed_at) ? source.observed_at : at });
-  return out;
+  return { entries: out, status: height.status, unconfirmed: applicable.some(e => e.status === "unknown") };
 }
 export function buildingForm(home = {}) {
   const title = String(home.title ?? "").toLowerCase();
   const hits = [];
   let named = false;
-  for (const entry of formSources(home)) {
+  const sources = formSources(home);
+  for (const entry of sources.entries) {
     for (const rule of formPhrases) {
       const found = rule.re.exec(entry.text);
       if (!found) continue;
@@ -1235,9 +1276,9 @@ export function buildingForm(home = {}) {
   }
   const statuses = new Set(hits.map((hit) => hit.status));
   // Two sources describing one building two ways is not a reading either way.
-  if (statuses.size > 1)
+  if (sources.status === "conflicting" || statuses.size > 1)
     return { status: "unknown", label: formLabels.unknown, short: formShort.unknown, reason: "conflicting_text",
-      because: "This record’s own sources describe the building two different ways.",
+      because: sources.status === "conflicting" ? "Current height evidence is conflicting; older assertions do not resolve it." : "This record’s own sources describe the building two different ways.",
       phrase: null, field: null, quote: "", url: "", observed_at: null };
   const [hit] = hits;
   if (hit)
@@ -1246,8 +1287,9 @@ export function buildingForm(home = {}) {
       phrase: hit.phrase, field: hit.field, quote: hit.text.slice(0, 240), url: hit.url,
       observed_at: dateOk(hit.observed_at) ? hit.observed_at : null };
   return { status: "unknown", label: formLabels.unknown, short: formShort.unknown,
-    reason: named ? "name_only" : "no_recorded_description",
-    because: named
+    reason: sources.unconfirmed ? "current_height_unconfirmed" : named ? "name_only" : "no_recorded_description",
+    because: sources.unconfirmed ? "The latest applicable source does not establish the building’s height. Earlier descriptions remain in the research history."
+      : named
       ? "The only mention of a tower here is the building’s own name, which describes nothing."
       : "Nothing in this record’s retained sources describes the building’s height. Unknown is not a low-rise.",
     phrase: null, field: null, quote: "", url: "", observed_at: null };
@@ -1547,4 +1589,168 @@ export function costField(label) { return costFields[label] ?? 'leasing-draft'; 
 export function nextMoves(homes, workspace, prefs=defaults, now=new Date()) {
   return homes.map(home=>nextMove(home,workspace,prefs,now)).filter(Boolean)
     .sort((a,b)=>b.priority-a.priority || a.home.id.localeCompare(b.home.id)).slice(0,3);
+}
+
+// Dated, scoped source assertions. These do not change provider observations,
+// scalar quote fields or personal notes. A selected-home claim is never exact.
+export const downtownAreas = ["River North", "Streeterville", "Lakeshore East", "The Loop", "West Loop / Fulton Market", "South Loop"];
+export function calendarDay(day) {
+  return typeof day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(day) && dateOk(day) && new Date(day).toISOString().slice(0, 10) === day;
+}
+const homeEvidenceValues = {
+  balcony: ["private", "juliet", "shared", "none", "unspecified"],
+  laundry: ["in_unit_both", "washer_only", "dryer_only", "shared", "hookups", "none", "unspecified"],
+  eligibility: ["income_restricted", "unrestricted", "mixed_program"],
+};
+export function validHomeEvidence(list) {
+  if (!Array.isArray(list) || list.length > 100) return false;
+  return list.every(e => {
+    if (!isObj(e) || Object.keys(e).sort().join() !== "applies,attribute,note,scope,source,status,subject,value" ||
+      !["neighborhood", "balcony", "laundry", "sqft", "height", "floor", "view", "availability", "price", "parking", "eligibility"].includes(e.attribute) ||
+      !["reported", "unknown", "conflicting"].includes(e.status) || !["building", "plan", "unit", "address"].includes(e.scope) ||
+      !["all", "selected", "exact", "general"].includes(e.applies) || !textOk(e.subject, 180) || !e.subject.trim() || !textOk(e.note, 1200) || !e.note.trim()) return false;
+    const src = e.source;
+    if (!isObj(src) || Object.keys(src).sort().join() !== "name,observed_at,url" || !textOk(src.name, 160) || !src.name.trim() || !calendarDay(src.observed_at) || !textOk(src.url, 2000) || !/^https?:\/\//.test(src.url) || /[\s\\]/.test(src.url) || !safeUrl(src.url)) return false;
+    try { const u = new URL(src.url); if (!u.hostname || u.username || u.password) return false; } catch { return false; }
+    if (e.status === "unknown" || e.status === "conflicting") return e.value === null;
+    if (homeEvidenceValues[e.attribute]) return homeEvidenceValues[e.attribute].includes(e.value);
+    if (e.attribute === "neighborhood") return Array.isArray(e.value) && e.value.length > 0 && e.value.length <= 10 && e.value.every(n => textOk(n, 100) && n.trim());
+    if (e.attribute === "sqft") return Number.isFinite(e.value) && e.value > 0 && e.value <= 100000;
+    if (e.attribute === "floor") return Number.isInteger(e.value) && e.value >= -10 && e.value <= 200;
+    if (e.attribute === "availability") return calendarDay(e.value);
+    return textOk(e.value, 600) && !!e.value.trim();
+  });
+}
+export function mergeHomeEvidence(previous = [], incoming = []) {
+  const result = [...previous];
+  for (const entry of incoming)
+    if (!result.some(prior => JSON.stringify(prior) === JSON.stringify(entry))) result.push(entry);
+  return result;
+}
+export function homeEvidenceReading(home, record = {}) {
+  const original = record.snapshot?.home_evidence ?? [];
+  const current = home.notebook_only ? null : home.home_evidence ?? null;
+  const saved = record.home_evidence_update?.evidence ?? original;
+  return { original, current, evidence: current ?? saved, context: current ? "Current research" : "Saved research" };
+}
+function evidenceApplies(e, h) {
+  // Height describes the building itself, including a general building claim;
+  // it never establishes a plan/unit's floor or a selected-home amenity.
+  if (e.attribute === "height") return e.scope === "building" && e.applies !== "selected";
+  if (e.applies === "selected" || e.applies === "general") return false;
+  if (e.scope === "plan") return e.applies === "exact" && e.subject === h.floor_plan;
+  if (e.scope === "unit") return e.applies === "exact" && e.subject === h.unit_label;
+  return e.applies === "all";
+}
+export function attributeReading(home, record, attribute) {
+  const observations = homeEvidenceReading(home, record).evidence.filter(e => e.attribute === attribute);
+  return attributeEvidence(home, observations);
+}
+function attributeEvidence(home, observations) {
+  // One source's newest assertion for one subject supersedes only that source's
+  // older assertion. Different sources that disagree remain visibly unresolved.
+  const latest = new Map();
+  for (const e of observations) {
+    const key = JSON.stringify([e.source.url, e.scope, e.subject]);
+    if (!latest.has(key) || latest.get(key).source.observed_at <= e.source.observed_at) latest.set(key, e);
+  }
+  const entries = [...latest.values()];
+  const applicable = entries.filter(e => evidenceApplies(e, home));
+  const reported = applicable.filter(e => e.status === "reported");
+  const conflict = applicable.some(e => e.status === "conflicting") || new Set(reported.map(e => JSON.stringify(e.value))).size > 1;
+  return { status: conflict ? "conflicting" : reported.length ? "supported" : "unknown", value: conflict ? null : reported[0]?.value ?? null, entries };
+}
+export function areaIdentity(home, record = {}) {
+  const read = attributeReading(home, record, "neighborhood");
+  if (read.entries.length) return { ...read, areas: [...new Set(read.entries.filter(e => e.status === "reported" && evidenceApplies(e, home)).flatMap(e => e.value))] };
+  // Legacy curated labels retain their source/date. Provider search-area text,
+  // a ZIP, a point inside a radius, and personal labels are not neighborhoods.
+  const source = home.kind === "building" && home.sources?.find(s => safeUrl(s.url) && textOk(s.supports) && s.supports.trim());
+  const known = source && !/unknown|unverified|search area/i.test(home.neighborhood);
+  return { status: known ? "supported" : "unknown", areas: known ? [home.neighborhood] : [], entries: [], legacySource: source || null };
+}
+function areaKey(s) {
+  const n = s.toLowerCase().trim();
+  return ["west loop", "fulton market", "west loop / fulton market"].includes(n) ? "west loop / fulton market" : n === "loop" ? "the loop" : n;
+}
+export function homeSearchActive(p = defaults) {
+  return p.homeSearch || p.includeAreas?.length > 0 || p.excludeAreas?.length > 0 || p.privateBalcony || p.inUnitLaundry || p.over600 || p.requireHighRise || p.excludeRestricted;
+}
+export function downtownSearch(p = defaults) {
+  return validatePreferences({ ...p, homeSearch: true, includeAreas: downtownAreas.slice(0, 5), excludeAreas: ["South Loop"],
+    neighborhood: "all", region: "chicago", radiusMiles: 0, urbanScope: "all", bedrooms: "all", layoutScope: "all", search: "",
+    privateBalcony: true, inUnitLaundry: true, over600: true, requireHighRise: true, highRise: true,
+    excludeRestricted: true, budgetMode: "flexible", min: 0, max: 20000, strictCap: null, preferredMin: 2500, preferredMax: 3000,
+    targetRent: null, parking: false, parkingPreferred: false, charging: false, unknown: true, moveIn: "2026-11-01", resultGroup: "matches" });
+}
+export function moveInReading(home, record = {}, target = "") {
+  const read = attributeReading(home, record, "availability");
+  if (read.status !== "supported") return { ...read, label: read.status === "conflicting" ? "Availability sources conflict" : "Move-in date needs confirmation", timing: "unknown" };
+  const after = target && read.value > target;
+  return { ...read, timing: after ? "after" : "reported", label: `Advertised ${read.value}${after ? " — after your target" : " — reconfirm for your target"}` };
+}
+export function criteriaReading(home, record = {}, p = defaults) {
+  const missing = [], excluded = [], supported = [];
+  const area = areaIdentity(home, record), labels = area.areas.map(areaKey);
+  if ((p.excludeAreas ?? []).some(n => labels.includes(areaKey(n)))) excluded.push(`Excluded area: ${area.areas.join(" / ")}`);
+  if ((p.includeAreas?.length || p.excludeAreas?.length) && area.status !== "supported") missing.push("Neighborhood identity" + (area.status === "conflicting" ? " (sources conflict)" : ""));
+  else if (p.includeAreas?.length && !p.includeAreas.some(n => labels.includes(areaKey(n)))) excluded.push("Outside selected neighborhoods");
+  const check = (active, key, label, predicate, negatives) => {
+    if (!active) return;
+    const r = attributeReading(home, record, key);
+    if (r.status === "supported" && predicate(r.value)) supported.push(label);
+    else if (r.status === "supported" && negatives(r.value)) excluded.push(`${label}: source reports ${String(r.value).replaceAll("_", " ")}`);
+    else missing.push(`${label}${r.status === "conflicting" ? " (sources conflict)" : r.entries.some(e => e.applies === "selected") ? " for this plan/unit (selected homes only)" : " for this plan/unit"}`);
+  };
+  check(p.privateBalcony, "balcony", "Private balcony", v => v === "private", v => ["juliet", "shared", "none"].includes(v));
+  check(p.inUnitLaundry, "laundry", "In-unit washer AND dryer", v => v === "in_unit_both", v => ["washer_only", "dryer_only", "shared", "hookups", "none"].includes(v));
+  check(p.over600, "sqft", "Size strictly over 600 sq ft", v => v > 600, v => v <= 600);
+  if (p.requireHighRise) {
+    const form = buildingForm({ ...home, home_evidence: homeEvidenceReading(home, record).evidence });
+    if (form.status === "high_rise") supported.push("High-rise building");
+    else if (form.status === "low_mid_rise") excluded.push("Source describes a low/mid-rise building");
+    else missing.push("Building height");
+  }
+  if (p.excludeRestricted) {
+    const prior = eligibilityReading(home, record).evidence;
+    const r = attributeReading(home, record, "eligibility");
+    const exactRestricted = r.status === "supported" && r.value === "income_restricted" && r.entries.some(e => ["plan", "unit"].includes(e.scope) && e.applies === "exact" && evidenceApplies(e, home));
+    const exactMarket = r.status === "supported" && r.value === "unrestricted" && r.entries.some(e => e.applies === "exact" && evidenceApplies(e, home));
+    if (r.status === "conflicting" || prior?.scope === "offer" && exactMarket) missing.push("Eligibility sources conflict; verify this offer");
+    else if (prior?.scope === "offer" || exactRestricted) excluded.push("Documented income-restricted offer");
+    else if ((prior || r.entries.some(e => e.value === "mixed_program" || e.value === "income_restricted")) && !exactMarket) missing.push("Address/program evidence: verify this offer’s eligibility");
+  }
+  return { status: excluded.length ? "excluded" : missing.length ? "lead" : "match", missing, excluded, supported, area };
+}
+export function discoveryGroups(homes, workspace, prefs = defaults, feed = {}) {
+  const groups = { matches: [], leads: [], unresolved: [], excluded: [] };
+  const base = baseVisibleHomes(homes, workspace, prefs, feed);
+  const ids = new Set(base.map(h => h.id));
+  for (const h of base) {
+    const r = criteriaReading(h, workspace.records[h.id] ?? {}, prefs);
+    groups[r.status === "excluded" ? "excluded" : r.status === "match" ? "matches" : r.area.status !== "supported" && (prefs.includeAreas?.length || prefs.excludeAreas?.length) ? "unresolved" : "leads"].push(h);
+  }
+  groups.excluded.push(...homes.filter(h => !ids.has(h.id)));
+  return groups;
+}
+export function visibleHomes(homes, workspace, prefs = defaults, feed = {}) {
+  if (!homeSearchActive(prefs)) return baseVisibleHomes(homes, workspace, prefs, feed);
+  const groups = discoveryGroups(homes, workspace, prefs, feed);
+  return groups[prefs.resultGroup === "leads" ? "leads" : "matches"];
+}
+export function preferredBudget(home, record = {}, p = defaults) {
+  const c = costs(home, record, p), value = p.basis === "total" ? c.rent === null ? null : c.known : c.rent;
+  const basis = p.basis === "total" ? "Known subtotal" : "Base rent";
+  return `${value === null ? basis + " unquoted" : basis + (value < p.preferredMin ? " below" : value > p.preferredMax ? " above" : " within") + " your preferred range"}. ${c.unknown.length ? "Costs remain unresolved; this is not an all-in budget match." : "Review any other recurring charges."}`;
+}
+export function homeCriteriaQuestions(home, record = {}, p = defaults) {
+  const q = [];
+  if (p.privateBalcony) q.push("Does this exact plan and unit have a private, usable balcony, rather than a Juliet railing or shared terrace?");
+  if (p.inUnitLaundry) q.push("Are both the washer and dryer installed inside this unit, rather than hookups or shared laundry?");
+  if (p.over600) q.push("Can you confirm this plan/unit’s interior size is strictly greater than 600 sq ft?");
+  if (attributeReading(home, record, "floor").status !== "supported") q.push("What floor is this actual apartment on? Please do not infer it from the unit number.");
+  if (attributeReading(home, record, "view").status !== "supported") q.push("What does this unit actually face, and can I see the view from its windows and balcony?");
+  if (p.moveIn) q.push(`Can this exact apartment be leased for ${p.moveIn}? An advertised earlier date is not a reservation for my date.`);
+  if (criteriaReading(home, record, p).missing.some(x => /eligibility|Eligibility/.test(x))) q.push("Does this specific offer carry income or program conditions, or is it an independently documented market-rate offer?");
+  return q;
 }

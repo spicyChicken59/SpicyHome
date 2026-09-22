@@ -1,0 +1,35 @@
+{
+  "starting_commit": "a427c4c0f591ed8800534c85a60bd7617232cc5b",
+  "checks": {
+    "data/seed.json": {
+      "annotation_only": true,
+      "preserved_all_other_json_values": true,
+      "records": 22,
+      "enriched_ids": [
+        "amli-west-loop",
+        "coast",
+        "215-west",
+        "marlowe",
+        "73-east-lake"
+      ]
+    },
+    "dist/data.json": {
+      "annotation_only": true,
+      "preserved_all_other_json_values": true,
+      "records": 1000,
+      "enriched_ids": [
+        "amli-west-loop",
+        "coast",
+        "215-west",
+        "marlowe",
+        "73-east-lake"
+      ]
+    },
+    "design_system": {
+      "version": "2.13.0",
+      "commit": "14a752dd0269bd6ebbb7080eb0d9e1922cd1ef2c",
+      "immutable_files_checked": 22
+    },
+    "protected_data_and_settings_unchanged": true
+  }
+}

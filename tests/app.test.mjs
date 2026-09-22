@@ -2535,7 +2535,8 @@ test("a home with no coordinates still walks, with directions from its recorded 
 // filter panel rather than reaching into state.
 async function bootLens(patch = {}, notebook = null) {
   const now = testNow().toISOString();
-  const homes = seed.homes.map((h) => ({ ...h, observed_at: now, ...(patch[h.id] ?? {}) }));
+  // These legacy-lens fixtures intentionally predate scoped September 22 research.
+  const homes = seed.homes.map(({home_evidence, ...h}) => ({ ...h, observed_at: now, ...(patch[h.id] ?? {}) }));
   const snapshot = { ...seed, generated_at: now, homes, city_context: { cta: { updated_at: now } } };
   return boot({ remote: snapshot, packaged: snapshot, notebook });
 }

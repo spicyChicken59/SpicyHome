@@ -1,0 +1,10 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> spicyhome@1.0.0 check
+> node --check dist/app.js && node --check dist/model.js && python -m unittest discover -s tests -p 'test_*.py'
+
+........................................................
+----------------------------------------------------------------------
+Ran 56 tests in 1.264s
+
+OK

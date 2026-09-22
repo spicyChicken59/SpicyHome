@@ -1,0 +1,32 @@
+{
+  "reviewed_starting_head": "7ece4842d83d10a3481e75c94b01c9d9f60ad74e",
+  "base_main": "a427c4c0f591ed8800534c85a60bd7617232cc5b",
+  "corrected_source_commit": "a422d99518a064a68c2b0da44db7662c9c7a258c",
+  "local_tested_source_commit": "2151a9ec35f4245b82c8cda2d22a31eeff25110c",
+  "identical_source_tree": "1bf9e493cf4758ed3d2a147f470bdbd09f140a19",
+  "environment": {
+    "os": "Linux",
+    "node": "v24.19.0",
+    "python": "3.12.14",
+    "jsdom": "26.1.0"
+  },
+  "tested_files": {
+    "dist/app.js": {
+      "git_blob": "20008275093d9a13e146ad6b5294a7979473fe0a",
+      "sha256": "90fbd9a5dc221071c1ce28ce215d52442bc3f00c967f27cc5a622e44f742f8e7"
+    },
+    "dist/model.js": {
+      "git_blob": "c172772a7a04e19c5a4b5fdc3340aea891dc313c",
+      "sha256": "4039ba3eb4315c0dd09c2411561b79ee1ef96e0e9395b3285574244a40bbc228"
+    },
+    "tests/home-search.test.mjs": {
+      "git_blob": "5c3d86b3bf46a18b5db60bdf51fb80d7e2683e39",
+      "sha256": "5945a931281ddecd52252a2d3e9e5117b541b2b4838ffbbdfb0763710fdd6690"
+    }
+  },
+  "protected_paths_unchanged_from_reviewed_head": true,
+  "immutable_design_assets_verified": 22,
+  "design_version": "2.13.0",
+  "design_commit": "14a752dd0269bd6ebbb7080eb0d9e1922cd1ef2c",
+  "final_publication": "Documentation-only descendant; exact final head and its CI are recorded on PR #31. Product/test blob hashes must match this manifest."
+}

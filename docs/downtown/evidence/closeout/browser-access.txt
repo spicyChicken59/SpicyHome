@@ -1,0 +1,9 @@
+PR #31 correction closeout — 2026-09-22
+Reviewed checkout: 7ece4842d83d10a3481e75c94b01c9d9f60ad74e
+Supported browser: cloud Chrome / cdp, browser-client skill.
+Local server: python -m http.server 8765 --bind 127.0.0.1 --directory dist
+One navigation attempt: http://127.0.0.1:8765/
+Result: Browser Use cannot open http://127.0.0.1:8765 in tab 4. Browser reported: net::ERR_BLOCKED_BY_CLIENT
+Rendered acceptance: BLOCKED / NOT RUN. Screenshots: NOT PRODUCED.
+No repeat navigation, policy change, tunnel, public deployment or alternate browser mechanism.
+Required environment: supported browser with permitted access to the local server serving the checked-out PR head.

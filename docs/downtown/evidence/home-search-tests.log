@@ -1,0 +1,25 @@
+✔ downtown preset explicitly clears old cap and filters, preserves optional UI/estimate and is valid (2.100949ms)
+✔ area inclusions OR together, South Loop exclusion wins overlapping and conflicting source labels (3.978623ms)
+✔ private outdoor and both laundry functions require applicable exact evidence, never selected/shared/hookups (1.94838ms)
+✔ size 599 and 600 fail; >600 passes; absent/building-range/unqualified evidence never passes (0.97401ms)
+✔ building height never establishes apartment floor or actual view (1.456763ms)
+✔ documented offer restriction excludes, address evidence holds, conflicts hold and cheap unknown is not restricted (0.954421ms)
+✔ flexible budget is not a minimum or hidden cap and incomplete subtotal stays qualified (1.206919ms)
+✔ source-backed date after target differs from missing date; plan does not inherit a different unit date (0.350355ms)
+✔ fresh and legacy searches validate; malformed preferences and source scopes are rejected at every import boundary (2.384515ms)
+✔ real research: five leads, zero full preset matches; source counts are retained-data counts (27.407543ms)
+✔ journey: explicit apply, neighborhoods, surfaces, lead, two saves, compare, note, reload and export/import (1448.838039ms)
+✔ undo persists and malformed imports fail atomically before notebook or UI preferences change (520.621417ms)
+✔ original snapshots and later evidence survive archive editing, reload, export/import and reappearance (528.389455ms)
+✔ address-wide restrictions stay verification even when asserted for the whole address; real floor/view need exact scope (0.65726ms)
+✔ fresh saved search persists all criteria; research suggestions follow the same unranked group (434.083223ms)
+✔ later observations append to separately saved history when an incoming feed omits an earlier observation (202.828679ms)
+✔ zero-match state names missing evidence and requires an explicit single-criterion relaxation (200.101014ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3882.259579

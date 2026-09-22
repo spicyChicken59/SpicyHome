@@ -1,0 +1,87 @@
+✖ correction A: repeated save of an incoming subset keeps the first effective research recording time (417.769021ms)
+✖ correction B: newer same-source unknown supersedes historical height (0.910421ms)
+✖ correction B: newer same-source conflicting supersedes historical height (0.789479ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 0
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 810.291453
+
+✖ failing tests:
+
+test at tests/home-search.test.mjs:147:1
+✖ correction A: repeated save of an incoming subset keeps the first effective research recording time (417.769021ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+
+    {
+      evidence: [
+        {
+          applies: 'exact',
+          attribute: 'view',
+  ...
+      ],
+  +   recorded_at: '2026-09-23T12:00:00.000Z'
+  -   recorded_at: '2026-09-22T12:00:00.000Z'
+    }
+
+      at TestContext.<anonymous> (file:///workspace/scratch/b54955a0388e/SpicyHome/tests/home-search.test.mjs:159:11)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { evidence: [ [Object], [Object], [Object], [Object], [Object], [Object] ], recorded_at: '2026-09-23T12:00:00.000Z' },
+    expected: { evidence: [ [Object], [Object], [Object], [Object], [Object], [Object] ], recorded_at: '2026-09-22T12:00:00.000Z' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/home-search.test.mjs:168:47
+✖ correction B: newer same-source unknown supersedes historical height (0.910421ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'high_rise'
+  - 'unknown'
+
+      at TestContext.<anonymous> (file:///workspace/scratch/b54955a0388e/SpicyHome/tests/home-search.test.mjs:171:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'high_rise',
+    expected: 'unknown',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/home-search.test.mjs:168:47
+✖ correction B: newer same-source conflicting supersedes historical height (0.789479ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'high_rise'
+  - 'unknown'
+
+      at TestContext.<anonymous> (file:///workspace/scratch/b54955a0388e/SpicyHome/tests/home-search.test.mjs:171:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'high_rise',
+    expected: 'unknown',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

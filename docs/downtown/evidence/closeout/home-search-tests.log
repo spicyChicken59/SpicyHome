@@ -1,0 +1,36 @@
+✔ downtown preset explicitly clears old cap and filters, preserves optional UI/estimate and is valid (1.595364ms)
+✔ area inclusions OR together, South Loop exclusion wins overlapping and conflicting source labels (3.262126ms)
+✔ private outdoor and both laundry functions require applicable exact evidence, never selected/shared/hookups (1.324346ms)
+✔ size 599 and 600 fail; >600 passes; absent/building-range/unqualified evidence never passes (0.469728ms)
+✔ building height never establishes apartment floor or actual view (1.224445ms)
+✔ documented offer restriction excludes, address evidence holds, conflicts hold and cheap unknown is not restricted (0.520184ms)
+✔ flexible budget is not a minimum or hidden cap and incomplete subtotal stays qualified (0.691912ms)
+✔ source-backed date after target differs from missing date; plan does not inherit a different unit date (0.23895ms)
+✔ fresh and legacy searches validate; malformed preferences and source scopes are rejected at every import boundary (1.660482ms)
+✔ real research: five leads, zero full preset matches; source counts are retained-data counts (12.446594ms)
+✔ journey: explicit apply, neighborhoods, surfaces, lead, two saves, compare, note, reload and export/import (1024.6118ms)
+✔ undo persists and malformed imports fail atomically before notebook or UI preferences change (309.120528ms)
+✔ original snapshots and later evidence survive archive editing, reload, export/import and reappearance (619.459778ms)
+✔ address-wide restrictions stay verification even when asserted for the whole address; real floor/view need exact scope (5.975634ms)
+✔ fresh saved search persists all criteria; research suggestions follow the same unranked group (415.382371ms)
+✔ later observations append to separately saved history when an incoming feed omits an earlier observation (132.67969ms)
+✔ zero-match state names missing evidence and requires an explicit single-criterion relaxation (168.749709ms)
+✔ correction A: repeated save of an incoming subset keeps the first effective research recording time (177.889977ms)
+✔ correction B: newer same-source unknown supersedes historical height (0.53116ms)
+✔ correction B: newer same-source conflicting supersedes historical height (0.126991ms)
+✔ correction A: notes, stage, finalist and save actions preserve effective history through subsets, reorder, archive and reappearance (1943.552319ms)
+✔ correction A: an empty incoming ledger does not create a dated empty update (113.668453ms)
+✔ correction B: latest same-source corrections replace the reading without removing history or depending on array order (1.0753ms)
+✔ correction B: independent current disagreements remain unresolved, including two different high-rise counts (0.462477ms)
+✔ correction B: scope and subject identity bound supersession; plan/unit claims never establish building height (0.363437ms)
+✔ correction B: applicable corrections supersede older same-source legacy text, preserving independent and uncorrected legacy evidence (0.233262ms)
+✔ correction B: cards, dossier, comparison and archived controls agree on unknown height (631.866674ms)
+✔ correction B: cards, dossier, comparison and archived controls agree on conflicting height (606.433442ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6527.787583

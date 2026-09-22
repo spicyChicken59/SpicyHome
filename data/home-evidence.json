@@ -1,0 +1,788 @@
+{
+  "schema_version": 1,
+  "records": {
+    "coast": {
+      "identity": {
+        "address": "345 E Wacker Dr, Chicago, IL 60601",
+        "city": "Chicago",
+        "floor_plan": "1x1L"
+      },
+      "evidence": [
+        {
+          "attribute": "neighborhood",
+          "value": [
+            "Lakeshore East"
+          ],
+          "status": "reported",
+          "scope": "building",
+          "subject": "Coast at Lakeshore East",
+          "applies": "all",
+          "note": "Operator identifies this neighborhood; not derived from ZIP or distance.",
+          "source": {
+            "name": "Coast at Lakeshore East official website",
+            "url": "https://www.rentcoast.com/chicago/coast-at-lakeshore-east/amenities/",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "height",
+          "value": "46-story building",
+          "status": "reported",
+          "scope": "building",
+          "subject": "Coast at Lakeshore East",
+          "applies": "general",
+          "note": "Building description; apartment floor and view remain separate.",
+          "source": {
+            "name": "Coast at Lakeshore East official website",
+            "url": "https://www.rentcoast.com/",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "balcony",
+          "value": "unspecified",
+          "status": "reported",
+          "scope": "building",
+          "subject": "Coast at Lakeshore East",
+          "applies": "selected",
+          "note": "Glass-paneled balconies advertised; suite amenities are qualified to selected suites. Private access for 1x1L is unconfirmed.",
+          "source": {
+            "name": "Coast at Lakeshore East official website",
+            "url": "https://www.rentcoast.com/chicago/coast-at-lakeshore-east/amenities/",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "laundry",
+          "value": "in_unit_both",
+          "status": "reported",
+          "scope": "building",
+          "subject": "Coast at Lakeshore East",
+          "applies": "selected",
+          "note": "Full-size washer and dryer under home features; selected-suite qualification retained.",
+          "source": {
+            "name": "Coast at Lakeshore East official website",
+            "url": "https://www.rentcoast.com/chicago/coast-at-lakeshore-east/amenities/",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "sqft",
+          "value": 663,
+          "status": "reported",
+          "scope": "plan",
+          "subject": "1x1L",
+          "applies": "exact",
+          "note": "1x1L: one bedroom, one bathroom; advertised approximate plan area.",
+          "source": {
+            "name": "Coast at Lakeshore East official website",
+            "url": "https://www.rentcoast.com/chicago/coast-at-lakeshore-east/conventional/",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "price",
+          "value": "From $2,650/month; 15-month lease; fee treatment unspecified",
+          "status": "reported",
+          "scope": "plan",
+          "subject": "1x1L",
+          "applies": "general",
+          "note": "Plan starting price; not a unit quote or complete monthly budget.",
+          "source": {
+            "name": "Coast at Lakeshore East official website",
+            "url": "https://www.rentcoast.com/chicago/coast-at-lakeshore-east/conventional/",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "availability",
+          "value": null,
+          "status": "unknown",
+          "scope": "plan",
+          "subject": "1x1L",
+          "applies": "general",
+          "note": "Four units advertised for 1x1L; exact dates not established in this review.",
+          "source": {
+            "name": "Coast at Lakeshore East official website",
+            "url": "https://www.rentcoast.com/chicago/coast-at-lakeshore-east/conventional/",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "parking",
+          "value": "Third-party garage; reserved and unreserved spaces",
+          "status": "reported",
+          "scope": "building",
+          "subject": "Coast at Lakeshore East",
+          "applies": "general",
+          "note": "Price and resident-space availability need confirmation.",
+          "source": {
+            "name": "Coast at Lakeshore East official website",
+            "url": "https://www.rentcoast.com/chicago/coast-at-lakeshore-east/amenities/",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "floor",
+          "value": null,
+          "status": "unknown",
+          "scope": "plan",
+          "subject": "1x1L",
+          "applies": "general",
+          "note": "No apartment floor established; building height is not apartment floor.",
+          "source": {
+            "name": "Coast at Lakeshore East official website",
+            "url": "https://www.rentcoast.com/",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "view",
+          "value": null,
+          "status": "unknown",
+          "scope": "plan",
+          "subject": "1x1L",
+          "applies": "general",
+          "note": "Building view marketing does not establish the view from plan 1x1L.",
+          "source": {
+            "name": "Coast at Lakeshore East official website",
+            "url": "https://www.rentcoast.com/chicago/coast-at-lakeshore-east/amenities/",
+            "observed_at": "2026-09-22"
+          }
+        }
+      ]
+    },
+    "marlowe": {
+      "identity": {
+        "address": "169 W Huron Street, Chicago, IL 60654",
+        "city": "Chicago",
+        "floor_plan": "A8"
+      },
+      "evidence": [
+        {
+          "attribute": "neighborhood",
+          "value": [
+            "River North"
+          ],
+          "status": "reported",
+          "scope": "building",
+          "subject": "Marlowe",
+          "applies": "all",
+          "note": "Operator identifies this neighborhood; not derived from ZIP or distance.",
+          "source": {
+            "name": "Marlowe official website",
+            "url": "https://www.livemarlowe.com/",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "height",
+          "value": null,
+          "status": "unknown",
+          "scope": "building",
+          "subject": "Marlowe",
+          "applies": "general",
+          "note": "A 15th-floor social space is described; total building height is not explicitly stated.",
+          "source": {
+            "name": "Marlowe official website",
+            "url": "https://www.livemarlowe.com/community",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "balcony",
+          "value": null,
+          "status": "unknown",
+          "scope": "plan",
+          "subject": "A8",
+          "applies": "general",
+          "note": "No private balcony established for A8 by the reviewed plan page.",
+          "source": {
+            "name": "Marlowe official website",
+            "url": "https://www.livemarlowe.com/floorplans/a8",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "laundry",
+          "value": null,
+          "status": "unknown",
+          "scope": "plan",
+          "subject": "A8",
+          "applies": "general",
+          "note": "Full-size Whirlpool appliances are unspecified; both laundry functions are not established.",
+          "source": {
+            "name": "Marlowe official website",
+            "url": "https://www.livemarlowe.com/floorplans/a8",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "sqft",
+          "value": 719,
+          "status": "reported",
+          "scope": "plan",
+          "subject": "A8",
+          "applies": "exact",
+          "note": "A8: one bedroom, one bathroom; approximate plan area.",
+          "source": {
+            "name": "Marlowe official website",
+            "url": "https://www.livemarlowe.com/floorplans/a8",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "price",
+          "value": "$3,411/month on units 806 and 606; fee treatment unspecified",
+          "status": "reported",
+          "scope": "plan",
+          "subject": "A8",
+          "applies": "general",
+          "note": "Unit-specific advertisements retained separately; no personal quote.",
+          "source": {
+            "name": "Marlowe official website",
+            "url": "https://www.livemarlowe.com/floorplans/a8",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "availability",
+          "value": "2026-10-26",
+          "status": "reported",
+          "scope": "unit",
+          "subject": "806",
+          "applies": "exact",
+          "note": "Advertised for unit 806 only; not a reservation for November 1.",
+          "source": {
+            "name": "Marlowe official website",
+            "url": "https://www.livemarlowe.com/floorplans/a8",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "availability",
+          "value": "2026-11-06",
+          "status": "reported",
+          "scope": "unit",
+          "subject": "606",
+          "applies": "exact",
+          "note": "Advertised for unit 606 only; later than November 1.",
+          "source": {
+            "name": "Marlowe official website",
+            "url": "https://www.livemarlowe.com/floorplans/a8",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "parking",
+          "value": "Enclosed parking garage advertised",
+          "status": "reported",
+          "scope": "building",
+          "subject": "Marlowe",
+          "applies": "general",
+          "note": "Monthly cost and spaces available need checking.",
+          "source": {
+            "name": "Marlowe official website",
+            "url": "https://www.livemarlowe.com/community",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "floor",
+          "value": null,
+          "status": "unknown",
+          "scope": "plan",
+          "subject": "A8",
+          "applies": "general",
+          "note": "Do not derive apartment floors from 806 or 606.",
+          "source": {
+            "name": "Marlowe official website",
+            "url": "https://www.livemarlowe.com/floorplans/a8",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "view",
+          "value": null,
+          "status": "unknown",
+          "scope": "plan",
+          "subject": "A8",
+          "applies": "general",
+          "note": "Selected-apartment city-view marketing does not establish A8\u2019s actual view.",
+          "source": {
+            "name": "Marlowe official website",
+            "url": "https://www.livemarlowe.com/floorplans/a8",
+            "observed_at": "2026-09-22"
+          }
+        }
+      ]
+    },
+    "amli-west-loop": {
+      "identity": {
+        "address": "205 S. Peoria St., Chicago, IL 60607",
+        "city": "Chicago",
+        "floor_plan": "A2c"
+      },
+      "evidence": [
+        {
+          "attribute": "neighborhood",
+          "value": [
+            "West Loop"
+          ],
+          "status": "reported",
+          "scope": "building",
+          "subject": "AMLI West Loop",
+          "applies": "all",
+          "note": "Operator identifies this neighborhood; not derived from ZIP or distance.",
+          "source": {
+            "name": "AMLI West Loop official website",
+            "url": "https://www.amli.com/apartments/chicago/west-loop-apartments/amli-west-loop",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "height",
+          "value": null,
+          "status": "unknown",
+          "scope": "building",
+          "subject": "AMLI West Loop",
+          "applies": "general",
+          "note": "Reviewed operator overview does not establish building height.",
+          "source": {
+            "name": "AMLI West Loop official website",
+            "url": "https://www.amli.com/apartments/chicago/west-loop-apartments/amli-west-loop",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "balcony",
+          "value": "unspecified",
+          "status": "reported",
+          "scope": "building",
+          "subject": "AMLI West Loop",
+          "applies": "selected",
+          "note": "Balconies advertised only in selected apartments; private balcony for A2c unconfirmed.",
+          "source": {
+            "name": "AMLI West Loop official website",
+            "url": "https://www.amli.com/apartments/chicago/west-loop-apartments/amli-west-loop/amenities",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "laundry",
+          "value": "in_unit_both",
+          "status": "reported",
+          "scope": "building",
+          "subject": "AMLI West Loop",
+          "applies": "all",
+          "note": "Operator describes full-size washers and dryers as apartment features; confirm installed appliances on tour.",
+          "source": {
+            "name": "AMLI West Loop official website",
+            "url": "https://www.amli.com/apartments/chicago/west-loop-apartments/amli-west-loop",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "sqft",
+          "value": null,
+          "status": "unknown",
+          "scope": "plan",
+          "subject": "A2c",
+          "applies": "general",
+          "note": "A2c lists 635\u2013644 sq ft; retained 635 is not a newly confirmed exact unit size.",
+          "source": {
+            "name": "AMLI West Loop official website",
+            "url": "https://www.amli.com/apartments/chicago/west-loop-apartments/amli-west-loop/floorplans",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "price",
+          "value": "A2c from $2,769 base / $2,894 total monthly",
+          "status": "reported",
+          "scope": "plan",
+          "subject": "A2c",
+          "applies": "general",
+          "note": "Starting advertisement; do not combine with another unit\u2019s balcony or personal quote.",
+          "source": {
+            "name": "AMLI West Loop official website",
+            "url": "https://www.amli.com/apartments/chicago/west-loop-apartments/amli-west-loop/floorplans",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "availability",
+          "value": null,
+          "status": "unknown",
+          "scope": "plan",
+          "subject": "A2c",
+          "applies": "general",
+          "note": "A2c displays \u201cNow\u201d and three units; November 1 availability is unconfirmed.",
+          "source": {
+            "name": "AMLI West Loop official website",
+            "url": "https://www.amli.com/apartments/chicago/west-loop-apartments/amli-west-loop/floorplans",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "eligibility",
+          "value": "mixed_program",
+          "status": "reported",
+          "scope": "address",
+          "subject": "AMLI West Loop",
+          "applies": "general",
+          "note": "Operator mentions fully leased ARO apartments. This does not restrict every offer; verify whether A2c is a market-rate offer.",
+          "source": {
+            "name": "AMLI West Loop official website",
+            "url": "https://www.amli.com/apartments/chicago/west-loop-apartments/amli-west-loop/amenities",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "parking",
+          "value": "Reserved garage spaces advertised",
+          "status": "reported",
+          "scope": "building",
+          "subject": "AMLI West Loop",
+          "applies": "general",
+          "note": "A space and monthly cost are unconfirmed.",
+          "source": {
+            "name": "AMLI West Loop official website",
+            "url": "https://www.amli.com/apartments/chicago/west-loop-apartments/amli-west-loop/amenities",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "floor",
+          "value": null,
+          "status": "unknown",
+          "scope": "plan",
+          "subject": "A2c",
+          "applies": "general",
+          "note": "Apartment floor not established.",
+          "source": {
+            "name": "AMLI West Loop official website",
+            "url": "https://www.amli.com/apartments/chicago/west-loop-apartments/amli-west-loop/floorplans",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "view",
+          "value": null,
+          "status": "unknown",
+          "scope": "plan",
+          "subject": "A2c",
+          "applies": "general",
+          "note": "Selected layouts have marketed views; A2c\u2019s view is unconfirmed.",
+          "source": {
+            "name": "AMLI West Loop official website",
+            "url": "https://www.amli.com/apartments/chicago/west-loop-apartments/amli-west-loop/floorplans",
+            "observed_at": "2026-09-22"
+          }
+        }
+      ]
+    },
+    "215-west": {
+      "identity": {
+        "address": "215 W. Washington, Chicago, IL 60606",
+        "city": "Chicago",
+        "floor_plan": "T03"
+      },
+      "evidence": [
+        {
+          "attribute": "neighborhood",
+          "value": [
+            "The Loop"
+          ],
+          "status": "reported",
+          "scope": "building",
+          "subject": "215 West Apartments",
+          "applies": "all",
+          "note": "Operator identifies this neighborhood; not derived from ZIP or distance.",
+          "source": {
+            "name": "215 West Apartments official website",
+            "url": "https://www.215westapts.com/amenities",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "height",
+          "value": "High-rise community",
+          "status": "reported",
+          "scope": "building",
+          "subject": "215 West Apartments",
+          "applies": "general",
+          "note": "Operator describes building form; no apartment floor is implied.",
+          "source": {
+            "name": "215 West Apartments official website",
+            "url": "https://www.215westapts.com/floorplans",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "balcony",
+          "value": null,
+          "status": "unknown",
+          "scope": "plan",
+          "subject": "T03",
+          "applies": "general",
+          "note": "Shared garden terrace advertised; no private T03 balcony established.",
+          "source": {
+            "name": "215 West Apartments official website",
+            "url": "https://www.215westapts.com/amenities",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "laundry",
+          "value": "in_unit_both",
+          "status": "reported",
+          "scope": "building",
+          "subject": "215 West Apartments",
+          "applies": "all",
+          "note": "In-home washers and dryers described for each residence.",
+          "source": {
+            "name": "215 West Apartments official website",
+            "url": "https://www.215westapts.com/amenities",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "sqft",
+          "value": 756,
+          "status": "reported",
+          "scope": "plan",
+          "subject": "T03",
+          "applies": "exact",
+          "note": "T03: one bedroom, one bathroom; approximate area.",
+          "source": {
+            "name": "215 West Apartments official website",
+            "url": "https://www.215westapts.com/floorplans",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "price",
+          "value": "T03 from $2,683/month; fee treatment unspecified",
+          "status": "reported",
+          "scope": "plan",
+          "subject": "T03",
+          "applies": "general",
+          "note": "Starting monthly advertisement, not a complete quote.",
+          "source": {
+            "name": "215 West Apartments official website",
+            "url": "https://www.215westapts.com/floorplans",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "availability",
+          "value": "2026-10-24",
+          "status": "reported",
+          "scope": "plan",
+          "subject": "T03",
+          "applies": "exact",
+          "note": "Advertised T03 date; confirm the exact unit and November 1 lease start.",
+          "source": {
+            "name": "215 West Apartments official website",
+            "url": "https://www.215westapts.com/floorplans",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "parking",
+          "value": "Covered attached parking advertised",
+          "status": "reported",
+          "scope": "building",
+          "subject": "215 West Apartments",
+          "applies": "general",
+          "note": "Reviewed page did not reconfirm the older $300 amount; retained source amount keeps its original date.",
+          "source": {
+            "name": "215 West Apartments official website",
+            "url": "https://www.215westapts.com/amenities",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "floor",
+          "value": null,
+          "status": "unknown",
+          "scope": "plan",
+          "subject": "T03",
+          "applies": "general",
+          "note": "Apartment floor not established.",
+          "source": {
+            "name": "215 West Apartments official website",
+            "url": "https://www.215westapts.com/floorplans",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "view",
+          "value": null,
+          "status": "unknown",
+          "scope": "plan",
+          "subject": "T03",
+          "applies": "general",
+          "note": "Selected city-view marketing is not a T03 view confirmation.",
+          "source": {
+            "name": "215 West Apartments official website",
+            "url": "https://www.215westapts.com/amenities",
+            "observed_at": "2026-09-22"
+          }
+        }
+      ]
+    },
+    "73-east-lake": {
+      "identity": {
+        "address": "73 E Lake St, Chicago, IL 60601",
+        "city": "Chicago",
+        "floor_plan": "07a"
+      },
+      "evidence": [
+        {
+          "attribute": "neighborhood",
+          "value": [
+            "The Loop"
+          ],
+          "status": "reported",
+          "scope": "building",
+          "subject": "73 East Lake",
+          "applies": "all",
+          "note": "Operator identifies this neighborhood; not derived from ZIP or distance.",
+          "source": {
+            "name": "73 East Lake official website",
+            "url": "https://www.experience73.com/",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "height",
+          "value": "42-story high-rise",
+          "status": "reported",
+          "scope": "building",
+          "subject": "73 East Lake",
+          "applies": "general",
+          "note": "Building form, not a confirmation of floor or view for 07a.",
+          "source": {
+            "name": "73 East Lake official website",
+            "url": "https://www.experience73.com/",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "balcony",
+          "value": null,
+          "status": "unknown",
+          "scope": "plan",
+          "subject": "07a",
+          "applies": "general",
+          "note": "Shared rooftop terrace advertised; no private 07a balcony established.",
+          "source": {
+            "name": "73 East Lake official website",
+            "url": "https://www.experience73.com/amenities",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "laundry",
+          "value": "in_unit_both",
+          "status": "reported",
+          "scope": "building",
+          "subject": "73 East Lake",
+          "applies": "all",
+          "note": "In-unit washer and dryer advertised under apartment amenities.",
+          "source": {
+            "name": "73 East Lake official website",
+            "url": "https://www.experience73.com/amenities",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "sqft",
+          "value": 682,
+          "status": "reported",
+          "scope": "plan",
+          "subject": "07a",
+          "applies": "exact",
+          "note": "07a shown with unit 2607: one bedroom, one bathroom, approximate area.",
+          "source": {
+            "name": "73 East Lake official website",
+            "url": "https://www.experience73.com/models",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "price",
+          "value": "Unit 2607 / 07a: $2,866\u2013$4,319 base; 12-month term",
+          "status": "reported",
+          "scope": "unit",
+          "subject": "2607",
+          "applies": "general",
+          "note": "Source range retained separately from the older scalar observation; fees unresolved.",
+          "source": {
+            "name": "73 East Lake official website",
+            "url": "https://www.experience73.com/models",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "availability",
+          "value": null,
+          "status": "unknown",
+          "scope": "unit",
+          "subject": "2607",
+          "applies": "general",
+          "note": "Unit 2607 displays October 14 without an explicit year in the listing; do not promise target-date availability.",
+          "source": {
+            "name": "73 East Lake official website",
+            "url": "https://www.experience73.com/models",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "parking",
+          "value": "Reserved garage parking advertised",
+          "status": "reported",
+          "scope": "building",
+          "subject": "73 East Lake",
+          "applies": "general",
+          "note": "Price and availability unconfirmed.",
+          "source": {
+            "name": "73 East Lake official website",
+            "url": "https://www.experience73.com/amenities",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "floor",
+          "value": null,
+          "status": "unknown",
+          "scope": "plan",
+          "subject": "07a",
+          "applies": "general",
+          "note": "No actual unit floor established; 2607 is not floor evidence.",
+          "source": {
+            "name": "73 East Lake official website",
+            "url": "https://www.experience73.com/models",
+            "observed_at": "2026-09-22"
+          }
+        },
+        {
+          "attribute": "view",
+          "value": null,
+          "status": "unknown",
+          "scope": "plan",
+          "subject": "07a",
+          "applies": "general",
+          "note": "Skyline marketing and shared roof views do not establish this apartment\u2019s view.",
+          "source": {
+            "name": "73 East Lake official website",
+            "url": "https://www.experience73.com/amenities",
+            "observed_at": "2026-09-22"
+          }
+        }
+      ]
+    }
+  }
+}

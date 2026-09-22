@@ -39,8 +39,8 @@ import {
   eligibilityReading,
   downtownAreas, downtownSearch, homeSearchActive, validatePreferences,
   homeEvidenceReading, mergeHomeEvidence, attributeReading, areaIdentity, criteriaReading,
-  discoveryGroups, moveInReading, preferredBudget, homeCriteriaQuestions,
-} from "./model.js?v=20260922-downtown";
+  discoveryGroups, unresolvedBuckets, unresolvedTriage, moveInReading, preferredBudget, homeCriteriaQuestions,
+} from "./model.js?v=20260922-triage";
 const $ = (s) => document.querySelector(s),
   KEY = "spicyhome.workspace.v1",
   CACHE = "spicyhome.feed.v1";
@@ -85,7 +85,7 @@ let atlasSelected = null, savedSearchesOpen = false, compareDifferences = false;
 // null = not chosen yet, so the tray opens its identity list on a wide screen
 // and keeps it one press away on a phone, where it would cover the apartments.
 let trayListOpen = null;
-let homeSearchControlsOpen = false, verificationLimit = 10, exclusionLimit = 10;
+let homeSearchControlsOpen = false, unresolvedOpen = false, verificationLimits = {}, exclusionLimit = 10;
 try {
   storedNotebook = localStorage.getItem(KEY);
   if (storedNotebook) state = validateWorkspace(JSON.parse(storedNotebook));
@@ -1405,7 +1405,7 @@ function bindContent() {
   );
 }
 function bindCards() {
-  bindStudioTasks('[data-task-target="detail-eligibility"]');
+  bindStudioTasks('[data-task-target="detail-eligibility"], [data-task-target="detail-home-evidence"]');
   document.querySelectorAll("button[data-open-studio]").forEach(button=>{button.onclick=()=>{view="studio";render();$("#view-title").tabIndex=-1;$("#view-title").focus();$("#workspace").scrollIntoView?.({block:"start"});};});
   document.querySelectorAll("[data-calendar]").forEach((button) => { button.onclick = () => {const home=getHome(button.dataset.calendar);if(home && record(home.id).tourDate) downloadTour(home,record(home.id));}; });
   document.querySelectorAll("[data-tour]").forEach((b) => { b.onclick = () => { showDetail(b.dataset.tour); $("#tour-companion").open = true; $("#tour-companion").scrollIntoView?.({block:"start"}); $("#tour-companion summary").focus(); }; });
@@ -1481,6 +1481,7 @@ function showDetail(id) {
   if (!h) return;
   const focusAttribute = document.activeElement?.hasAttribute("data-map-home")
     ? "map-home"
+    : document.activeElement?.matches('#unresolved-verification [data-studio-task]') ? "studio-task"
     : "detail";
   const r = record(id),
     c = costs(h, r, prefs);
@@ -2609,7 +2610,7 @@ function applyHomePreferences(patch) {
   try {
     const next = validatePreferences({ ...prefs, ...patch });
     state.searchUndo = JSON.parse(JSON.stringify(prefs));
-    prefs = next; focusSkipped.clear(); verificationLimit = 10; exclusionLimit = 10;
+    prefs = next; focusSkipped.clear(); verificationLimits = {}; exclusionLimit = 10;
     const ok = persist(); render(); saveNotice(ok);
   } catch (e) { const error = $("#home-search-error"); if (error) error.textContent = e.message; else toast(e.message); }
 }
@@ -2674,10 +2675,16 @@ function renderHomeSearchGroups() {
   const missingCriteria = [["privateBalcony","Private balcony"],["inUnitLaundry","In-unit washer AND dryer"],["over600","Size strictly over 600 sq ft"],["requireHighRise","Building height"]]
     .map(([key,label]) => ({key,label,count:groups.leads.filter(h=>criteriaReading(h,record(h.id),prefs).missing.some(m=>m.startsWith(label))).length})).filter(g=>g.count);
   const gaps = !groups.matches.length && missingCriteria.length ? `<details class="criteria-gaps" open><summary>Evidence missing from the known-area leads</summary><ul>${missingCriteria.map(g=>`<li><span>${esc(g.label)}: ${g.count} need confirmation.</span><button class="text-button" data-relax-home="${g.key}">Remove ${esc(g.label.toLowerCase())} requirement</button></li>`).join("")}</ul><p class="meta">Each button explicitly changes one criterion. Eligibility and other selected requirements still apply.</p></details>` : "";
-  target.innerHTML=`<div class="criteria-groups" role="group" aria-label="Evidence groups"><button class="button secondary" data-evidence-group="matches" aria-pressed="${prefs.resultGroup === "matches"}">Property criteria supported (${groups.matches.length})</button><button class="button secondary" data-evidence-group="leads" aria-pressed="${prefs.resultGroup === "leads"}">Known-area verification leads (${groups.leads.length})</button></div><p class="meta">List, map and Focus use the selected group. Matches describe property evidence, not availability, household eligibility or a complete budget. No criteria are relaxed automatically.</p>${gaps}<details class="verification-group"><summary>Neighborhood unresolved (${groups.unresolved.length})</summary><p>Not a positive downtown match and not assumed to be South Loop. Verify neighborhood identity first. Showing ${Math.min(verificationLimit,groups.unresolved.length)} at a time.</p><div class="verification-list">${groups.unresolved.slice(0,verificationLimit).map(h=>verificationRow(h)).join("")}</div>${groups.unresolved.length>verificationLimit ? '<button class="button secondary small" id="more-verification">Show 10 more unresolved records</button>' : ''}</details><details class="verification-group"><summary>Excluded by active search (${groups.excluded.length}) · records retained</summary><p>These records and their source histories remain loaded. Saved homes are always reachable in Decision Desk.</p><div class="verification-list">${groups.excluded.slice(0,exclusionLimit).map(h=>verificationRow(h,true)).join("")}</div>${groups.excluded.length>exclusionLimit ? '<button class="button secondary small" id="more-exclusions">Show 10 more excluded records</button>' : ''}</details>`;
+  target.innerHTML=`<div class="criteria-groups" role="group" aria-label="Evidence groups"><button class="button secondary" data-evidence-group="matches" aria-pressed="${prefs.resultGroup === "matches"}">Property criteria supported (${groups.matches.length})</button><button class="button secondary" data-evidence-group="leads" aria-pressed="${prefs.resultGroup === "leads"}">Known-area verification leads (${groups.leads.length})</button></div><p class="meta">List, map and Focus use the selected group. Matches describe property evidence, not availability, household eligibility or a complete budget. No criteria are relaxed automatically.</p>${gaps}${unresolvedGroups(groups.unresolved)}<details class="verification-group"><summary>Excluded by active search (${groups.excluded.length}) · records retained</summary><p>These records and their source histories remain loaded. Saved homes are always reachable in Decision Desk.</p><div class="verification-list">${groups.excluded.slice(0,exclusionLimit).map(h=>verificationRow(h,true)).join("")}</div>${groups.excluded.length>exclusionLimit ? '<button class="button secondary small" id="more-exclusions">Show 10 more excluded records</button>' : ''}</details>`;
   document.querySelectorAll("[data-evidence-group]").forEach(b=>b.onclick=()=>{prefs.resultGroup=b.dataset.evidenceGroup;focusSkipped.clear();persist();renderResults();bindCards();document.querySelector(`[data-evidence-group="${prefs.resultGroup}"]`)?.focus();});
   document.querySelectorAll("[data-relax-home]").forEach(b=>b.onclick=()=>applyHomePreferences({[b.dataset.relaxHome]:false}));
-  if($("#more-verification"))$("#more-verification").onclick=()=>{verificationLimit+=10;renderHomeSearchGroups();bindCards();document.querySelector(".verification-group").open=true;};
+  $("#unresolved-verification").ontoggle = e => { if (e.currentTarget?.isConnected) unresolvedOpen = e.currentTarget.open; };
+  document.querySelectorAll("[data-more-verification]").forEach(b => b.onclick = () => {
+    const key = b.dataset.moreVerification, previous = verificationLimits[key] ?? 10;
+    verificationLimits[key] = previous + 10; unresolvedOpen = true;
+    renderHomeSearchGroups(); bindCards();
+    document.querySelectorAll(`#unresolved-${key} [data-task-target="detail-home-evidence"]`)[previous]?.focus();
+  });
   if($("#more-exclusions"))$("#more-exclusions").onclick=()=>{exclusionLimit+=10;renderHomeSearchGroups();bindCards();document.querySelectorAll(".verification-group")[1].open=true;};
   $("#result-count").textContent=`${groups[prefs.resultGroup].length} ${prefs.resultGroup === "matches" ? "property-criteria matches" : "known-area verification leads"} · current group`;
   $("#budget-note").textContent=prefs.budgetMode === "flexible" ? `Preferred ${money(prefs.preferredMin)}–${money(prefs.preferredMax)}; ${prefs.strictCap === null ? "no strict cap" : "explicit strict cap " + money(prefs.strictCap)}. Base rent, advertised totals, personal quotes and incomplete known subtotals retain their own basis and dates.` : `Strict ${money(prefs.min)}–${money(prefs.max)} against ${prefs.basis === "rent" ? "base rent" : "known subtotal"}; unknown fees remain unresolved.`;
@@ -2685,4 +2692,32 @@ function renderHomeSearchGroups() {
 function verificationRow(home,excluded=false) {
   const r=criteriaReading(home,record(home.id),prefs);
   return `<article><div><strong>${esc(home.title)}</strong><p class="meta">${esc(planLabel(home))} · ${esc(home.neighborhood)}</p><p>${esc(excluded ? r.excluded.join("; ") || "Outside another active filter (layout, region, price or text)" : r.missing.join("; "))}</p></div><button class="button secondary small" data-detail="${esc(home.id)}">Inspect record</button></article>`;
+}
+function unresolvedGroups(homes) {
+  const entries = homes.map(home => ({ home, triage: unresolvedTriage(criteriaReading(home, record(home.id), prefs)) }));
+  return `<details class="verification-group" id="unresolved-verification" ${unresolvedOpen ? "open" : ""}><summary>Neighborhood unresolved (${homes.length})</summary>
+    <p>These are retained evidence records, not a count of downtown apartments. Neighborhood identity must be verified; coordinates cannot establish it or clear the South Loop exclusion.</p>
+    <p class="meta">Ordered by the checks still needed for your active criteria: neighborhood only, one additional check, then several. Within each bucket: newest record observation first, then ID. Availability, your eligibility and complete costs still need review.</p>
+    ${unresolvedBuckets.map(bucket => {
+      const rows = entries.filter(e => e.triage.key === bucket.key), limit = verificationLimits[bucket.key] ?? 10;
+      return `<section class="unresolved-bucket" id="unresolved-${bucket.key}" data-unresolved-bucket="${bucket.key}" aria-labelledby="triage-${bucket.key}">
+        <h4 id="triage-${bucket.key}">${esc(bucket.label)} (${rows.length})</h4><p class="meta">${esc(bucket.detail)}</p>
+        ${rows.length ? `<p class="meta">Showing ${Math.min(limit, rows.length)} of ${rows.length} records.</p><div class="verification-list">${rows.slice(0, limit).map(e => unresolvedRow(e.home, e.triage)).join("")}</div>` : '<p class="meta">No records in this bucket under the active criteria.</p>'}
+        ${rows.length > limit ? `<button class="button secondary small" data-more-verification="${bucket.key}">Show 10 more: ${esc(bucket.label.toLowerCase())}</button>` : ""}
+      </section>`;
+    }).join("")}</details>`;
+}
+function unresolvedRow(home, triage) {
+  const setting = urbanSetting(home, feed);
+  const location = setting.status === "unlocated"
+    ? "Unlocated — no recorded coordinates. Straight-line distance is unknown."
+    : `Derived from recorded coordinates: ${setting.detail} Neighborhood identity remains unverified.`;
+  return `<article class="unresolved-record" data-triage-home="${esc(home.id)}">
+    <strong>${esc(home.title)}</strong><p class="meta">${esc(planLabel(home))} · ${esc(home.address || "Address not recorded")}</p>
+    <p class="triage-effort">${esc(triage.label)} · ${triage.otherChecks} additional active ${triage.otherChecks === 1 ? "check" : "checks"}</p>
+    <p>Still to verify:</p><ul class="triage-missing">${triage.missingCriteria.map(c => `<li data-missing-criterion="${c.key}">${esc(c.label)}</li>`).join("")}</ul>
+    <p class="meta triage-location">${esc(location)}</p><p class="meta">Record observed ${esc(dateLabel(home.observed_at))}. Separate research dates are in the dossier.</p>
+    <p class="meta source-access">${esc(sourceSentence(home))}</p>
+    <div class="unresolved-actions"><button class="button secondary small" data-studio-task="${esc(home.id)}" data-task-target="detail-home-evidence">Open dossier &amp; evidence</button>${sourceLinks(home)}</div>
+  </article>`;
 }

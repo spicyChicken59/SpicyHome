@@ -1103,14 +1103,14 @@ const formHome = (patch = {}) => ({ ...home, id: "form", title: "Elm Place", atm
   amenities: [], sources: [], observed_at: "2026-09-07", ...patch });
 test("a building is a high-rise only where a source actually described one", () => {
   // The whole retained record, read the way the page reads it. One building in
-  // 1,000 carries the words; the claim is not made anywhere else.
+  // 1,000 originally carried the words; later research adds two scoped descriptions.
   const record = JSON.parse(fs.readFileSync(new URL("../dist/data.json", import.meta.url)));
   const called = record.homes.filter((h) => buildingForm(h).status === "high_rise");
-  assert.deepEqual(called.map((h) => h.id), ["73-east-lake"]);
-  const only = buildingForm(called[0]);
+  assert.deepEqual(called.map((h) => h.id), ["coast", "215-west", "73-east-lake"]);
+  const only = buildingForm(called.find(h => h.id === "73-east-lake"));
   assert.equal(only.phrase.toLowerCase(), "high-rise");
-  assert.match(only.quote, /Spacious high-rise homes/);
-  assert.equal(only.observed_at, "2026-09-07", "the source's own date, never today's");
+  assert.match(only.quote, /42-story high-rise/);
+  assert.equal(only.observed_at, "2026-09-22", "the research source date, not the older rent observation");
   assert.equal(record.homes.filter((h) => buildingForm(h).status === "low_mid_rise").length, 0,
     "nothing in this record affirmatively establishes a low or mid-rise, so nothing claims one");
   // Of the 978 provider listings, NONE can be classified: the provider's

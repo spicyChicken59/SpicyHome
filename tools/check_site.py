@@ -4,6 +4,8 @@ from urllib.parse import urlsplit
 ROOT=pathlib.Path(__file__).resolve().parents[1];DIST=ROOT/'dist';errors=[]
 sys.path.insert(0,str(ROOT/'src'))
 from eligibility import valid_evidence
+from home_evidence import valid_home_evidence, load_home_research
+load_home_research()
 html=(DIST/'index.html').read_text()
 for ref in re.findall(r'(?:src|href)="([^"#]+)"',html):
  if not ref.startswith(('http:','https:','data:','mailto:')) and not (DIST/urlsplit(ref).path).is_file() and ref!='./':errors.append('Missing local asset: '+ref)
@@ -16,6 +18,7 @@ for name,expected in manifest['files'].items():
 feed=json.loads((DIST/'data.json').read_text());ids=[]
 for h in feed['homes']:
  ids.append(h['id'])
+ if 'home_evidence' in h and not valid_home_evidence(h['home_evidence']):errors.append('Invalid home research: '+h['id'])
  if 'eligibility_evidence' in h and not valid_evidence(h['eligibility_evidence']):errors.append('Invalid eligibility evidence: '+h['id'])
  for field in ['bedrooms','bathrooms']:
   value=h.get(field)

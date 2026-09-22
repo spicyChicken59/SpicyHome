@@ -4,6 +4,7 @@ No scraping, scoring service, email, or secrets in browser outputs.
 from __future__ import annotations
 import argparse, copy, datetime as dt, hashlib, json, math, os, pathlib, re, sys, urllib.error, urllib.parse, urllib.request
 from eligibility import annotate_home, load_evidence, retain_evidence
+from home_evidence import load_home_research, annotate_home_research, retain_home_research
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 UTC=dt.timezone.utc
 ENDPOINT='https://api.rentcast.io/v1/listings/rental/long-term'
@@ -147,8 +148,12 @@ def normalize(rows,config,at):
     homes=[h for h in homes if h['id'] not in excluded['layout_corrections']]
     return homes,excluded
 
-def combine(previous,seed,homes,excluded,total,returned,at,query,evidence=None,eligibility=None):
+def combine(previous,seed,homes,excluded,total,returned,at,query,evidence=None,eligibility=None,research=None):
     if eligibility is None:eligibility=load_evidence()
+    if research is None:research=load_home_research()
+    previous_by_id={h['id']:h for h in previous.get('homes',[])}
+    seed=copy.deepcopy(seed)
+    seed['homes']=[retain_home_research(previous_by_id.get(h['id'],h),h) for h in seed['homes']]
     scanned_city=query.get('city','Chicago')
     if evidence is None:evidence={}
     def remember(ident,layout):
@@ -174,7 +179,7 @@ def combine(previous,seed,homes,excluded,total,returned,at,query,evidence=None,e
         prior=old.pop(h['id'],None)
         if h['id'] in evidence:h=preserve_layout_evidence(evidence[h['id']],h)
         if prior:
-            h=retain_evidence(prior,h)
+            h=retain_home_research(prior,retain_evidence(prior,h))
             h=preserve_layout_evidence(prior,h)
             history=list(prior.get('history',[]))
             # Same UTC day's price is the latest observed quote, never a fake extra day.
@@ -217,7 +222,7 @@ def combine(previous,seed,homes,excluded,total,returned,at,query,evidence=None,e
         for group in buckets.values():
             if index<len(group):balanced.append(group[index])
     result['homes']=copy.deepcopy(seed['homes'])+balanced[:max(0,1000-len(seed['homes']))]
-    result['homes']=[annotate_home(home,eligibility) for home in result['homes']]
+    result['homes']=[annotate_home_research(annotate_home(home,eligibility),research) for home in result['homes']]
     result['provider']['archived_from_current_view']=len(current)+len(seed['homes'])-len(result['homes'])
     for key in ['charging_stations','transit_stops','city_context']:
         if key in previous: result[key]=previous[key]

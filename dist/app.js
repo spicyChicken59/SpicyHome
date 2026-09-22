@@ -146,9 +146,13 @@ function savedSource(id, home) {
     result.eligibility_update = { evidence, recorded_at: new Date().toISOString() };
   if (prior.home_evidence_update) result.home_evidence_update = prior.home_evidence_update;
   const research = home && homeEvidenceReading(home, prior).current;
-  const keptResearch = prior.home_evidence_update?.evidence ?? prior.snapshot?.home_evidence;
-  if (prior.snapshot && research && JSON.stringify(research) !== JSON.stringify(keptResearch))
-    result.home_evidence_update = { evidence: mergeHomeEvidence(keptResearch, research), recorded_at: new Date().toISOString() };
+  const keptResearch = prior.home_evidence_update?.evidence ?? prior.snapshot?.home_evidence ?? [];
+  if (prior.snapshot && research) {
+    // Feed omissions and assertion ordering do not change the retained history.
+    const merged = mergeHomeEvidence(keptResearch, research);
+    if (JSON.stringify(merged) !== JSON.stringify(keptResearch))
+      result.home_evidence_update = { evidence: merged, recorded_at: new Date().toISOString() };
+  }
   return result;
 }
 const dateLabel = (s) => {

@@ -1233,26 +1233,36 @@ const formLabels = {
 const formShort = { high_rise: "High-rise recorded", low_mid_rise: "Low/mid-rise recorded", unknown: "Height not recorded" };
 function formSources(home) {
   const url = safeUrl(home.source_url), at = home.observed_at;
-  const out = [];
-  for (const e of home.home_evidence ?? [])
-    if (e.attribute === "height" && e.status === "reported" && e.scope === "building")
-      out.push({ field: e.source.name, text: e.value, url: safeUrl(e.source.url), observed_at: e.source.observed_at });
+  // The caller supplies the current or archived evidence context. Use the same
+  // latest source/scope/subject reading as the general attribute reader.
+  const height = attributeEvidence(home, (home.home_evidence ?? []).filter(e => e.attribute === "height"));
+  const applicable = height.entries.filter(e => evidenceApplies(e, home));
+  const out = applicable.filter(e => e.status === "reported").map(e => ({
+    field: e.source.name, text: e.value, url: safeUrl(e.source.url), observed_at: e.source.observed_at,
+  }));
+  const addLegacy = entry => {
+    // A dated correction from this source also supersedes its older, unscoped
+    // description. Unrelated sources and later legacy observations stay readable.
+    if (!applicable.some(e => safeUrl(e.source.url) === entry.url &&
+      (!dateOk(entry.observed_at) || e.source.observed_at >= entry.observed_at.slice(0, 10)))) out.push(entry);
+  };
   if (typeof home.atmosphere === "string" && home.atmosphere.trim())
-    out.push({ field: "the building description", text: home.atmosphere.trim(), url, observed_at: at });
+    addLegacy({ field: "the building description", text: home.atmosphere.trim(), url, observed_at: at });
   for (const item of Array.isArray(home.amenities) ? home.amenities : [])
     if (typeof item === "string" && item.trim())
-      out.push({ field: "the advertised amenities", text: item.trim(), url, observed_at: at });
+      addLegacy({ field: "the advertised amenities", text: item.trim(), url, observed_at: at });
   for (const source of Array.isArray(home.sources) ? home.sources : [])
     if (source && typeof source.supports === "string" && source.supports.trim())
-      out.push({ field: "a cited source note", text: source.supports.trim(), url: safeUrl(source?.url) || url,
+      addLegacy({ field: "a cited source note", text: source.supports.trim(), url: safeUrl(source?.url) || url,
         observed_at: dateOk(source?.observed_at) ? source.observed_at : at });
-  return out;
+  return { entries: out, status: height.status, unconfirmed: applicable.some(e => e.status === "unknown") };
 }
 export function buildingForm(home = {}) {
   const title = String(home.title ?? "").toLowerCase();
   const hits = [];
   let named = false;
-  for (const entry of formSources(home)) {
+  const sources = formSources(home);
+  for (const entry of sources.entries) {
     for (const rule of formPhrases) {
       const found = rule.re.exec(entry.text);
       if (!found) continue;
@@ -1266,9 +1276,9 @@ export function buildingForm(home = {}) {
   }
   const statuses = new Set(hits.map((hit) => hit.status));
   // Two sources describing one building two ways is not a reading either way.
-  if (statuses.size > 1)
+  if (sources.status === "conflicting" || statuses.size > 1)
     return { status: "unknown", label: formLabels.unknown, short: formShort.unknown, reason: "conflicting_text",
-      because: "This record’s own sources describe the building two different ways.",
+      because: sources.status === "conflicting" ? "Current height evidence is conflicting; older assertions do not resolve it." : "This record’s own sources describe the building two different ways.",
       phrase: null, field: null, quote: "", url: "", observed_at: null };
   const [hit] = hits;
   if (hit)
@@ -1277,8 +1287,9 @@ export function buildingForm(home = {}) {
       phrase: hit.phrase, field: hit.field, quote: hit.text.slice(0, 240), url: hit.url,
       observed_at: dateOk(hit.observed_at) ? hit.observed_at : null };
   return { status: "unknown", label: formLabels.unknown, short: formShort.unknown,
-    reason: named ? "name_only" : "no_recorded_description",
-    because: named
+    reason: sources.unconfirmed ? "current_height_unconfirmed" : named ? "name_only" : "no_recorded_description",
+    because: sources.unconfirmed ? "The latest applicable source does not establish the building’s height. Earlier descriptions remain in the research history."
+      : named
       ? "The only mention of a tower here is the building’s own name, which describes nothing."
       : "Nothing in this record’s retained sources describes the building’s height. Unknown is not a low-rise.",
     phrase: null, field: null, quote: "", url: "", observed_at: null };
@@ -1623,6 +1634,9 @@ export function homeEvidenceReading(home, record = {}) {
   return { original, current, evidence: current ?? saved, context: current ? "Current research" : "Saved research" };
 }
 function evidenceApplies(e, h) {
+  // Height describes the building itself, including a general building claim;
+  // it never establishes a plan/unit's floor or a selected-home amenity.
+  if (e.attribute === "height") return e.scope === "building" && e.applies !== "selected";
   if (e.applies === "selected" || e.applies === "general") return false;
   if (e.scope === "plan") return e.applies === "exact" && e.subject === h.floor_plan;
   if (e.scope === "unit") return e.applies === "exact" && e.subject === h.unit_label;
@@ -1630,6 +1644,9 @@ function evidenceApplies(e, h) {
 }
 export function attributeReading(home, record, attribute) {
   const observations = homeEvidenceReading(home, record).evidence.filter(e => e.attribute === attribute);
+  return attributeEvidence(home, observations);
+}
+function attributeEvidence(home, observations) {
   // One source's newest assertion for one subject supersedes only that source's
   // older assertion. Different sources that disagree remain visibly unresolved.
   const latest = new Map();

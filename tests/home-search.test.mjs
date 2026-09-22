@@ -78,15 +78,19 @@ test('real research: five leads, zero full preset matches; source counts are ret
 const html=fs.readFileSync(new URL('../dist/index.html',import.meta.url),'utf8');
 const code=fs.readFileSync(new URL('../dist/model.js',import.meta.url),'utf8').replace(/^export\s+/gm,'')+'\n'+fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8').replace(/^import\s*\{[\s\S]*?\}\s*from\s*["']\.\/model\.js(?:\?[^"']*)?["'];?\s*/,'');
 const KEY='spicyhome.workspace.v1';
-async function boot(homes,notebook=null) {
+async function boot(homes,notebook=null,now=null) {
  const errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e.message));
  const dom=new JSDOM(html,{url:'https://downtown-fixture.test/',runScripts:'outside-only',virtualConsole:vc});const w=dom.window,doc=w.document;
+ if(now) { const NativeDate=w.Date; w.Date=class extends NativeDate {
+   constructor(...args){super(...(args.length ? args : [now]));}
+   static now(){return new NativeDate(now).getTime();}
+ }; }
  w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};
  w.matchMedia=()=>({matches:false});w.confirm=()=>true;w.URL.createObjectURL=()=> 'blob:synthetic';w.URL.revokeObjectURL=()=>{};w.HTMLAnchorElement.prototype.click=()=>{};
  if(notebook)w.localStorage.setItem(KEY,JSON.stringify(notebook));
  const data={...feed,homes};w.fetch=async url=>({ok:true,text:async()=>JSON.stringify(String(url).includes('config.json')?{feed_url:'fixture',fallback_url:'fixture'}:data)});
  w.eval(code);for(let i=0;i<80&&!doc.querySelector('#apply-downtown');i++)await new Promise(r=>setTimeout(r,3));
- return {w,doc,errors,notebook:()=>JSON.parse(w.localStorage.getItem(KEY)),close:()=>{w.close();assert.deepEqual(errors,[]);}};
+ return {w,doc,errors,setNow:at=>{now=at;},notebook:()=>JSON.parse(w.localStorage.getItem(KEY)),close:()=>{w.close();assert.deepEqual(errors,[]);}};
 }
 const input=(d,selector,value)=>{const el=d.doc.querySelector(selector);el.value=value;el.dispatchEvent(new d.w.Event('change',{bubbles:true}));};
 const importText=(d,text)=>d.doc.querySelector('#import-file').onchange({target:{files:[{size:text.length,text:async()=>text}],value:''}});
@@ -138,4 +142,191 @@ test('later observations append to separately saved history when an incoming fee
 
 test('zero-match state names missing evidence and requires an explicit single-criterion relaxation',async()=>{
  const d=await boot([replace(fixture('lead'),'balcony',null)]);click(d,'#apply-downtown');assert.equal(d.doc.querySelectorAll('#results .home-card').length,0);assert.match(d.doc.querySelector('.criteria-gaps').textContent,/Private balcony: 1 need confirmation/);assert.equal(d.notebook().preferences.privateBalcony,true);click(d,'[data-relax-home="privateBalcony"]');assert.equal(d.notebook().preferences.privateBalcony,false);assert.equal(d.notebook().preferences.inUnitLaundry,true);assert.equal(d.doc.querySelectorAll('#results .home-card').length,1);d.close();
+});
+
+test('correction A: repeated save of an incoming subset keeps the first effective research recording time',async()=>{
+ const h=fixture('history'),snapshot={...h,home_evidence:[]};
+ const old=assertion('view','Courtyard',{source:{name:'Old fixture',url:'https://example.invalid/old',observed_at:'2026-09-20'}});
+ const notebook={...emptyWorkspace(),records:{history:{saved:true,snapshot,home_evidence_update:{evidence:[old],recorded_at:'2026-09-20T12:00:00Z'}}}};
+ const d=await boot([h],notebook,'2026-09-22T12:00:00Z');
+ try {
+   click(d,'[data-view="shortlist"]');click(d,'[data-detail="history"]');saveRecord(d);
+   const first=d.notebook().records.history;
+   assert.deepEqual(first.home_evidence_update.evidence,[old,...h.home_evidence]);
+   assert.equal(first.home_evidence_update.recorded_at,'2026-09-22T12:00:00.000Z');
+   d.setNow('2026-09-23T12:00:00Z');
+   click(d,'[data-detail="history"]');saveRecord(d);
+   assert.deepEqual(d.notebook().records.history.home_evidence_update,first.home_evidence_update);
+   assert.deepEqual(d.notebook().records.history.snapshot,snapshot);
+ } finally {d.close();}
+});
+
+const heightAssertion=(value,day='2026-09-20',extra={})=>assertion('height',value,{
+ scope:'building',subject:'Synthetic building',applies:'all',
+ source:{name:'Synthetic height source',url:'https://example.invalid/height',observed_at:day},...extra
+});
+for(const status of ['unknown','conflicting'])test(`correction B: newer same-source ${status} supersedes historical height`,()=>{
+ const h=fixture('height',{home_evidence:[heightAssertion('20-story building'),heightAssertion(null,'2026-09-22',{status})]});
+ assert.equal(attributeReading(h,{},'height').status,status);
+ assert.equal(buildingForm(h).status,'unknown');
+ assert.equal(criteriaReading(h,{}, {...defaults,requireHighRise:true}).status,'lead');
+ assert.equal(h.home_evidence.length,2,'Both historical assertions stay retained');
+});
+
+test('correction A: notes, stage, finalist and save actions preserve effective history through subsets, reorder, archive and reappearance',async()=>{
+ const h=fixture('stable'),snapshot={...h,home_evidence:[]};
+ const old=assertion('view','Courtyard',{source:{name:'Old fixture',url:'https://example.invalid/old',observed_at:'2026-09-20'}});
+ const retained={evidence:[old,...h.home_evidence],recorded_at:'2026-09-22T12:00:00Z'};
+ const scan={basis:'curated_research',city:'Chicago',saved_at:'2026-09-07T12:00:00Z',observed_at:'2026-09-07',feed_generated_at:'2026-09-07T10:00:00Z'};
+ const eligibilityUpdate={evidence:eligibility('address'),recorded_at:'2026-09-20T12:00:00Z'};
+ const quotes=[{rent:2200,date:'2026-09-19',date_basis:'entered',recorded_at:'2026-09-19T12:00:00Z'}];
+ let notebook={...emptyWorkspace(),records:{stable:{saved:true,snapshot,scan,parkingCost:0,utilities:0,
+   rentOverride:2200,quoteDate:'2026-09-19',quote_history:quotes,eligibility_update:eligibilityUpdate,home_evidence_update:retained}}};
+ validateWorkspace(notebook);
+ const unchanged=d=>{
+   const r=d.notebook().records.stable;
+   for(const [key,value] of Object.entries({snapshot,scan,parkingCost:0,utilities:0,rentOverride:2200,
+     quoteDate:'2026-09-19',quote_history:quotes,eligibility_update:eligibilityUpdate,home_evidence_update:retained}))
+     assert.deepEqual(r[key],value,key);
+ };
+ const variants=[h,{...h,home_evidence:[...h.home_evidence].reverse()},
+   {...h,home_evidence:h.home_evidence.slice(2,3)},{...h,home_evidence:[]},null,h];
+ for(const [index,current] of variants.entries()) {
+   const d=await boot(current?[current]:[],notebook,`2026-09-${23+index}T12:00:00Z`);
+   try {
+     click(d,'[data-view="shortlist"]');click(d,'[data-detail="stable"]');
+     d.doc.querySelector('#notes').value=`Personal note ${index}`;saveRecord(d);unchanged(d);
+     input(d,'[data-stage="stable"]','researching');unchanged(d);
+     click(d,'[data-finalist="stable"]');unchanged(d);
+     click(d,'[data-finalist="stable"]');unchanged(d);
+     if(current) {
+       click(d,'[data-view="discover"]');
+       click(d,'#results [data-save="stable"]');unchanged(d);
+       click(d,'#results [data-save="stable"]');unchanged(d);
+     }
+     notebook=d.notebook();assert.equal(notebook.records.stable.notes,`Personal note ${index}`);
+   } finally {d.close();}
+ }
+ // A genuinely new assertion is appended once after reappearance. A later
+ // stage/notes save cannot manufacture a second research observation or quote.
+ const fresh=assertion('floor',24,{scope:'unit',subject:'X24',source:{name:'New fixture',url:'https://example.invalid/new',observed_at:'2026-09-29'}});
+ const d=await boot([{...h,home_evidence:[...h.home_evidence,fresh]}],notebook,'2026-09-29T12:00:00Z');
+ try {
+   click(d,'[data-view="shortlist"]');click(d,'[data-detail="stable"]');saveRecord(d);
+   const once=d.notebook().records.stable;
+   assert.deepEqual(once.home_evidence_update,{evidence:[...retained.evidence,fresh],recorded_at:'2026-09-29T12:00:00.000Z'});
+   d.setNow('2026-09-30T12:00:00Z');input(d,'[data-stage="stable"]','shortlisted');
+   click(d,'[data-detail="stable"]');saveRecord(d);
+   assert.deepEqual(d.notebook().records.stable.home_evidence_update,once.home_evidence_update);
+   assert.deepEqual(d.notebook().records.stable.snapshot,snapshot);
+   assert.deepEqual(d.notebook().records.stable.scan,scan);
+   assert.deepEqual(d.notebook().records.stable.quote_history,quotes);
+   assert.deepEqual(d.notebook().records.stable.eligibility_update,eligibilityUpdate);
+ } finally {d.close();}
+});
+
+test('correction A: an empty incoming ledger does not create a dated empty update',async()=>{
+ const snapshot=fixture('empty',{home_evidence:undefined});
+ const d=await boot([{...snapshot,home_evidence:[]}],{...emptyWorkspace(),records:{empty:{saved:true,snapshot}}},'2026-09-22T12:00:00Z');
+ try {
+   click(d,'[data-view="shortlist"]');click(d,'[data-detail="empty"]');saveRecord(d);
+   assert.equal(d.notebook().records.empty.home_evidence_update,undefined);
+ } finally {d.close();}
+});
+
+test('correction B: latest same-source corrections replace the reading without removing history or depending on array order',()=>{
+ const old=heightAssertion('20-story building');
+ for(const value of ['8-story building','30-story building']) {
+   const correction=heightAssertion(value,'2026-09-22',{applies:'general'});
+   for(const evidence of [[old,correction],[correction,old]]) {
+     const h=fixture('corrected',{home_evidence:evidence}),before=clone(h);
+     assert.equal(attributeReading(h,{},'height').value,value);
+     assert.equal(buildingForm(h).status,value.startsWith('8')?'low_mid_rise':'high_rise');
+     assert.equal(buildingForm(h).observed_at,'2026-09-22');
+     assert.equal(criteriaReading(h,{}, {...defaults,requireHighRise:true}).status,value.startsWith('8')?'excluded':'match');
+     assert.equal(attributeReading(h,{},'floor').status,'unknown');
+     assert.equal(attributeReading(h,{},'view').status,'unknown');
+     assert.deepEqual(h,before);
+   }
+ }
+});
+
+test('correction B: independent current disagreements remain unresolved, including two different high-rise counts',()=>{
+ for(const value of ['8-story building','30-story building',null]) {
+   const other=heightAssertion(value,'2026-09-22',{status:value===null?'conflicting':'reported',
+     source:{name:'Independent source',url:'https://example.invalid/other-height',observed_at:'2026-09-22'}});
+   const h=fixture('conflict',{home_evidence:[heightAssertion('20-story building'),other]});
+   assert.equal(attributeReading(h,{},'height').status,'conflicting');
+   assert.equal(buildingForm(h).status,'unknown');
+   assert.equal(criteriaReading(h,{}, {...defaults,requireHighRise:true}).status,'lead');
+ }
+ const unknown=heightAssertion(null,'2026-09-22');
+ const independent=heightAssertion('8-story building','2026-09-22',{source:{...unknown.source,url:'https://example.invalid/independent'}});
+ const h=fixture('independent',{home_evidence:[heightAssertion('20-story building'),unknown,independent]});
+ assert.equal(buildingForm(h).status,'low_mid_rise','An independent current source may support a reading; the superseded 20-story claim may not');
+});
+
+test('correction B: scope and subject identity bound supersession; plan/unit claims never establish building height',()=>{
+ const old=heightAssertion('20-story building');
+ for(const patch of [{scope:'unit',subject:'P1',applies:'exact'},{scope:'plan',subject:'P1',applies:'exact'},
+   {scope:'building',subject:'Other building'}]) {
+   const h=fixture('scope',{home_evidence:[old,heightAssertion(null,'2026-09-22',patch)]});
+   assert.equal(buildingForm(h).status,'high_rise');
+ }
+ for(const patch of [{scope:'unit',subject:'P1',applies:'exact'},{scope:'plan',subject:'P1',applies:'exact'},{applies:'selected'}]) {
+   const h=fixture('unqualified',{home_evidence:[heightAssertion('20-story building','2026-09-22',patch)]});
+   assert.equal(buildingForm(h).status,'unknown');assert.equal(attributeReading(h,{},'height').status,'unknown');
+ }
+});
+
+test('correction B: applicable corrections supersede older same-source legacy text, preserving independent and uncorrected legacy evidence',()=>{
+ const legacy=fixture('legacy',{home_evidence:[],source_url:'https://example.invalid/height',atmosphere:'20-story building',
+   amenities:['High-rise building'],sources:[{url:'https://example.invalid/height',supports:'20-story building',observed_at:'2026-09-20'}]});
+ assert.equal(buildingForm(legacy).status,'high_rise');
+ for(const status of ['unknown','conflicting']) {
+   const h={...legacy,home_evidence:[heightAssertion(null,'2026-09-22',{status})]};
+   assert.equal(buildingForm(h).status,'unknown');
+ }
+ const corrected={...legacy,home_evidence:[heightAssertion('8-story building','2026-09-22')]};
+ assert.equal(buildingForm(corrected).status,'low_mid_rise');
+ assert.equal(buildingForm({...legacy,home_evidence:[heightAssertion(null,'2026-09-22',{scope:'plan',subject:'P1'})]}).status,'high_rise');
+ assert.equal(buildingForm({...legacy,home_evidence:[heightAssertion(null,'2026-09-22')],
+   sources:[{url:'https://example.invalid/independent',supports:'20-story building',observed_at:'2026-09-21'}]}).status,'high_rise');
+ assert.equal(buildingForm({...legacy,home_evidence:[heightAssertion(null,'2026-09-22')],
+   sources:[{url:'https://example.invalid/height',supports:'20-story building',observed_at:'2026-09-23'}]}).status,'high_rise');
+});
+
+for(const status of ['unknown','conflicting'])test(`correction B: cards, dossier, comparison and archived controls agree on ${status} height`,async()=>{
+ const old=heightAssertion('20-story building'),correction=heightAssertion(null,'2026-09-22',{status});
+ const original=fixture('changed',{home_evidence:[...fixture().home_evidence.filter(e=>e.attribute!=='height'),old]});
+ const current={...original,home_evidence:[...original.home_evidence,correction]},other=fixture('other');
+ let notebook={...emptyWorkspace(),preferences:p,records:{changed:{saved:true,snapshot:original},other:{saved:true,snapshot:other}}};
+ assert.equal(buildingForm(original).status,'high_rise');
+ for(const homes of [[current,other],[other],[current,other]]) {
+   const archived=homes.length===1,d=await boot(homes,notebook,'2026-09-23T12:00:00Z');
+   try {
+     if(!archived) {
+       click(d,'[data-evidence-group="matches"]');
+       assert(!d.doc.querySelector('#results [data-home="changed"]'),'Not a supported match');
+       click(d,'[data-evidence-group="leads"]');
+       const card=d.doc.querySelector('#results [data-home="changed"]');assert(card);
+       assert.match(card.querySelector('.home-evidence-summary').textContent,/Height not recorded/);
+       assert.doesNotMatch(card.textContent,/High-rise recorded/);
+     }
+     click(d,'[data-view="shortlist"]');click(d,'[data-detail="changed"]');
+     assert.match(d.doc.querySelector('.detail-form').textContent,/Height not recorded/);
+     assert.match(d.doc.querySelector('.original-home-evidence').textContent,/20-story building/);
+     assert.match(d.doc.querySelector('#detail-home-evidence').textContent,new RegExp('height · '+status));
+     d.doc.querySelector('#notes').value=archived?'Archived correction note':'Live correction note';saveRecord(d);
+     for(const id of ['changed','other'])click(d,`[data-compare="${id}"]`);
+     click(d,'#open-compare');
+     const label=[...d.doc.querySelectorAll('.sc-compare-pair__measure')].find(el=>el.textContent.startsWith('Building form on record'));
+     assert.deepEqual([...label.nextElementSibling.querySelectorAll('.sc-figure')].map(el=>el.textContent),['Height not recorded','High-rise recorded']);
+     notebook=d.notebook();assert.deepEqual(notebook.records.changed.snapshot,original);
+     assert.deepEqual(notebook.records.changed.home_evidence_update.evidence,current.home_evidence);
+     const context=archived?{...original,notebook_only:true}:current;
+     assert.equal(attributeReading(context,notebook.records.changed,'height').status,status);
+     assert.equal(buildingForm({...context,home_evidence:homeEvidenceReading(context,notebook.records.changed).evidence}).status,'unknown');
+   } finally {d.close();}
+ }
 });

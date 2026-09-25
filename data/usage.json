@@ -107,7 +107,13 @@
       "at": "2026-09-24T17:52:07.629289Z",
       "status": "consumed",
       "city": "Evanston"
+    },
+    {
+      "id": "36170322679-1",
+      "at": "2026-09-25T17:57:16.308465Z",
+      "status": "reserved",
+      "city": "Oak Park"
     }
   ],
-  "next_city": "Oak Park"
+  "next_city": "Park Ridge"
 }

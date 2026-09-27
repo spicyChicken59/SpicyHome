@@ -119,7 +119,13 @@
       "at": "2026-09-26T17:10:48.769064Z",
       "status": "consumed",
       "city": "Park Ridge"
+    },
+    {
+      "id": "36338036243-1",
+      "at": "2026-09-27T17:44:54.017410Z",
+      "status": "reserved",
+      "city": "Elmhurst"
     }
   ],
-  "next_city": "Elmhurst"
+  "next_city": "Downers Grove"
 }

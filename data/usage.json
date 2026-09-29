@@ -131,7 +131,13 @@
       "at": "2026-09-28T20:07:18.124134Z",
       "status": "consumed",
       "city": "Downers Grove"
+    },
+    {
+      "id": "36613477000-1",
+      "at": "2026-09-29T18:38:31.290764Z",
+      "status": "reserved",
+      "city": "Arlington Heights"
     }
   ],
-  "next_city": "Arlington Heights"
+  "next_city": "Naperville"
 }

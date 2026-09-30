@@ -137,7 +137,13 @@
       "at": "2026-09-29T18:38:31.290764Z",
       "status": "consumed",
       "city": "Arlington Heights"
+    },
+    {
+      "id": "36758588538-1",
+      "at": "2026-09-30T18:26:43.891516Z",
+      "status": "reserved",
+      "city": "Naperville"
     }
   ],
-  "next_city": "Naperville"
+  "next_city": "Chicago"
 }

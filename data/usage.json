@@ -143,7 +143,13 @@
       "at": "2026-09-30T18:26:43.891516Z",
       "status": "consumed",
       "city": "Naperville"
+    },
+    {
+      "id": "36910193077-1",
+      "at": "2026-10-01T18:53:34.264877Z",
+      "status": "reserved",
+      "city": "Chicago"
     }
   ],
-  "next_city": "Chicago"
+  "next_city": "Evanston"
 }

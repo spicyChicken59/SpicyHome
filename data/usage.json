@@ -149,7 +149,13 @@
       "at": "2026-10-01T18:53:34.264877Z",
       "status": "consumed",
       "city": "Chicago"
+    },
+    {
+      "id": "37047251375-1",
+      "at": "2026-10-02T18:24:59.625154Z",
+      "status": "reserved",
+      "city": "Evanston"
     }
   ],
-  "next_city": "Evanston"
+  "next_city": "Oak Park"
 }

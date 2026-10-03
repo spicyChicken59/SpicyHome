@@ -1690,17 +1690,18 @@ export function moveInReading(home, record = {}, target = "") {
   return { ...read, timing: after ? "after" : "reported", label: `Advertised ${read.value}${after ? " — after your target" : " — reconfirm for your target"}` };
 }
 export function criteriaReading(home, record = {}, p = defaults) {
-  const missing = [], excluded = [], supported = [];
+  const missing = [], missingCriteria = [], excluded = [], supported = [];
+  const needs = (key, label) => { missing.push(label); missingCriteria.push({ key, label }); };
   const area = areaIdentity(home, record), labels = area.areas.map(areaKey);
   if ((p.excludeAreas ?? []).some(n => labels.includes(areaKey(n)))) excluded.push(`Excluded area: ${area.areas.join(" / ")}`);
-  if ((p.includeAreas?.length || p.excludeAreas?.length) && area.status !== "supported") missing.push("Neighborhood identity" + (area.status === "conflicting" ? " (sources conflict)" : ""));
+  if ((p.includeAreas?.length || p.excludeAreas?.length) && area.status !== "supported") needs("neighborhood", "Neighborhood identity" + (area.status === "conflicting" ? " (sources conflict)" : ""));
   else if (p.includeAreas?.length && !p.includeAreas.some(n => labels.includes(areaKey(n)))) excluded.push("Outside selected neighborhoods");
   const check = (active, key, label, predicate, negatives) => {
     if (!active) return;
     const r = attributeReading(home, record, key);
     if (r.status === "supported" && predicate(r.value)) supported.push(label);
     else if (r.status === "supported" && negatives(r.value)) excluded.push(`${label}: source reports ${String(r.value).replaceAll("_", " ")}`);
-    else missing.push(`${label}${r.status === "conflicting" ? " (sources conflict)" : r.entries.some(e => e.applies === "selected") ? " for this plan/unit (selected homes only)" : " for this plan/unit"}`);
+    else needs(key, `${label}${r.status === "conflicting" ? " (sources conflict)" : r.entries.some(e => e.applies === "selected") ? " for this plan/unit (selected homes only)" : " for this plan/unit"}`);
   };
   check(p.privateBalcony, "balcony", "Private balcony", v => v === "private", v => ["juliet", "shared", "none"].includes(v));
   check(p.inUnitLaundry, "laundry", "In-unit washer AND dryer", v => v === "in_unit_both", v => ["washer_only", "dryer_only", "shared", "hookups", "none"].includes(v));
@@ -1709,28 +1710,50 @@ export function criteriaReading(home, record = {}, p = defaults) {
     const form = buildingForm({ ...home, home_evidence: homeEvidenceReading(home, record).evidence });
     if (form.status === "high_rise") supported.push("High-rise building");
     else if (form.status === "low_mid_rise") excluded.push("Source describes a low/mid-rise building");
-    else missing.push("Building height");
+    else needs("height", "Building height");
   }
   if (p.excludeRestricted) {
     const prior = eligibilityReading(home, record).evidence;
     const r = attributeReading(home, record, "eligibility");
     const exactRestricted = r.status === "supported" && r.value === "income_restricted" && r.entries.some(e => ["plan", "unit"].includes(e.scope) && e.applies === "exact" && evidenceApplies(e, home));
     const exactMarket = r.status === "supported" && r.value === "unrestricted" && r.entries.some(e => e.applies === "exact" && evidenceApplies(e, home));
-    if (r.status === "conflicting" || prior?.scope === "offer" && exactMarket) missing.push("Eligibility sources conflict; verify this offer");
+    if (r.status === "conflicting" || prior?.scope === "offer" && exactMarket) needs("eligibility", "Eligibility sources conflict; verify this offer");
     else if (prior?.scope === "offer" || exactRestricted) excluded.push("Documented income-restricted offer");
-    else if ((prior || r.entries.some(e => e.value === "mixed_program" || e.value === "income_restricted")) && !exactMarket) missing.push("Address/program evidence: verify this offer’s eligibility");
+    else if ((prior || r.entries.some(e => e.value === "mixed_program" || e.value === "income_restricted")) && !exactMarket) needs("eligibility", "Address/program evidence: verify this offer’s eligibility");
   }
-  return { status: excluded.length ? "excluded" : missing.length ? "lead" : "match", missing, excluded, supported, area };
+  return { status: excluded.length ? "excluded" : missing.length ? "lead" : "match", missing, missingCriteria, excluded, supported, area };
+}
+export const unresolvedBuckets = [
+  { key: "neighborhood_only", label: "Neighborhood only", detail: "Neighborhood identity is the only unresolved active criterion." },
+  { key: "one_check", label: "Neighborhood + one check", detail: "Neighborhood identity and exactly one other active criterion need verification." },
+  { key: "several_checks", label: "Several checks remain", detail: "Neighborhood identity and two or more other active criteria need verification." },
+];
+// A projection of the shared criteria result, never another evidence reader or
+// apartment score. Exclusions win. No derived location or notebook timestamp
+// can supply evidence or reduce the number of checks.
+export function unresolvedTriage(reading) {
+  if (reading.status === "excluded" || !reading.missingCriteria.some(c => c.key === "neighborhood")) return null;
+  const otherChecks = reading.missingCriteria.filter(c => c.key !== "neighborhood").length;
+  const order = Math.min(otherChecks, 2);
+  return { ...unresolvedBuckets[order], order, otherChecks, missingCriteria: reading.missingCriteria };
 }
 export function discoveryGroups(homes, workspace, prefs = defaults, feed = {}) {
   const groups = { matches: [], leads: [], unresolved: [], excluded: [] };
+  const triage = new Map();
   const base = baseVisibleHomes(homes, workspace, prefs, feed);
   const ids = new Set(base.map(h => h.id));
   for (const h of base) {
     const r = criteriaReading(h, workspace.records[h.id] ?? {}, prefs);
-    groups[r.status === "excluded" ? "excluded" : r.status === "match" ? "matches" : r.area.status !== "supported" && (prefs.includeAreas?.length || prefs.excludeAreas?.length) ? "unresolved" : "leads"].push(h);
+    triage.set(h.id, unresolvedTriage(r));
+    groups[r.status === "excluded" ? "excluded" : r.status === "match" ? "matches" : triage.get(h.id) ? "unresolved" : "leads"].push(h);
   }
   groups.excluded.push(...homes.filter(h => !ids.has(h.id)));
+  // Fixed bucket order, then the record's source observation (newest first),
+  // then ID in code-unit order. Rent, distance, preferences.sort, personal
+  // quotes, saved_at and later research recording times never rank this queue.
+  const observed = h => Number.isFinite(Date.parse(h.observed_at)) ? Date.parse(h.observed_at) : -Infinity;
+  groups.unresolved.sort((a, b) => triage.get(a.id).order - triage.get(b.id).order
+    || observed(b) - observed(a) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   return groups;
 }
 export function visibleHomes(homes, workspace, prefs = defaults, feed = {}) {

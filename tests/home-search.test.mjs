@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { JSDOM, VirtualConsole } from 'jsdom';
-import { defaults, downtownSearch, criteriaReading, discoveryGroups, visibleHomes, emptyWorkspace, validatePreferences, validateWorkspace, validateHome, validHomeEvidence, attributeReading, homeEvidenceReading, moveInReading, preferredBudget, buildingForm, leasingQuestions } from '../dist/model.js';
+import { defaults, downtownSearch, criteriaReading, discoveryGroups, unresolvedBuckets, unresolvedTriage, visibleHomes, emptyWorkspace, validatePreferences, validateWorkspace, validateHome, validHomeEvidence, attributeReading, areaIdentity, urbanSetting, sourceAccess, homeEvidenceReading, moveInReading, preferredBudget, buildingForm, leasingQuestions } from '../dist/model.js';
 const clone = v => structuredClone(v);
 const feed = JSON.parse(fs.readFileSync(new URL('../dist/data.json',import.meta.url)));
 const p = downtownSearch(defaults);
@@ -329,4 +329,229 @@ for(const status of ['unknown','conflicting'])test(`correction B: cards, dossier
      assert.equal(buildingForm({...context,home_evidence:homeEvidenceReading(context,notebook.records.changed).evidence}).status,'unknown');
    } finally {d.close();}
  }
+});
+
+// Unresolved triage uses the very same missing criteria as Discover. These
+// fixtures are synthetic evidence; no neighborhood research is being added.
+const unresolved = (id, changes={}) => replace(fixture(id, {neighborhood:'Chicago · neighborhood unverified', ...changes}), 'neighborhood', null, {scope:'building', applies:'all'});
+const triageOf = (h, prefs=p, record={}) => unresolvedTriage(criteriaReading(h, record, prefs));
+const triageCounts = (homes, prefs=p, workspace=w) => {
+ const groups=discoveryGroups(homes,workspace,prefs,feed);
+ return Object.fromEntries(unresolvedBuckets.map(b=>[b.key,groups.unresolved.filter(h=>triageOf(h,prefs,workspace.records[h.id]).key===b.key).length]));
+};
+const triageRows = d => [...d.doc.querySelectorAll('[data-triage-home]')].map(el=>({id:el.dataset.triageHome,bucket:el.closest('[data-unresolved-bucket]').dataset.unresolvedBucket,missing:[...el.querySelectorAll('[data-missing-criterion]')].map(li=>li.textContent)}));
+
+test('triage: neighborhood-only, one-check and several-checks project exact shared missing facts',()=>{
+ const only=unresolved('only'),one=replace(unresolved('one'),'balcony',null),several=replace(replace(unresolved('several'),'balcony',null),'laundry',null);
+ const before=clone([only,one,several]);
+ for(const [home,key,count,missing] of [[only,'neighborhood_only',0,['neighborhood']],[one,'one_check',1,['neighborhood','balcony']],[several,'several_checks',2,['neighborhood','balcony','laundry']]]) {
+   assert(validateHome(home));
+   const reading=criteriaReading(home,{},p),triage=triageOf(home);
+   assert.equal(triage.key,key);assert.equal(triage.otherChecks,count);
+   assert.deepEqual(triage.missingCriteria.map(c=>c.key),missing);
+   assert.deepEqual(triage.missingCriteria.map(c=>c.label),reading.missing);
+   assert.equal(reading.area.status,'unknown');
+ }
+ assert.deepEqual(triageCounts([only,one,several]),{neighborhood_only:1,one_check:1,several_checks:1});
+ assert.deepEqual([only,one,several],before,'Triage does not write derived data into evidence');
+});
+
+test('triage: excluded neighborhoods and documented negatives never enter an unresolved bucket',()=>{
+ const south=replace(unresolved('south',{lat:41.88,lng:-87.63}),'neighborhood',['South Loop'],{scope:'building',applies:'all'});
+ const negative=replace(unresolved('negative'),'balcony','none');
+ const restricted={...unresolved('restricted'),eligibility_evidence:eligibility('offer')};
+ const groups=discoveryGroups([south,negative,restricted],w,p,feed);
+ assert.equal(groups.unresolved.length,0);assert.equal(groups.excluded.length,3);
+ for(const h of [south,negative,restricted])assert.equal(triageOf(h),null);
+ assert.equal(triageOf(fixture()),null,'Supported-area matches are not unresolved');
+});
+
+test('triage: selected-home marketing, conflicts and address eligibility count shared criteria only',()=>{
+ const selected=replace(unresolved('selected'),'balcony','private',{applies:'selected'});
+ assert.equal(triageOf(selected).key,'one_check');assert.match(triageOf(selected).missingCriteria[1].label,/selected homes only/);
+ const conflict=replace(unresolved('conflict'),'laundry',null,{status:'conflicting'});
+ assert.match(triageOf(conflict).missingCriteria[1].label,/sources conflict/);
+ const address={...unresolved('address'),eligibility_evidence:eligibility('address')};
+ assert.equal(triageOf(address).key,'one_check');assert.equal(triageOf(address).missingCriteria[1].key,'eligibility');
+ assert.equal(triageOf(address,{...p,excludeRestricted:false}).key,'neighborhood_only');
+ const conflictArea=replace(unresolved('area'),'neighborhood',null,{status:'conflicting',scope:'building',applies:'all'});
+ assert.equal(triageOf(conflictArea).key,'neighborhood_only');assert.match(triageOf(conflictArea).missingCriteria[0].label,/sources conflict/);
+});
+
+test('triage: coordinates supply distance only; absent coordinates stay unlocated',()=>{
+ const located=unresolved('located',{lat:41.89,lng:-87.64}),lost=unresolved('lost');
+ const before=clone([located,lost]);
+ assert.equal(typeof urbanSetting(located,feed).miles,'number');assert.match(urbanSetting(located,feed).detail,/straight-line miles/);
+ assert.equal(urbanSetting(lost,feed).status,'unlocated');assert.equal(urbanSetting(lost,feed).miles,null);
+ for(const h of [located,lost]){assert.equal(areaIdentity(h).status,'unknown');assert.equal(triageOf(h).key,'neighborhood_only');}
+ assert.equal(discoveryGroups([located,lost],w,p,feed).unresolved.length,2);
+ assert.deepEqual([located,lost],before);
+});
+
+test('triage: sort is bucket, source observation descending, ID ascending; no secondary score',()=>{
+ const homes=[
+   unresolved('only-old',{observed_at:'2026-01-01',rent:19999}),
+   unresolved('b',{observed_at:'2026-09-21T14:00:00Z',rent:800}),
+   unresolved('a',{observed_at:'2026-09-21T09:00:00-05:00',rent:10000}),
+   unresolved('c',{observed_at:'2026-09-21T13:30:00Z',rent:700}),
+   replace(unresolved('one-new',{observed_at:'2026-09-22',rent:600}),'balcony',null),
+   {...unresolved('four-new',{observed_at:'2026-09-22',rent:500}),home_evidence:[]},
+   replace(replace(unresolved('two-old',{observed_at:'2026-01-01',rent:400}),'balcony',null),'laundry',null)
+ ];
+ // Keep the no-research record a listing so a legacy curated area cannot apply.
+ homes[5].kind='listing';
+ const expected=['a','b','c','only-old','one-new','four-new','two-old'];
+ const notebook={...emptyWorkspace(),records:{'only-old':{saved:true,snapshot:clone(homes[0]),saved_at:'2026-12-01',quoteDate:'2026-12-01',rentOverride:300,home_evidence_update:{recorded_at:'2026-12-01T12:00:00Z',evidence:homes[0].home_evidence}}}};
+ const before=clone(homes);
+ for(const order of [homes,[...homes].reverse(),[...homes.slice(3),...homes.slice(0,3)]])for(const sort of ['rent','space','recent']) {
+   const groups=discoveryGroups(order,notebook,{...p,sort},feed);
+   assert.deepEqual(groups.unresolved.map(h=>h.id),expected);
+ }
+ assert.equal(triageOf(homes[5]).otherChecks,4);assert.equal(triageOf(homes[6]).otherChecks,2,'Exact counts do not reorder the several-checks bucket');
+ assert.deepEqual(homes,before);
+});
+
+test('triage: criteria toggles reclassify the same candidate without changing evidence',()=>{
+ const h=replace(replace(unresolved('editable'),'balcony',null),'laundry',null),before=clone(h);
+ assert.equal(triageOf(h).key,'several_checks');
+ assert.equal(triageOf(h,{...p,privateBalcony:false}).key,'one_check');
+ assert.equal(triageOf(h,{...p,privateBalcony:false,inUnitLaundry:false}).key,'neighborhood_only');
+ const anywhere={...p,includeAreas:[],excludeAreas:[]};
+ assert.equal(triageOf(h,anywhere),null);assert.equal(discoveryGroups([h],w,anywhere).leads.length,1);
+ assert.deepEqual(h,before);
+});
+
+test('triage: retained full-preset counts are 0 / 0 / 256 and no records are promoted',()=>{
+ const before=clone(feed.homes),groups=discoveryGroups(feed.homes,w,p,feed);
+ assert.deepEqual(Object.fromEntries(Object.entries(groups).map(([key,homes])=>[key,homes.length])),{matches:0,leads:5,unresolved:256,excluded:739});
+ assert.deepEqual(triageCounts(feed.homes),{neighborhood_only:0,one_check:0,several_checks:256});
+ for(const h of groups.unresolved){assert.equal(triageOf(h).otherChecks,4);assert.equal(areaIdentity(h).status,'unknown');}
+ assert.deepEqual(feed.homes,before);
+});
+
+test('triage DOM: missing facts, derived/unlocated context, existing source paths and dossier agree',async()=>{
+ const located=unresolved('located',{lat:41.89,lng:-87.64});
+ const lost=replace(unresolved('lost',{kind:'listing',sources:[{url:'https://developers.rentcast.io/reference',observed_at:'2026-09-07',supports:'Provider documentation'}]}),'balcony',null);
+ const several=replace(replace(unresolved('several'),'balcony',null),'laundry',null);
+ const d=await boot([several,lost,located]);
+ try {
+   click(d,'#apply-downtown');click(d,'#unresolved-verification > summary');
+   assert.deepEqual(triageRows(d).map(r=>r.id),['located','lost','several']);
+   assert.deepEqual([...d.doc.querySelectorAll('[data-unresolved-bucket] h4')].map(h=>h.textContent),['Neighborhood only (1)','Neighborhood + one check (1)','Several checks remain (1)']);
+   for(const h of [located,lost,several]) {
+     const row=d.doc.querySelector(`[data-triage-home="${h.id}"]`),access=sourceAccess(h);
+     assert.deepEqual([...row.querySelectorAll('[data-missing-criterion]')].map(el=>el.textContent),criteriaReading(h,{},p).missing);
+     assert.deepEqual([...row.querySelectorAll('a')].map(a=>a.href),[access.url,access.fallback?.url].filter(Boolean));
+     assert.doesNotMatch(row.textContent,/\b(best|top|recommended|most likely)\b/i);
+   }
+   const location=d.doc.querySelector('[data-triage-home="located"] .triage-location').textContent;
+   assert.match(location,/Derived from recorded coordinates: \d+\.\d straight-line miles from central Chicago/);
+   assert.match(location,/Neighborhood identity remains unverified/);assert.doesNotMatch(location,/River North|West Loop|South Loop|Downtown core/);
+   assert.match(d.doc.querySelector('[data-triage-home="lost"] .triage-location').textContent,/Unlocated — no recorded coordinates/);
+   assert.match(d.doc.querySelector('[data-triage-home="lost"] .source-access').textContent,/No exact listing URL.*A search, not a found listing/);
+   const button=d.doc.querySelector('[data-triage-home="located"] button');button.focus();button.click();
+   assert(d.doc.querySelector('#detail-dialog').open);assert(d.doc.querySelector('#detail-home-evidence').open);
+   assert.equal(d.doc.activeElement.id,'detail-home-evidence');
+   assert.match(d.doc.querySelector('#detail-home-evidence').textContent,/Confirm: Neighborhood identity/);
+   assert.match(d.doc.querySelector('#detail-sources').textContent,/No exact listing URL/);
+   d.doc.querySelector('#notes').value='Personal note: inspect location, no neighborhood asserted.';saveRecord(d);
+   assert.equal(d.doc.activeElement.dataset.studioTask,'located','Saving returns to the unresolved record');
+   assert.equal(d.doc.querySelector('#unresolved-verification').open,true);
+   assert.equal(areaIdentity(located,d.notebook().records.located).status,'unknown');
+ } finally {d.close();}
+});
+
+test('triage DOM: active controls immediately move records and removing neighborhood criteria ends triage',async()=>{
+ const h=replace(replace(unresolved('editable'),'balcony',null),'laundry',null);const d=await boot([h]);
+ try {
+   click(d,'#apply-downtown');assert.equal(triageRows(d)[0].bucket,'several_checks');
+   click(d,'[data-home-criterion="privateBalcony"]');assert.equal(triageRows(d)[0].bucket,'one_check');
+   assert.deepEqual(triageRows(d)[0].missing,['Neighborhood identity','In-unit washer AND dryer for this plan/unit']);
+   click(d,'[data-home-criterion="inUnitLaundry"]');assert.equal(triageRows(d)[0].bucket,'neighborhood_only');
+   assert.deepEqual(triageRows(d)[0].missing,['Neighborhood identity']);
+   for(const area of [...p.includeAreas,...p.excludeAreas])input(d,`[data-area-choice="${area}"]`,'any');
+   assert.equal(triageRows(d).length,0);assert.equal(d.doc.querySelectorAll('#results .home-card').length,1);
+   assert.equal(areaIdentity(h).status,'unknown','Explicitly dropping the area requirement supplies no neighborhood evidence');
+ } finally {d.close();}
+});
+
+test('triage DOM: List, Map, Focus and dossier never promote unresolved coordinates into area evidence',async()=>{
+ const h=unresolved('unknown',{lat:41.8819,lng:-87.6278}),match=fixture('match',{lat:41.89,lng:-87.64}),lead=replace(fixture('lead'),'balcony',null);
+ const south=replace(fixture('south',{lat:h.lat,lng:h.lng}),'neighborhood',['South Loop'],{scope:'building',applies:'all'});
+ const homes=[h,match,lead,south],before=clone(homes);const d=await boot(homes);
+ try {
+   click(d,'#apply-downtown');
+   for(const group of ['matches','leads']) {
+     click(d,`[data-evidence-group="${group}"]`);
+     const expected=group==='matches'?'match':'lead';
+     for(const surface of ['list','map','focus']) {
+       click(d,`[data-surface="${surface}"]`);
+       assert.deepEqual([...d.doc.querySelectorAll('#map-list [data-map-home]')].map(el=>el.dataset.mapHome),[expected]);
+       assert.deepEqual([...d.doc.querySelectorAll('#results [data-detail]')].map(el=>el.dataset.detail),[expected]);
+       if(surface==='focus')assert.deepEqual([...d.doc.querySelectorAll('#focus-surface [data-detail]')].map(el=>el.dataset.detail),[expected]);
+       assert.deepEqual(triageRows(d).map(r=>r.id),['unknown']);
+       click(d,'[data-triage-home="unknown"] button');assert.match(d.doc.querySelector('#detail-home-evidence').textContent,/Neighborhood identity/);d.doc.querySelector('#detail-dialog').close();
+     }
+   }
+   assert.deepEqual(homes,before);assert.equal(areaIdentity(h).status,'unknown');
+   assert.equal(triageOf(south),null);
+ } finally {d.close();}
+});
+
+test('triage DOM: each bucket pages independently in deterministic order and retains dossier actions',async()=>{
+ const homes=Array.from({length:12},(_,i)=>unresolved('only-'+String(i).padStart(2,'0')));
+ homes.push(replace(unresolved('one'),'balcony',null),replace(replace(unresolved('several'),'balcony',null),'laundry',null));
+ const d=await boot([...homes].reverse());
+ try {
+   click(d,'#apply-downtown');assert.equal(triageRows(d).length,12);
+   assert.deepEqual(triageRows(d).slice(-2).map(r=>r.id),['one','several'],'Later buckets are accessible without paging through earlier ones');
+   click(d,'[data-more-verification="neighborhood_only"]');
+   assert.deepEqual(triageRows(d).map(r=>r.id),homes.map(h=>h.id));
+   assert.equal(d.doc.querySelector('[data-more-verification="neighborhood_only"]'),null);
+   assert.equal(d.doc.activeElement.dataset.studioTask,'only-10');assert(d.doc.querySelector('#unresolved-verification').open);
+   click(d,'[data-triage-home="only-11"] button');assert(d.doc.querySelector('#detail-home-evidence').open);
+ } finally {d.close();}
+});
+
+test('triage DOM: save, no-op save, reload, export/import and archived snapshot preserve evidence and classification',async()=>{
+ const h=replace(unresolved('retained',{lat:41.89,lng:-87.64}),'balcony',null),homes=[h];
+ let d=await boot(homes,null,'2026-09-23T12:00:00Z'),notebook,rows,exported;
+ try {
+   click(d,'#apply-downtown');rows=triageRows(d);click(d,'[data-triage-home="retained"] button');
+   d.doc.querySelector('#notes').value='Private observation, never a neighborhood assertion';d.doc.querySelector('#parkingCost').value='0';saveRecord(d);
+   notebook=d.notebook();const original=clone(notebook.records.retained);
+   d.setNow('2026-09-24T12:00:00Z');click(d,'[data-triage-home="retained"] button');saveRecord(d);
+   assert.deepEqual(d.notebook().records.retained,original);assert.deepEqual(triageRows(d),rows);
+   assert.deepEqual(original.snapshot,h);assert.equal(original.quoteDate,'');assert.equal(original.quote_history?.length??0,0);
+ } finally {d.close();}
+ d=await boot(homes,notebook);
+ try {
+   assert.deepEqual(triageRows(d),rows);d.w.Blob=class{constructor(parts){exported=parts[0];}};
+   click(d,'[data-view="setup"]');click(d,'#export-notebook');
+   assert.equal(JSON.parse(exported).records.retained.snapshot.observed_at,h.observed_at);
+   assert(!Object.hasOwn(JSON.parse(exported).records.retained,'triage'),'Derived triage is never stored as evidence');
+ } finally {d.close();}
+ d=await boot(homes);
+ try {
+   await importText(d,exported);click(d,'[data-view="discover"]');
+   assert.deepEqual(d.notebook().records.retained,notebook.records.retained);assert.deepEqual(triageRows(d),rows);
+   assert.equal(triageOf(h,d.notebook().preferences,d.notebook().records.retained).key,'one_check');
+   const r=d.notebook().records.retained,archived={...r.snapshot,notebook_only:true};
+   assert.equal(triageOf(archived,d.notebook().preferences,r).key,'one_check');assert.equal(areaIdentity(archived,r).status,'unknown');
+ } finally {d.close();}
+});
+
+test('triage DOM: real full preset exposes empty easier buckets, all missing facts and search fallback',async()=>{
+ const d=await boot(feed.homes);
+ try {
+   click(d,'#apply-downtown');
+   assert.deepEqual([...d.doc.querySelectorAll('[data-unresolved-bucket] h4')].map(h=>h.textContent),['Neighborhood only (0)','Neighborhood + one check (0)','Several checks remain (256)']);
+   assert.equal(triageRows(d).length,10);
+   for(const row of d.doc.querySelectorAll('[data-triage-home]')) {
+     assert.equal(row.querySelectorAll('[data-missing-criterion]').length,5);
+     assert.match(row.querySelector('.triage-location').textContent,/Derived from recorded coordinates/);
+     assert(row.querySelector('a[href^="https://www.google.com/search?"]'));
+   }
+   assert.match(d.doc.querySelector('#unresolved-verification').textContent,/retained evidence records, not a count of downtown apartments/);
+ } finally {d.close();}
 });

@@ -68798,10 +68798,10 @@
   "city_context": {
     "afdc_status": "Key not configured; no public charging dataset fetched.",
     "cta": {
-      "updated_at": "2026-09-28T19:51:16.347330Z",
+      "updated_at": "2026-10-05T20:59:58.901512Z",
       "source": "https://data.cityofchicago.org/resource/8pix-ypme.json?$limit=1000"
     },
-    "last_attempt_at": "2026-09-28T19:51:16.347330Z",
+    "last_attempt_at": "2026-10-05T20:59:58.901512Z",
     "errors": []
   },
   "search_area": {

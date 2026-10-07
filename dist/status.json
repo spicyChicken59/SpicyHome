@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "attempted_at": "2026-10-06T18:54:36.236995Z",
-  "status": "success",
-  "message": "Latest area: Downers Grove. One page returned 87 of 87 matches; 87 fit the layout, budget and 35-mile search. Other cities retain their own last observations."
+  "attempted_at": "2026-10-07T19:20:35.454172Z",
+  "status": "failed",
+  "message": "Rolling request budget reached; existing snapshot preserved"
 }

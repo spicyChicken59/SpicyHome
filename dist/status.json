@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "attempted_at": "2026-10-08T19:16:52.550414Z",
+  "attempted_at": "2026-10-09T18:49:02.387539Z",
   "status": "failed",
   "message": "Rolling request budget reached; existing snapshot preserved"
 }

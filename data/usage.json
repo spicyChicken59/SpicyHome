@@ -2,17 +2,6 @@
   "schema_version": 1,
   "attempts": [
     {
-      "id": "34160646756-1",
-      "at": "2026-09-07T20:46:11.840353Z",
-      "status": "consumed"
-    },
-    {
-      "id": "34232264124-1",
-      "at": "2026-09-08T13:29:26.768169Z",
-      "status": "consumed",
-      "city": "Evanston"
-    },
-    {
       "id": "34357395697-1",
       "at": "2026-09-09T13:29:39.587568Z",
       "status": "consumed",
@@ -179,7 +168,13 @@
       "at": "2026-10-06T18:54:34.769824Z",
       "status": "consumed",
       "city": "Downers Grove"
+    },
+    {
+      "id": "38073451438-1",
+      "at": "2026-10-10T17:51:44.952303Z",
+      "status": "reserved",
+      "city": "Arlington Heights"
     }
   ],
-  "next_city": "Arlington Heights"
+  "next_city": "Naperville"
 }

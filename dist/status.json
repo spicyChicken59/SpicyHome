@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "attempted_at": "2026-10-09T18:49:02.387539Z",
-  "status": "failed",
-  "message": "Rolling request budget reached; existing snapshot preserved"
+  "attempted_at": "2026-10-10T17:51:46.189425Z",
+  "status": "success",
+  "message": "Latest area: Arlington Heights. One page returned 37 of 37 matches; 37 fit the layout, budget and 35-mile search. Other cities retain their own last observations."
 }

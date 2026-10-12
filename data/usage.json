@@ -2,12 +2,6 @@
   "schema_version": 1,
   "attempts": [
     {
-      "id": "34482654784-1",
-      "at": "2026-09-10T13:26:49.861865Z",
-      "status": "consumed",
-      "city": "Park Ridge"
-    },
-    {
       "id": "34604427084-1",
       "at": "2026-09-11T13:27:53.022851Z",
       "status": "consumed",
@@ -174,7 +168,13 @@
       "at": "2026-10-11T18:04:56.294570Z",
       "status": "consumed",
       "city": "Naperville"
+    },
+    {
+      "id": "38312462671-1",
+      "at": "2026-10-12T21:44:13.805485Z",
+      "status": "reserved",
+      "city": "Chicago"
     }
   ],
-  "next_city": "Chicago"
+  "next_city": "Evanston"
 }
